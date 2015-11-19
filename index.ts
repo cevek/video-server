@@ -1,6 +1,7 @@
 /// <reference path="typings/node/node.d.ts" />
 'use strict';
 
+var promisify = require('promisify');
 var co = require('co');
 var koa = require('koa');
 var router = require('koa-router')();
