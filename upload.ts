@@ -8,8 +8,7 @@ type Data = any;
 type SSN  =any;
 type Type = any;
 
-var uploadSessions:any;
-var UID = 0;
+var uploadSessions:{[user:string]:Uploader} = {};
 
 async function exec(command:string, options?:{timeout?:number}) {
     return await new Promise<string>((resolve, reject) =>
@@ -18,35 +17,49 @@ async function exec(command:string, options?:{timeout?:number}) {
             stderr:any) => err ? reject(err) : resolve(stdout.toString() + stderr.toString())));
 }
 
-function makeUploadSession() {
-    var usid = Math.random() * 1000000000 | 0;
-    usid = 1;
-    var dir = config.dataDir + usid + "/";
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir);
-    } else {
-        exec("rm " + dir + "*");
-    }
-
-    uploadSessions[usid] = {
-        user: UID,
-        time: new Date(),
-        processDir: config.processDir,
-        dataDirVideo: config.dataDirVideo,
-        dataDir: dir,
-        status: 0,
-        video: {},
-        ruAudio: {},
-        enAudio: {},
-        ruSub: {},
-        enSub: {}
-    };
-    return usid;
+enum ContentType{
+    VIDEO,
+    AUDIO,
+    EN_AUDIO,
+    RU_AUDIO,
+    SUBS,
+    EN_SUBS,
+    RU_SUBS
 }
-function removeUploadSession(usid:number, reason:string) {
-    console.log("remove: ", reason);
-    uploadSessions["deleted" + usid] = uploadSessions[usid];
-    delete uploadSessions[usid];
+
+class BaseContent {
+    basetype:ContentType;
+    type:ContentType;
+    source = 0; // [0=none 1=>file <0=>videoStream]
+    start = 0;
+    end = 0;
+    selectDuration = 0;
+    duration = 0;
+    videoStream = 0;
+    file = '';
+    filesize = 0;
+    parts:number[][] = [];
+    startpos = 0;
+    endpos = 0;
+    streams:{type:ContentType; format?:string; aid?: number; size?: {w:number; h:number}; lang?: string; title?: string; channels?: number}[];
+}
+class VideoContent extends BaseContent {
+    baseType = ContentType.VIDEO;
+    type = ContentType.VIDEO;
+}
+class AudioContent extends BaseContent {
+    baseType = ContentType.AUDIO;
+
+    constructor(public type:ContentType) {
+        super();
+    }
+}
+class SubsContent extends BaseContent {
+    baseType = ContentType.SUBS;
+
+    constructor(public type:ContentType) {
+        super();
+    }
 }
 
 export class Uploader {
@@ -57,20 +70,28 @@ export class Uploader {
     dataDirVideo = config.dataDirVideo;
     dataDir = '';
     status = 0;
-    video = {
-        source: 0,
-        streams: <{type: string}[]>[],
-        start: 0,
-        end: 0,
-        selectDuration: 0,
-        duration: 0
-    };
-    ruAudio = {};
-    enAudio = {};
-    ruSub = {};
-    enSub = {};
+    video = new VideoContent();
+    enAudio = new AudioContent(ContentType.EN_AUDIO);
+    ruAudio = new AudioContent(ContentType.RU_AUDIO);
+    enSub = new SubsContent(ContentType.EN_SUBS);
+    ruSub = new SubsContent(ContentType.RU_SUBS);
 
-    async destroy(reason: string){
+    getType(type:ContentType):BaseContent {
+        switch (type) {
+            case ContentType.VIDEO:
+                return this.video;
+            case ContentType.EN_AUDIO:
+                return this.enAudio;
+            case ContentType.RU_AUDIO:
+                return this.ruAudio;
+            case ContentType.EN_SUBS:
+                return this.enSub;
+            case ContentType.RU_SUBS:
+                return this.ruSub;
+        }
+    }
+
+    async destroy(reason:string) {
         console.log("remove: ", reason);
         uploadSessions["deleted" + this.user] = uploadSessions[this.user];
         delete uploadSessions[this.user];
@@ -92,71 +113,49 @@ export class Uploader {
     }
 
     async getInfo(data:Data) {
-        var types = this.validate(data);
-
-        var returninfo:{[ind:string]:{startpos:number; endpos:number;}} = {};
-
-        for (var t in types) {
-            if (this.ssn[t].source == 1) {
-                returninfo[t] = await this.getMediaPos(t);
-            }
-        }
-
-        return returninfo;
-        /*
-         if (req.GET.getmediapos)
-         getMediaPos(ssn, type, GET, function(){
-         res.end(JSON.stringify(track));
-         });
-         */
-    }
-
-    private validate(data:Data) {
         try {
             data = JSON.parse(data) || {}
         }
         catch (e) {
-            console.log(e)
+            console.error(e);
         }
 
-        console.log(data);
-        // check input data
-        var types:{[index:string]: string} = {
-            "video": "video",
-            "enAudio": "audio",
-            "ruAudio": "audio",
-            "enSub": "sub",
-            "ruSub": "sub"
+        this.validateContent(this.video, data.video);
+        this.validateContent(this.ruAudio, data.ruAudio);
+        this.validateContent(this.enAudio, data.enAudio);
+        this.validateContent(this.ruSub, data.ruSub);
+        this.validateContent(this.enSub, data.enSub);
+
+        return {
+            video: await this.getMediaPos(this.video),
+            enAudio: await this.getMediaPos(this.enAudio),
+            ruAudio: await this.getMediaPos(this.ruAudio),
         };
-        for (var t in types) {
-            data[t] = data[t] || {};
-            var track = this.ssn[t];
-            track.source = data[t].source | 0; // [0=none 1=>file <0=>videoStream]
+    }
 
-            // check audio & subs streams in video
-            if (t != "video" && track.source < 0) {
-                var stream = -1 * track.source;
-                if (this.video.streams[stream].type == types[t]) {
-                    track.videoStream = stream;
-                    track.duration = this.video.duration;
-                    track.selectDuration = this.video.selectDuration;
-                    track.start = this.video.start;
-                    track.end = this.video.end;
-                }
-                else {
-                    track.source = 0;
-                }
+    validateContent(track:BaseContent, data:Data) {
+        if (!(track instanceof VideoContent) && track.source < 0) {
+            var stream = -1 * track.source;
+            if (this.video.streams[stream].type == track.basetype) {
+                track.videoStream = stream;
+                track.duration = this.video.duration;
+                track.selectDuration = this.video.selectDuration;
+                track.start = this.video.start;
+                track.end = this.video.end;
             }
-
-            track.start = Math.min(Math.max(0, data[t].start | 0), track.duration);
-            track.end = Math.min(Math.max(track.start, data[t].end | 0), track.duration);
-            track.selectDuration = track.end - track.start;
-
-            // check duration
-            //video && enAudio && enSub && ruSub || enSub && ruSub
+            else {
+                track.source = 0;
+            }
         }
-        return types;
-    };
+
+        track.source = data.source | 0;
+        track.start = Math.min(Math.max(0, data.start | 0), track.duration);
+        track.end = Math.min(Math.max(track.start, data.end | 0), track.duration);
+        track.selectDuration = track.end - track.start;
+        // check duration
+        //video && enAudio && enSub && ruSub || enSub && ruSub
+
+    }
 
     async makeFile(type:Type, filesize:number) {
         console.log(filesize);
@@ -255,8 +254,7 @@ export class Uploader {
         return seeks[0] || 0;
     }
 
-    async getMediaInfo(type:Type) {
-        var track = this.ssn[type];
+    async getMediaInfo(track:BaseContent) {
         console.log("getmediainfo");
 
         var command = "strace -e_llseek,read avconv -ss 0.1 -i " + track.file + " -t 0 2>&1";
@@ -274,24 +272,23 @@ export class Uploader {
         var loadfrom = this.needToLoad(stdout, track.parts, track.filesize, true);
         loadfrom = Math.max(0, loadfrom - 200000);
         var res = stdout.match(/Duration: (\d+):(\d+):(\d+)/) || [0, 0, 0, 0];
-        var d = +res[1] * 3600 + +res[2] * 60 + +res[3];
+        track.duration = +res[1] * 3600 + +res[2] * 60 + +res[3];
         var streams:string[] = stdout.match(/Stream \#.*\n(\s+Metadata:\n(\s{5,}.*\n)*)?/g) || [];
-        var sinfo:{type:string; format?:string; aid?: number; size?: {w:number; h:number}; lang?: string; title?: string; channels?: number}[] = [];
         //console.log(stdout);
 
         for (var j in streams) {
             var m:string[] = streams[j].replace(/\s+/g, " ").match(/Stream \#0.(\d+)(\((.*?)\))?: ((Video): (.*?), .*?, (\d+x\d+)|(Audio): (.*?), .*?, (.*?), (.*? title : (.*?) $)?|(Subtitle): (.*? title : (.*?) $)?)/) || [];
             var tt = +m[1];
-            if (!sinfo[tt]) {
+            if (!track.streams[tt]) {
                 if (m[5]) {
                     var m2 = (m[7] || "").match(/(\d+)x(\d+)/);
                     var size = {w: +m2[1], h: +m2[2]}
-                    sinfo[tt] = {type: "video", format: m[6] || "", size: size};
+                    track.streams[tt] = {type: ContentType.VIDEO, format: m[6] || "", size: size};
                 }
                 if (m[8]) {
                     var channels = (m[10].match(/5.1/) ? 6 : (m[10].match(/mono/) ? 1 : 2) );
-                    sinfo[tt] = {
-                        type: "audio",
+                    track.streams[tt] = {
+                        type: ContentType.AUDIO,
                         lang: m[3] || "",
                         format: m[9] || "",
                         channels: channels,
@@ -299,33 +296,27 @@ export class Uploader {
                     };
                 }
                 if (m[13]) {
-                    sinfo[tt] = {type: "sub", lang: m[3] || "", title: m[15] || ""};
+                    track.streams[tt] = {type: ContentType.SUBS, lang: m[3] || "", title: m[15] || ""};
                 }
             }
         }
         //console.log(sinfo);
 
         var aid = 0;
-        for (var i = 0; i < sinfo.length; i++) {
-            if (sinfo[i].type == "audio") {
-                sinfo[i].aid = aid;
+        for (var i = 0; i < track.streams.length; i++) {
+            if (track.streams[i].type == ContentType.AUDIO) {
+                track.streams[i].aid = aid;
                 aid++;
             }
         }
 
         //console.log(streams, sinfo);
-
-        track.duration = d;
-        track.streams = sinfo;
         console.log(loadfrom);
 
-        return {streams: sinfo, duration: d, loadfrom: loadfrom};
+        return {streams: track.streams, duration: track.duration, loadfrom: loadfrom};
     }
 
-    async getMediaPos(type:Type) {
-        var track = this.ssn[type];
-        console.log("getmediapos", type);
-
+    async getMediaPos(track:BaseContent) {
         var stdout = await exec('strace -e_llseek mencoder ' + track.file + ' -ss ' + (track.start - 10) + ' -endpos 0 -oac pcm -ovc copy -o null 2>&1');
         //console.log("start", stdout);
         var startpos = this.needToLoad(stdout, track.parts, track.filesize);
