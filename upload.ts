@@ -6,7 +6,6 @@ var config = require("./config").config;
 
 type Data = any;
 type SSN  =any;
-type Type = any;
 
 var uploadSessions:{[user:string]:Uploader} = {};
 
@@ -28,6 +27,7 @@ enum ContentType{
 }
 
 class BaseContent {
+    fd: number;
     basetype:ContentType;
     type:ContentType;
     source = 0; // [0=none 1=>file <0=>videoStream]
@@ -63,8 +63,6 @@ class SubsContent extends BaseContent {
 }
 
 export class Uploader {
-    ssn:SSN;
-
     time = new Date();
     processDir = config.processDir;
     dataDirVideo = config.dataDirVideo;
@@ -157,20 +155,19 @@ export class Uploader {
 
     }
 
-    async makeFile(type:Type, filesize:number) {
+    async makeFile(track: BaseContent, filesize:number) {
         console.log(filesize);
         if (filesize < 1000 || filesize > 5 * 1000 * 1000 * 1000) {
             return false;
         }
 
-        var track = this.ssn[type];
         track.filesize = filesize;
         track.parts = [];
-        track.file = this.dataDir + type;
-        if (type == "video") {
-            track.file = this.dataDirVideo + type;
+        track.file = this.dataDir + track.type;
+        if (track instanceof VideoContent) {
+            track.file = this.dataDirVideo + track.type;
         }
-        console.log(this.ssn, track.file);
+        console.log(this);
 
         if (fs.existsSync(track.file)) {
             fs.unlinkSync(track.file);
@@ -186,8 +183,7 @@ export class Uploader {
         return true;
     }
 
-    async uploadPart(type:Type, params:{from: number; makefile: boolean; filesize: number}, data:Data) {
-        var track = this.ssn[type];
+    async uploadPart(track:BaseContent, params:{from: number; makefile: boolean; filesize: number}, data:Data) {
         var from = +params.from;
         var size = data.length;
         if (from < 0 || from + size > track.filesize) {
@@ -195,7 +191,7 @@ export class Uploader {
         }
 
         if (params.makefile || !track.fd) {
-            this.makeFile(type, +params.filesize);
+            this.makeFile(track, +params.filesize);
         }
         console.log("upload", from, data.length);
         fs.writeSync(track.fd, data, 0, data.length, from);
