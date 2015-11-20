@@ -1,5 +1,6 @@
 /// <reference path="typings/node/node.d.ts" />
 'use strict';
+import {uploaderSessions} from './upload';
 
 var promisify = require('promisify');
 var co = require('co');
@@ -10,8 +11,31 @@ var app = koa();
 app.experimental = true;
 import {db} from './db';
 
+
 router.get('/', async function () {
     this.body = 'Hello World!';
+});
+
+router.get('/getsession', async function () {
+    var uploader = uploaderSessions.create();
+    this.body = {usid: uploader.sid};
+});
+
+router.get('/getinfo', async function () {
+    var uploader = uploaderSessions.getUploaderBySid(this.params.sid);
+    this.body = await uploader.getInfo(this.body);
+});
+router.get('/uploadpart', async function () {
+    var uploader = uploaderSessions.getUploaderBySid(this.params.sid);
+    this.body = await uploader.uploadPart(this.params, this.data);
+    if (this.params.getmediainfo){
+        this.body = await uploader.getMediaInfo(this.params);
+    } else {
+        this.body = {status: 'ok'};
+    }
+});
+router.get('/extract', async function () {
+
 });
 
 router.get('/api/addtextlines', async function () {

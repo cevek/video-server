@@ -1,17 +1,44 @@
-/// <reference path="typings/node/node.d.ts" />
+/// <reference path='typings/node/node.d.ts' />
 'use strict';
 
 var fs = require('fs');
-var config = require("./config").config;
+var config = require('./config').config;
 
 type Data = any;
-type SSN  =any;
 
-var uploadSessions:{[user:string]:Uploader} = {};
+export var uploadSessions:{[user:string]:Uploader} = {};
+
+class UploaderSessions {
+    sessions:{[sid:string]: Uploader} = {};
+
+    create() {
+        var sid = Math.random().toString(33).substr(2, 5);
+        var uploader = new Uploader(sid);
+        this.sessions[sid] = uploader;
+        return uploader;
+    }
+
+    remove(sid:string) {
+        if (!this.sessions[sid]) {
+            throw new Error('sid not found: ' + sid);
+        }
+        this.sessions[sid].destroy();
+        this.sessions[sid] = null;
+    }
+
+    getUploaderBySid(sid:string) {
+        if (!this.sessions[sid]) {
+            throw new Error('sid not found: ' + sid);
+        }
+        return this.sessions[sid];
+    }
+}
+
+export var uploaderSessions = new UploaderSessions();
 
 async function exec(command:string, options?:{timeout?:number}) {
     return await new Promise<string>((resolve, reject) =>
-        require("child_process").exec(command, options, (err:any,
+        require('child_process').exec(command, options, (err:any,
             stdout:any,
             stderr:any) => err ? reject(err) : resolve(stdout.toString() + stderr.toString())));
 }
@@ -27,7 +54,7 @@ enum ContentType{
 }
 
 class BaseContent {
-    fd: number;
+    fd:number;
     basetype:ContentType;
     type:ContentType;
     source = 0; // [0=none 1=>file <0=>videoStream]
@@ -74,6 +101,9 @@ export class Uploader {
     enSub = new SubsContent(ContentType.EN_SUBS);
     ruSub = new SubsContent(ContentType.RU_SUBS);
 
+    constructor(public sid:string) {
+    }
+
     getType(type:ContentType):BaseContent {
         switch (type) {
             case ContentType.VIDEO:
@@ -89,25 +119,17 @@ export class Uploader {
         }
     }
 
-    async destroy(reason:string) {
-        console.log("remove: ", reason);
-        uploadSessions["deleted" + this.user] = uploadSessions[this.user];
-        delete uploadSessions[this.user];
+    async destroy() {
+
     }
 
     async init() {
-        var usid = Math.random() * 1000000000 | 0;
-        usid = 1;
-        this.dataDir = config.dataDir + usid + "/";
+        this.dataDir = config.dataDir + this.sid + '/';
         if (!fs.existsSync(this.dataDir)) {
             fs.mkdirSync(this.dataDir);
         } else {
-            await exec("rm " + this.dataDir + "*");
+            await exec('rm ' + this.dataDir + '*');
         }
-    }
-
-    constructor(public user:number) {
-
     }
 
     async getInfo(data:Data) {
@@ -146,16 +168,16 @@ export class Uploader {
             }
         }
 
-        track.source = data.source | 0;
-        track.start = Math.min(Math.max(0, data.start | 0), track.duration);
-        track.end = Math.min(Math.max(track.start, data.end | 0), track.duration);
+        track.source = +data.source;
+        track.start = Math.min(Math.max(0, +data.start), track.duration);
+        track.end = Math.min(Math.max(track.start, +data.end), track.duration);
         track.selectDuration = track.end - track.start;
         // check duration
         //video && enAudio && enSub && ruSub || enSub && ruSub
 
     }
 
-    async makeFile(track: BaseContent, filesize:number) {
+    async makeFile(track:BaseContent, filesize:number) {
         console.log(filesize);
         if (filesize < 1000 || filesize > 5 * 1000 * 1000 * 1000) {
             return false;
@@ -164,39 +186,40 @@ export class Uploader {
         track.filesize = filesize;
         track.parts = [];
         track.file = this.dataDir + track.type;
-        if (track instanceof VideoContent) {
-            track.file = this.dataDirVideo + track.type;
-        }
+        /*
+                if (track instanceof VideoContent) {
+                    track.file = this.dataDirVideo + track.type;
+                }
+        */
         console.log(this);
 
         if (fs.existsSync(track.file)) {
             fs.unlinkSync(track.file);
         }
 
-        var command = config.isWindows ? "fsutil file createnew " + track.file + " " + track.filesize : "fallocate -l " + track.filesize + " " + track.file;
-        await
-            exec(command);
-        console.log("created file", track.file);
-        track.fd = fs.openSync(track.file, "r+");
-        //if (type == "video")
-        //fs.writeSync(track.fd, new Buffer("x"), 0, 1, track.filesize-1);
+        await exec('fallocate -l ' + track.filesize + ' ' + track.file);
+        console.log('created file', track.file);
+        track.fd = fs.openSync(track.file, 'r+');
+        //if (type == 'video')
+        //fs.writeSync(track.fd, new Buffer('x'), 0, 1, track.filesize-1);
         return true;
     }
 
-    async uploadPart(track:BaseContent, params:{from: number; makefile: boolean; filesize: number}, data:Data) {
+    async uploadPart(params:{type: ContentType; from: number; makefile: boolean; filesize: number}, data:Buffer) {
+        var track = this.getType(params.type);
         var from = +params.from;
         var size = data.length;
         if (from < 0 || from + size > track.filesize) {
-            return this.destroy('!!from');
+            return;//this.destroy('!!from');
         }
 
         if (params.makefile || !track.fd) {
             this.makeFile(track, +params.filesize);
         }
-        console.log("upload", from, data.length);
+        console.log('upload', from, data.length);
         fs.writeSync(track.fd, data, 0, data.length, from);
         track.parts.push([from, from + size, size]);
-        //return removeUploadSession(ssn, "!makefile");
+        //return removeUploadSession(ssn, '!makefile');
     }
 
     needToLoad(tracedata:string, loadedparts:number[][], filesize:number, isffmpeg = false) {
@@ -211,7 +234,7 @@ export class Uploader {
 
         var n = (isffmpeg ? 3 : 4);
         var m:string[] = tracedata.match(/(_llseek\(\d, \d+|read\(\d,.*? = \d+$)/gm);
-        //.replace(/^[\s\S]*?_llseek\(\d, 0/, "")
+        //.replace(/^[\s\S]*?_llseek\(\d, 0/, '')
         for (var j in m) {
             var m2:string[] = m[j].match(/(seek\(\d, (\d+)|= (\d+))/) || [];
             if (m2[2]) {
@@ -243,22 +266,23 @@ export class Uploader {
             last_seek += +m2[3];
         }
 
-        //console.log("#####################3");
-        //console.log("seeks", seeks);
-        //console.log("all_seeks", all_seeks);
-        //console.log("loadedparts", loadedparts);
+        //console.log('#####################3');
+        //console.log('seeks', seeks);
+        //console.log('all_seeks', all_seeks);
+        //console.log('loadedparts', loadedparts);
         return seeks[0] || 0;
     }
 
-    async getMediaInfo(track:BaseContent) {
-        console.log("getmediainfo");
+    async getMediaInfo(params: {type: ContentType}) {
+        console.log('getmediainfo');
+        var track = this.getType(params.type);
 
-        var command = "strace -e_llseek,read avconv -ss 0.1 -i " + track.file + " -t 0 2>&1";
-        var stdout = await exec(command, {timeout: 2000});
+
+        var stdout = await exec('strace -e_llseek,read avconv -ss 0.1 -i ' + track.file + ' -t 0 2>&1', {timeout: 2000});
         /*
-         console.log("err", err);
-         console.log("stdout", stdout);
-         console.log("stderr", stderr);
+         console.log('err', err);
+         console.log('stdout', stdout);
+         console.log('stderr', stderr);
          //return;
          */
 
@@ -267,32 +291,32 @@ export class Uploader {
 
         var loadfrom = this.needToLoad(stdout, track.parts, track.filesize, true);
         loadfrom = Math.max(0, loadfrom - 200000);
+
         var res = stdout.match(/Duration: (\d+):(\d+):(\d+)/) || [0, 0, 0, 0];
         track.duration = +res[1] * 3600 + +res[2] * 60 + +res[3];
-        var streams:string[] = stdout.match(/Stream \#.*\n(\s+Metadata:\n(\s{5,}.*\n)*)?/g) || [];
-        //console.log(stdout);
 
-        for (var j in streams) {
-            var m:string[] = streams[j].replace(/\s+/g, " ").match(/Stream \#0.(\d+)(\((.*?)\))?: ((Video): (.*?), .*?, (\d+x\d+)|(Audio): (.*?), .*?, (.*?), (.*? title : (.*?) $)?|(Subtitle): (.*? title : (.*?) $)?)/) || [];
-            var tt = +m[1];
-            if (!track.streams[tt]) {
+        var streams:string[] = stdout.match(/Stream \#.*\n(\s+Metadata:\n(\s{5,}.*\n)*)?/g) || [];
+        for (var i = 0; i < streams.length; i++) {
+            var m:string[] = streams[i].replace(/\s+/g, ' ').match(/Stream \#0.(\d+)(\((.*?)\))?: ((Video): (.*?), .*?, (\d+x\d+)|(Audio): (.*?), .*?, (.*?), (.*? title : (.*?) $)?|(Subtitle): (.*? title : (.*?) $)?)/) || [];
+            var k = +m[1];
+            if (!track.streams[k]) {
                 if (m[5]) {
-                    var m2 = (m[7] || "").match(/(\d+)x(\d+)/);
-                    var size = {w: +m2[1], h: +m2[2]}
-                    track.streams[tt] = {type: ContentType.VIDEO, format: m[6] || "", size: size};
+                    var m2 = (m[7] || '').match(/(\d+)x(\d+)/);
+                    var size = {w: +m2[1], h: +m2[2]};
+                    track.streams[k] = {type: ContentType.VIDEO, format: m[6] || '', size: size};
                 }
                 if (m[8]) {
                     var channels = (m[10].match(/5.1/) ? 6 : (m[10].match(/mono/) ? 1 : 2) );
-                    track.streams[tt] = {
+                    track.streams[k] = {
                         type: ContentType.AUDIO,
-                        lang: m[3] || "",
-                        format: m[9] || "",
+                        lang: m[3] || '',
+                        format: m[9] || '',
                         channels: channels,
-                        title: m[12] || ""
+                        title: m[12] || ''
                     };
                 }
                 if (m[13]) {
-                    track.streams[tt] = {type: ContentType.SUBS, lang: m[3] || "", title: m[15] || ""};
+                    track.streams[k] = {type: ContentType.SUBS, lang: m[3] || '', title: m[15] || ''};
                 }
             }
         }
@@ -314,15 +338,15 @@ export class Uploader {
 
     async getMediaPos(track:BaseContent) {
         var stdout = await exec('strace -e_llseek mencoder ' + track.file + ' -ss ' + (track.start - 10) + ' -endpos 0 -oac pcm -ovc copy -o null 2>&1');
-        //console.log("start", stdout);
+        //console.log('start', stdout);
         var startpos = this.needToLoad(stdout, track.parts, track.filesize);
         track.startpos = startpos;
         var stdout = await exec('strace -e_llseek mencoder ' + track.file + ' -ss ' + (track.end + 10) + ' -endpos 0 -oac pcm -ovc copy  -o null 2>&1');
-        //console.log("end", stdout);
-        console.log("filesize", fs.statSync(track.file).size);
+        //console.log('end', stdout);
+        console.log('filesize', fs.statSync(track.file).size);
         var endpos = this.needToLoad(stdout, track.parts, track.filesize);
         track.endpos = endpos;
-        //console.log("loaded parts", track.parts);
+        //console.log('loaded parts', track.parts);
         console.log(startpos, endpos);
         return {startpos: startpos, endpos: endpos};
 
