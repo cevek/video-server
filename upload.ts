@@ -43,7 +43,7 @@ async function exec(command:string, options?:{timeout?:number}) {
             stderr:any) => err ? reject(err) : resolve(stdout.toString() + stderr.toString())));
 }
 
-enum ContentType{
+enum ContentType {
     VIDEO,
     AUDIO,
     EN_AUDIO,
@@ -73,6 +73,9 @@ class BaseContent {
 class VideoContent extends BaseContent {
     baseType = ContentType.VIDEO;
     type = ContentType.VIDEO;
+    constructor(){
+        super();
+    }
 }
 class AudioContent extends BaseContent {
     baseType = ContentType.AUDIO;
@@ -118,6 +121,22 @@ export class Uploader {
                 return this.ruSub;
         }
     }
+
+    getTypeByString(type: string){
+        switch (type) {
+            case 'video':
+                return this.video;
+            case 'enAudio':
+                return this.enAudio;
+            case 'ruAudio':
+                return this.ruAudio;
+            case 'enSubs':
+                return this.enSub;
+            case 'ruSubs':
+                return this.ruSub;
+        }
+    }
+
 
     async destroy() {
 
@@ -205,8 +224,8 @@ export class Uploader {
         return true;
     }
 
-    async uploadPart(params:{type: ContentType; from: number; makefile: boolean; filesize: number}, data:Buffer) {
-        var track = this.getType(params.type);
+    async uploadPart(params:{type: string; from: number; makefile: boolean; filesize: number}, data:Buffer) {
+        var track = this.getTypeByString(params.type);
         var from = +params.from;
         var size = data.length;
         if (from < 0 || from + size > track.filesize) {
@@ -222,7 +241,7 @@ export class Uploader {
         //return removeUploadSession(ssn, '!makefile');
     }
 
-    needToLoad(tracedata:string, loadedparts:number[][], filesize:number, isffmpeg = false) {
+    needToLoad(tracedata:string, loadedparts:number[][], filesize:number, isffmpeg?: boolean) {
         var last_seek = 0;
         var all_seeks:number[] = [];
         var m:string[] = tracedata.match(/Read error at pos. \d+/g);
@@ -273,12 +292,12 @@ export class Uploader {
         return seeks[0] || 0;
     }
 
-    async getMediaInfo(params: {type: ContentType}) {
+    async getMediaInfo(params: {type: string}) {
         console.log('getmediainfo');
-        var track = this.getType(params.type);
+        var track = this.getTypeByString(params.type);
 
 
-        var stdout = await exec('strace -e_llseek,read avconv -ss 0.1 -i ' + track.file + ' -t 0 2>&1', {timeout: 2000});
+        var stdout = await exec('strace -e_llseek,read ffmpeg -ss 0.1 -i ' + track.file + ' -t 0 2>&1', {timeout: 2000});
         /*
          console.log('err', err);
          console.log('stdout', stdout);

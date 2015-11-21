@@ -1,12 +1,16 @@
 /// <reference path="typings/node/node.d.ts" />
 'use strict';
+require('source-map-support').install();
+
 import {uploaderSessions} from './upload';
 
 var promisify = require('promisify');
 var co = require('co');
+var fs = require('fs');
 var koa = require('koa');
 var router = require('koa-router')();
 var cors = require('koa-cors');
+var koaBody = require('koa-body');
 var app = koa();
 app.experimental = true;
 import {db} from './db';
@@ -18,44 +22,41 @@ router.get('/', async function () {
 
 router.get('/getsession', async function () {
     var uploader = uploaderSessions.create();
+    console.log(uploader.sid);
     this.body = {usid: uploader.sid};
 });
 
 router.get('/getinfo', async function () {
-    var uploader = uploaderSessions.getUploaderBySid(this.params.sid);
-    this.body = await uploader.getInfo(this.body);
+    var uploader = uploaderSessions.getUploaderBySid(this.request.query.usid);
+    this.body = await uploader.getInfo(this.request.body);
 });
-router.get('/uploadpart', async function () {
-    var uploader = uploaderSessions.getUploaderBySid(this.params.sid);
-    this.body = await uploader.uploadPart(this.params, this.data);
-    if (this.params.getmediainfo){
-        this.body = await uploader.getMediaInfo(this.params);
+router.post('/uploadpart', async function () {
+    console.log(this.request.query);
+    console.log(this.request.body);
+    debugger;
+    var uploader = uploaderSessions.getUploaderBySid(this.request.query.usid);
+    var data = fs.readFileSync(this.request.body.files.data.path);
+    await uploader.uploadPart(this.request.query, data);
+    debugger;
+    var body: any;
+    if (this.request.query.getmediainfo){
+        body = await uploader.getMediaInfo(this.request.query);
     } else {
-        this.body = {status: 'ok'};
+        body = {status: 'ok'};
     }
+    this.body = body;
 });
 router.get('/extract', async function () {
 
 });
-
-router.get('/api/addtextlines', async function () {
-    var data = this.request;
-
-    var transaction = await db.beginTransaction();
-    await transaction.query(db.insertSql('lines', data.lines));
-    await transaction.query(db.insertSql('textLines', data.textLines));
-    await transaction.commit();
-
-    this.body = {status: "ok"};
-});
-
+app.use(koaBody({multipart: true, formidable:{uploadDir: __dirname}}));
 app.use(cors({credentials: true}));
 app.use(router.routes());
 app.use(router.allowedMethods());
-app.listen(3700);
+app.listen(1335);
 
 app.on('error', function (err:Error) {
     console.error(err.stack);
 });
-console.log("serving localhost:3700");
+console.log("serving localhost:1335");
 
