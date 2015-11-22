@@ -56,6 +56,8 @@ app.use(router.allowedMethods());
 app.listen(1335);
 
 app.on('error', function (err:Error) {
+    console.error('App Error');
+    console.error(err);
     console.error(err.stack);
 });
 console.log("serving localhost:1335");

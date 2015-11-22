@@ -2,7 +2,7 @@
 'use strict';
 
 var fs = require('fs');
-var config = require('./config').config;
+import {config} from './config';
 
 type Data = any;
 
@@ -38,9 +38,9 @@ export var uploaderSessions = new UploaderSessions();
 
 async function exec(command:string, options?:{timeout?:number}) {
     return await new Promise<string>((resolve, reject) =>
-        require('child_process').exec(command, options, (err:any,
-            stdout:any,
-            stderr:any) => err ? reject(err) : resolve(stdout.toString() + stderr.toString())));
+        require('child_process').exec(command, options,
+            (err:any, stdout:any, stderr:any) =>
+                err ? reject(err) : resolve(stdout.toString() + stderr.toString())));
 }
 
 enum ContentType {
@@ -68,12 +68,13 @@ class BaseContent {
     parts:number[][] = [];
     startpos = 0;
     endpos = 0;
-    streams:{type:ContentType; format?:string; aid?: number; size?: {w:number; h:number}; lang?: string; title?: string; channels?: number}[];
+    streams:{type:ContentType; format?:string; aid?: number; size?: {w:number; h:number}; lang?: string; title?: string; channels?: number}[] = [];
 }
 class VideoContent extends BaseContent {
     baseType = ContentType.VIDEO;
     type = ContentType.VIDEO;
-    constructor(){
+
+    constructor() {
         super();
     }
 }
@@ -96,7 +97,7 @@ export class Uploader {
     time = new Date();
     processDir = config.processDir;
     dataDirVideo = config.dataDirVideo;
-    dataDir = '';
+    dataDir = config.dataDir;
     status = 0;
     video = new VideoContent();
     enAudio = new AudioContent(ContentType.EN_AUDIO);
@@ -122,7 +123,7 @@ export class Uploader {
         }
     }
 
-    getTypeByString(type: string){
+    getTypeByString(type:string) {
         switch (type) {
             case 'video':
                 return this.video;
@@ -136,7 +137,6 @@ export class Uploader {
                 return this.ruSub;
         }
     }
-
 
     async destroy() {
 
@@ -197,7 +197,7 @@ export class Uploader {
     }
 
     async makeFile(track:BaseContent, filesize:number) {
-        console.log(filesize);
+        console.log('makefile', filesize);
         if (filesize < 1000 || filesize > 5 * 1000 * 1000 * 1000) {
             return false;
         }
@@ -216,7 +216,12 @@ export class Uploader {
             fs.unlinkSync(track.file);
         }
 
-        await exec('fallocate -l ' + track.filesize + ' ' + track.file);
+        if (config.isMac) {
+            await exec('mkfile -n ' + track.filesize + ' ' + track.file);
+        }
+        else {
+            await exec('fallocate -l ' + track.filesize + ' ' + track.file);
+        }
         console.log('created file', track.file);
         track.fd = fs.openSync(track.file, 'r+');
         //if (type == 'video')
@@ -225,23 +230,27 @@ export class Uploader {
     }
 
     async uploadPart(params:{type: string; from: number; makefile: boolean; filesize: number}, data:Buffer) {
+        console.log('uploadPart', params);
+
         var track = this.getTypeByString(params.type);
         var from = +params.from;
         var size = data.length;
-        if (from < 0 || from + size > track.filesize) {
-            return;//this.destroy('!!from');
-        }
 
         if (params.makefile || !track.fd) {
-            this.makeFile(track, +params.filesize);
+            await this.makeFile(track, +params.filesize);
         }
+
+        if (from < 0 || from + size > track.filesize) {
+            throw new Error('Incorrect from: ' + from);
+        }
+
         console.log('upload', from, data.length);
         fs.writeSync(track.fd, data, 0, data.length, from);
         track.parts.push([from, from + size, size]);
         //return removeUploadSession(ssn, '!makefile');
     }
 
-    needToLoad(tracedata:string, loadedparts:number[][], filesize:number, isffmpeg?: boolean) {
+    needToLoad(tracedata:string, loadedparts:number[][], filesize:number, isffmpeg?:boolean) {
         var last_seek = 0;
         var all_seeks:number[] = [];
         var m:string[] = tracedata.match(/Read error at pos. \d+/g);
@@ -251,7 +260,6 @@ export class Uploader {
             all_seeks.push((+m2[1] | 0));
         }
 
-        var n = (isffmpeg ? 3 : 4);
         var m:string[] = tracedata.match(/(_llseek\(\d, \d+|read\(\d,.*? = \d+$)/gm);
         //.replace(/^[\s\S]*?_llseek\(\d, 0/, '')
         for (var j in m) {
@@ -292,12 +300,12 @@ export class Uploader {
         return seeks[0] || 0;
     }
 
-    async getMediaInfo(params: {type: string}) {
+    async getMediaInfo(params:{type: string}) {
         console.log('getmediainfo');
         var track = this.getTypeByString(params.type);
 
-
-        var stdout = await exec('strace -e_llseek,read ffmpeg -ss 0.1 -i ' + track.file + ' -t 0 2>&1', {timeout: 2000});
+        var strace = config.isMac ? "sudo dtruss -t lseek" : "strace -e_llseek,read";
+        var stdout = await exec(strace + ' ffmpeg -ss 0.1 -i ' + track.file + ' -t 0 2>&1', {timeout: 10000});
         /*
          console.log('err', err);
          console.log('stdout', stdout);
@@ -356,11 +364,15 @@ export class Uploader {
     }
 
     async getMediaPos(track:BaseContent) {
-        var stdout = await exec('strace -e_llseek mencoder ' + track.file + ' -ss ' + (track.start - 10) + ' -endpos 0 -oac pcm -ovc copy -o null 2>&1');
+        console.log('getMediaPos');
+
+        var strace = config.isMac ? "sudo dtruss -t lseek" : "strace -e_llseek,read";
+
+        var stdout = await exec(strace + ' mencoder ' + track.file + ' -ss ' + (track.start - 10) + ' -endpos 0 -oac pcm -ovc copy -o null 2>&1');
         //console.log('start', stdout);
         var startpos = this.needToLoad(stdout, track.parts, track.filesize);
         track.startpos = startpos;
-        var stdout = await exec('strace -e_llseek mencoder ' + track.file + ' -ss ' + (track.end + 10) + ' -endpos 0 -oac pcm -ovc copy  -o null 2>&1');
+        var stdout = await exec(strace + ' mencoder ' + track.file + ' -ss ' + (track.end + 10) + ' -endpos 0 -oac pcm -ovc copy  -o null 2>&1');
         //console.log('end', stdout);
         console.log('filesize', fs.statSync(track.file).size);
         var endpos = this.needToLoad(stdout, track.parts, track.filesize);

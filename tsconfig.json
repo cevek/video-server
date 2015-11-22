@@ -5,7 +5,7 @@
     "noImplicitAny": true,
     "outDir": "built",
     "rootDir": ".",
-    "sourceMap": true
+    "sourceMap": false
   },
   "exclude": [
     "node_modules"
