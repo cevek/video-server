@@ -37,10 +37,10 @@ class UploaderSessions {
 export var uploaderSessions = new UploaderSessions();
 
 async function exec(command:string, options?:{timeout?:number}) {
-    return await new Promise<string>((resolve, reject) =>
+    return await (new Promise<string>((resolve, reject) =>
         require('child_process').exec(command, options,
             (err:any, stdout:any, stderr:any) =>
-                err ? reject(err) : resolve(stdout.toString() + stderr.toString())));
+                err ? reject(err) : resolve(stdout.toString() + stderr.toString()))));
 }
 
 enum ContentType {
