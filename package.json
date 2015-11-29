@@ -19,6 +19,7 @@
     "mysql2": "^0.15.8",
     "promisify": "0.0.3",
     "request": "^2.67.0",
+    "socketio": "^1.0.0",
     "source-map-support": "^0.3.3"
   }
 }
