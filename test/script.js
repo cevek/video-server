@@ -12,7 +12,7 @@ if (!XMLHttpRequest.prototype.sendAsBinary) {
 }
 
 var url = 'http://localhost:1335/uploadpart';
-var portion = 3000000;
+var portion = 50000;
 
 var input = document.createElement('input');
 input.setAttribute("type", "file");
