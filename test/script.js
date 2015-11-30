@@ -12,13 +12,12 @@ if (!XMLHttpRequest.prototype.sendAsBinary) {
 }
 
 var url = 'http://localhost:1335/uploadpart';
-var portion = 50000;
 
 var input = document.createElement('input');
 input.setAttribute("type", "file");
 document.body.appendChild(input);
 input.onchange = function () {
-    UploadPortion(input, url, 0, portion);
+    UploadPortion(input);
 };
 
 function UploadPortion(inputFile, url, from, end) {
@@ -26,7 +25,7 @@ function UploadPortion(inputFile, url, from, end) {
         var file = inputFile.files[0];
         var info = {
             startTime: Math.random() * 5000 | 0,
-            duration: 100,//(Math.random() * 300 | 0) + 60,
+            duration: 10,//(Math.random() * 300 | 0) + 60,
             filename: file.name,
             size: file.size
         };
@@ -57,11 +56,17 @@ function stopStream(id) {
     console.log("stopStream", id);
     streams[id] = false;
 }
-function sendStream(file, start, id) {
+
+function sendStream(file, start, id, partSize) {
+    if (!partSize) {
+        partSize = 10000;
+    }
+    partSize = Math.min(partSize, 1000000);
+
     console.log("sendStream", start, id);
     streams[id] = true;
     var reader = new FileReader();
-    var end = Math.min(start + portion, file.size);
+    var end = Math.min(start + partSize, file.size);
     if (end - start > 0) {
         reader.readAsArrayBuffer(file.slice(start, end));
         reader.onloadend = e => {
@@ -74,7 +79,7 @@ function sendStream(file, start, id) {
                     file: e.target.result
                 }, () => {
                     if (streams[id]) {
-                        sendStream(file, start + portion, id);
+                        sendStream(file, start + partSize, id, partSize * 2);
                     }
                 });
             }

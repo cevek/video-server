@@ -8,6 +8,8 @@ var http = require('http');
 var koaBody = require('koa-body');
 var app = koa();
 
+var child_process = require('child_process');
+
 
 function createSession(data) {
     var sid = Math.random().toString(33).substr(3, 5);
@@ -21,15 +23,17 @@ function createSession(data) {
         parts: [],
         currentTime: 0,
         stdout: '',
-
         socket: null,
         videoServer: {},
     };
     session.size = data.size;
     session.filename = data.filename;
     session.fileExt = data.filename.split('.').pop();
+    session.folder = sid + '/';
+    session.inputFile = session.folder + 'input.' + session.fileExt;
     session.duration = data.duration;
     session.startTime = data.startTime;
+    fs.mkdirSync(session.folder);
 
     sessions[sid] = session;
     return session;
@@ -47,8 +51,17 @@ var ContentType = {
     VIDEO: 'video'
 };
 
+function extract(session) {
+    return new Promise((resolve, reject) => {
+        console.log('ffmpeg -y -i ' + session.inputFile + ' ' + session.track.streams.map((track, i) => '-map 0:' + i + ' -c copy ' + track.file).join(' '));
 
-function mediaInfo(stdout) {
+        child_process.exec('ffmpeg -y -i ' + session.inputFile + ' ' + session.track.streams.map((track, i) => '-map 0:' + i + ' -c copy ' + track.file).join(' '), {},
+            (err, stdout, stderr)=> err ? reject(err) : resolve(stdout.toString() + stderr.toString()));
+    });
+}
+
+
+function mediaInfo(stdout, session) {
     var res = stdout.match(/Duration: (\d+):(\d+):(\d+)/) || [0, 0, 0, 0];
     var track = {streams: []};
     track.duration = +res[1] * 3600 + +res[2] * 60 + +res[3];
@@ -61,7 +74,12 @@ function mediaInfo(stdout) {
             if (m[5]) {
                 var m2 = (m[7] || '').match(/(\d+)x(\d+)/);
                 var size = {w: +m2[1], h: +m2[2]};
-                track.streams[k] = {type: ContentType.VIDEO, format: m[6] || '', size: size};
+                track.streams[k] = {
+                    type: ContentType.VIDEO,
+                    format: m[6] || '',
+                    size: size,
+                    file: session.folder+ 'video.mp4'
+                };
             }
             if (m[8]) {
                 var channels = (m[10].match(/5.1/) ? 6 : (m[10].match(/mono/) ? 1 : 2) );
@@ -70,11 +88,16 @@ function mediaInfo(stdout) {
                     lang: m[3] || '',
                     format: m[9] || '',
                     channels: channels,
+                    file: session.folder+ 'audio' + k + '.mp4',
                     title: m[12] || ''
                 };
             }
             if (m[13]) {
-                track.streams[k] = {type: ContentType.SUBS, lang: m[3] || '', title: m[15] || ''};
+                track.streams[k] = {
+                    type: ContentType.SUBS,
+                    lang: m[3] || '', title: m[15] || '',
+                    file: session.folder+ 'sub' + k + '.srt'
+                };
             }
         }
     }
@@ -92,7 +115,7 @@ function mediaInfo(stdout) {
 }
 
 function startFFmpeg(session) {
-    var ls = require('child_process').spawn('ffmpeg', ['-y', '-ss', session.startTime, '-i', 'http://localhost:1338/' + session.sid, '-acodec', 'copy', '-vcodec', 'copy', '-scodec', 'copy', '-map', '0', '123.' + session.fileExt]);
+    var ls = require('child_process').spawn('ffmpeg', ['-y', '-ss', session.startTime, '-i', 'http://localhost:1338/' + session.sid, '-acodec', 'copy', '-vcodec', 'copy', '-scodec', 'copy', '-map', '0', session.inputFile]);
     ls.stdout.on('data', function (data) {
         console.log('stdout: ' + data);
     });
@@ -178,6 +201,16 @@ console.log("serving localhost:1335");
 */
 
 
+function done(session) {
+    var track = mediaInfo(session.stdout, session);
+    session.track = track;
+    console.log(session.stdout);
+    extract(session).then(data => {
+        session.socket.emit('done', track);
+        console.log("extract info", data);
+    }, err => console.error(err));
+}
+
 http.createServer(function (req, res) {
     console.log("connected", req.headers);
     var session = getSession(req.url.split('/').pop());
@@ -185,9 +218,7 @@ http.createServer(function (req, res) {
     req.on('close', function (res, socket, upgradeHead) {
         session.activeVideoStreams--;
         if (session.activeVideoStreams === 0) {
-            var track = mediaInfo(session.stdout);
-            console.log(session.stdout);
-            session.socket.emit('done', track);
+            done(session);
         }
         console.log('close');
         session.socket.emit('close', {id: req.socket._id});

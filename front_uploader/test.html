@@ -374,7 +374,7 @@ function upload(){
 	var enSubFile	 = $("#enSubFile")[0];
 
 	function checkForm(){
-		if (videoSelect==1 && !videoFile.value)
+		if (videoSelect==1 && !inputFile.value)
 			return "Не выбрано видео";
 		if (videoSelect==1 && enAudioSelect==0)
 			return "Если есть видео необходима английская аудиодорожка";
