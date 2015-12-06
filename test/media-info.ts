@@ -7,7 +7,6 @@ export enum ContentType {
 export interface Stream {
     n: number;
     type:ContentType;
-    file: string;
     format?:string;
     aid?: number;
     size?: {w:number; h:number};
@@ -36,7 +35,6 @@ export function mediaInfo(stdout:string) {
                     type: ContentType.VIDEO,
                     format: m[6] || '',
                     size: size,
-                    file: 'video.mp4'
                 };
             }
             if (m[8]) {
@@ -47,7 +45,6 @@ export function mediaInfo(stdout:string) {
                     lang: m[3] || '',
                     format: m[9] || '',
                     channels: channels,
-                    file: 'audio' + k + '.mp4',
                     title: m[12] || ''
                 };
             }
@@ -56,7 +53,6 @@ export function mediaInfo(stdout:string) {
                     n: k,
                     type: ContentType.SUBS,
                     lang: m[3] || '', title: m[15] || '',
-                    file: 'sub' + k + '.srt'
                 };
             }
         }

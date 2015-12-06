@@ -1,9 +1,12 @@
 "use strict";
+import {mkdirSync} from "fs";
+import {writeFileSync} from "fs";
+import {upload} from "./youtube/upload";
+import {ContentType} from "./media-info";
 import {config} from "./config";
 import {MediaInfo} from "./media-info";
 import {mediaInfo} from "./media-info";
 import {exec} from "./utils";
-import * as fs from 'fs';
 import {spawn} from "./utils";
 //import {spawn} from 'child_process';
 
@@ -23,7 +26,9 @@ export class Session {
     startTime:number;
     socket:{emit: (name:string, obj:any)=>void};
     timeout = 10 * 60; // 10 min timeout;
+    //todo: add check
     maxParts = 100;
+    youtubeId:string;
     isDone = false;
 
     constructor(data:{size: number; filename: string; duration: number; startTime: number}, socket:any) {
@@ -37,13 +42,16 @@ export class Session {
         this.duration = data.duration;
         this.startTime = data.startTime;
         console.log(data);
-        fs.mkdirSync(this.folder);
+        mkdirSync(this.folder);
     }
 
     extract() {
-        console.log("Extract start");
         return exec('ffmpeg -y -i ' + this.inputFile + ' ' +
-            this.track.streams.map(track => '-map 0:' + track.n + ' -c copy ' + this.folder + track.file).join(' '));
+            this.track.streams.map(track => {
+                var audioParams = track.type == ContentType.AUDIO ? ' -vn -sn -c:a libfdk_aac -profile:a aac_he_v2 -ac 2 -b:a 32k -map_channel 0.' + track.n + '.2' : '';
+                var ext = track.type == ContentType.VIDEO ? 'mp4' : (track.type == ContentType.AUDIO ? 'aac' : 'srt');
+                return '-c copy -map 0:' + track.n + audioParams + ' ' + this.folder + track.n + '.' + ext;
+            }).join(' '));
     }
 
     sendProgress(time:number) {
@@ -70,9 +78,17 @@ export class Session {
     }
 
     done() {
+        this.isDone = true;
         this.track = mediaInfo(this.stdout);
-        this.extract().then(data => {
-            this.socket.emit('done', this.track);
+        this.socket.emit('upload-done', {});
+        Promise.all([
+            //todo: what if only audio?
+            upload(this.sid, this.inputFile),
+            this.extract()
+        ]).then((res) => {
+            var youtube = this.youtubeLink(res[0]);
+            writeFileSync(this.folder + 'youtube.txt', youtube);
+            this.socket.emit('done', {track: this.track, youtube: youtube});
         }).catch(err => this.closeWithError(err));
     }
 
@@ -98,22 +114,40 @@ export class Session {
     }
 
     closeWithError(err:Error) {
+        this.socket.emit('err', err.message);
         console.error(err);
-        this.socket.emit('error', {});
+        console.error(err.stack);
+    }
+
+    onPart(data:{id: string, file: Buffer, sid: string}) {
+        const con = this.getVideoConnection(data.id);
+        if (con) {
+            const videoRes = con.res;
+            if (videoRes.writable) {
+                videoRes.write(data.file);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    youtubeLink(id:string) {
+        this.youtubeId = id;
+        return 'https://www.youtube.com/watch?v=' + id;
     }
 }
 
 class SessionStore {
     sessions:{[sid: string]: Session} = {};
 
-    get(sid:string) {
+    get(sid:string):Session {
         var session = this.sessions[sid];
         if (!session) {
             console.error(new Error(`Sid: ${sid} not found`));
             return null;
         }
         if (session.isDone) {
-            session.closeWithError(new Error('Session is done'));
+            //session.closeWithError(new Error('Session is done'));
             return null;
         }
         return session;
