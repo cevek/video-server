@@ -45,6 +45,9 @@ function UploadPortion(inputFile, url, from, end) {
         });
         socket.on('progress', data => {
             console.log("progress", data);
+        });
+        socket.on('error', err => {
+            console.error(err);
         })
     });
 }
