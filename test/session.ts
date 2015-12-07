@@ -11,7 +11,7 @@ import {spawn} from "./utils";
 //import {spawn} from 'child_process';
 
 export class Session {
-    sid = Math.random().toString(33).substr(3, 5);
+    sid = (Date.now() / 1000 | 0) + Math.random().toString(33).substr(3, 5);
     currentTime = 0;
     stdout = '';
     videoServer:{[id:string]: {res: {writable: boolean; write:(data:Buffer)=>void}}} = {};
@@ -77,6 +77,14 @@ export class Session {
             }, this.timeout).catch(err => this.closeWithError(err));
     }
 
+    extractThumbs() {
+        var fld = this.folder;
+        return exec(`ffmpeg -y -i ${this.inputFile} -qscale 1 -vsync 1 -r 1 ${fld}_raw%03d.jpg`).then(()=>
+            exec(`convert ${fld}_raw*.jpg -thumbnail 200x100^ -auto-level -level 0,60%% -modulate 100,70 ${fld}_thumb.jpg`).then(() =>
+                exec(`montage ${fld}_thumb*.jpg  -tile 20x -geometry +0+0 -gravity north ${fld}thumbs.jpg`).then(() =>
+                    exec(`rm ${fld}_*.jpg`))));
+    }
+
     done() {
         this.isDone = true;
         this.track = mediaInfo(this.stdout);
@@ -84,6 +92,7 @@ export class Session {
         Promise.all([
             //todo: what if only audio?
             upload(this.sid, this.inputFile),
+            this.extractThumbs(),
             this.extract()
         ]).then((res) => {
             var youtube = this.youtubeLink(res[0]);
