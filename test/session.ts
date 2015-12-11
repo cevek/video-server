@@ -11,7 +11,7 @@ import {spawn} from "./utils";
 //import {spawn} from 'child_process';
 
 export class Session {
-    sid = (Date.now() / 1000 | 0) + Math.random().toString(33).substr(3, 5);
+    sid = (Date.now() / 1000 | 0) + '_' + Math.random().toString(33).substr(3, 5);
     currentTime = 0;
     stdout = '';
     videoServer:{[id:string]: {res: {writable: boolean; write:(data:Buffer)=>void}}} = {};
@@ -45,17 +45,21 @@ export class Session {
         mkdirSync(this.folder);
     }
 
+    emit(name:string, data: any) {
+        this.socket.emit(name + '-' + this.sid, data);
+    }
+
     extract() {
         return exec('ffmpeg -y -i ' + this.inputFile + ' ' +
             this.track.streams.map(track => {
-                var audioParams = track.type == ContentType.AUDIO ? ' -vn -sn -c:a libfdk_aac -profile:a aac_he_v2 -ac 2 -b:a 32k -map_channel 0.' + track.n + '.2' : '';
+                var audioParams = track.type == ContentType.AUDIO ? ` -vn -sn -c:a libfdk_aac -profile:a aac_he_v2 -ac 2 -b:a 32k ${track.channels > 2 ? `-map_channel 0.${track.n}.2` : ''}` : '';
                 var ext = track.type == ContentType.VIDEO ? 'mp4' : (track.type == ContentType.AUDIO ? 'aac' : 'srt');
                 return '-c copy -map 0:' + track.n + audioParams + ' ' + this.folder + track.n + '.' + ext;
             }).join(' '));
     }
 
     sendProgress(time:number) {
-        this.socket.emit('progress', {
+        this.emit('progress', {
             time: Math.min(time, this.duration),
             progress: Math.min(time / this.duration, 1)
         });
@@ -88,7 +92,7 @@ export class Session {
     done() {
         this.isDone = true;
         this.track = mediaInfo(this.stdout);
-        this.socket.emit('upload-done', {});
+        this.emit('upload-done', {});
         Promise.all([
             //todo: what if only audio?
             upload(this.sid, this.inputFile),
@@ -97,12 +101,12 @@ export class Session {
         ]).then((res) => {
             var youtube = this.youtubeLink(res[0]);
             writeFileSync(this.folder + 'youtube.txt', youtube);
-            this.socket.emit('done', {track: this.track, youtube: youtube});
+            this.emit('done', {track: this.track, youtube: youtube});
         }).catch(err => this.closeWithError(err));
     }
 
     closeConnection(id:string):void {
-        this.socket.emit('close', {id: id});
+        this.emit('close', {id: id});
         this.videoServer[id] = null;
         this.activeVideoStreams--;
         if (this.activeVideoStreams === 0) {
@@ -114,7 +118,7 @@ export class Session {
         this.activeVideoStreams++;
         var id = Math.random().toString(33).substr(2, 5);
         this.videoServer[id] = {res: res};
-        this.socket.emit('data-need', {id: id, start: start});
+        this.emit('data-need', {id: id, start: start});
         return id;
     }
 
@@ -123,7 +127,7 @@ export class Session {
     }
 
     closeWithError(err:Error) {
-        this.socket.emit('err', err.message);
+        this.emit('err', err.message);
         console.error(err);
         console.error(err.stack);
     }

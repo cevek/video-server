@@ -42,7 +42,7 @@ function UploadPortion(inputFile, url, from, end) {
         var file = inputFile.files[0];
         var info = {
             startTime: Math.random() * 5000 | 0,
-            duration: 30,//(Math.random() * 300 | 0) + 60,
+            duration: 18,//(Math.random() * 300 | 0) + 60,
             filename: file.name,
             size: file.size
         };

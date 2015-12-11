@@ -1,0 +1,21 @@
+{
+  "name": "example",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "main": "index.js",
+  "author": "cevek <x.cevek@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "babel-fast-react": "^1.0.0",
+    "classnames": "^2.2.0",
+    "css-loader": "^0.22.0",
+    "extract-text-webpack-plugin": "^0.9.1",
+    "fast-react": "^1.0.1",
+    "fast-react-loader": "^1.0.0",
+    "style-loader": "^0.13.0",
+    "ts-loader": "^0.7.0",
+    "typescript": "^1.6.2",
+    "webpack": "^1.12.3"
+  }
+}
