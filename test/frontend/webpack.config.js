@@ -17,7 +17,7 @@ module.exports = {
     },
     resolve: {
         alias: {
-            //react: 'fast-react'
+            react: 'fast-react'
         },
         extensions: ['', '.js', '.jsx', '.ts', '.tsx']
     },

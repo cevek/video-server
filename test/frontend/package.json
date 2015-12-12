@@ -11,7 +11,7 @@
     "classnames": "^2.2.0",
     "css-loader": "^0.22.0",
     "extract-text-webpack-plugin": "^0.9.1",
-    "fast-react": "^1.0.1",
+    "fast-react": "^1.0.4",
     "fast-react-loader": "^1.0.0",
     "style-loader": "^0.13.0",
     "ts-loader": "^0.7.0",
