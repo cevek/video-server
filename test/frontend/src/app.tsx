@@ -19,6 +19,7 @@ class Uploader extends React.Component<{}, {}> {
     streams:{[ind: string]:boolean} = {};
     socket = io('http://localhost:7878');
     fileSelected = false;
+    error = false;
     onChange = ()=> {
         this.fileSelected = true;
         this.forceUpdate();
@@ -71,10 +72,21 @@ class Uploader extends React.Component<{}, {}> {
                     this.progress = data.progress;
                 });
                 this.on('err', (err:string) => {
+                    this.onError();
                     console.error(err);
                 })
             });
         });
+    }
+
+    onError() {
+        this.error = true;
+        this.uploadDone = false;
+        this.isSending = false;
+        this.extractDone = false;
+        this.progress = 0;
+        this.startExtractTime = 0;
+        this.startTime = 0;
     }
 
     stopStream(id:string) {
@@ -83,7 +95,7 @@ class Uploader extends React.Component<{}, {}> {
     }
 
     sendStream(file:File, start:number, id:string, partSize?:number) {
-        if (this.uploadDone) {
+        if (this.uploadDone || this.error) {
             return;
         }
         if (!partSize) {
@@ -143,6 +155,7 @@ class Uploader extends React.Component<{}, {}> {
 
     render() {
         return <div>
+            {this.error ? 'Error occured' : null}
             { this.extractDone ?
                 'Uploaded'
                 :
@@ -161,7 +174,6 @@ class Uploader extends React.Component<{}, {}> {
         </div>
     }
 }
-
 class Main extends React.Component<{},{}> {
     render() {
         return <div>
