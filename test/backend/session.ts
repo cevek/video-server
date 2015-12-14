@@ -1,4 +1,5 @@
 "use strict";
+var co = require('co');
 import {mkdirSync} from "fs";
 import {writeFileSync} from "fs";
 import {upload} from "./youtube/upload";
@@ -8,6 +9,8 @@ import {MediaInfo} from "./media-info";
 import {mediaInfo} from "./media-info";
 import {exec} from "./utils";
 import {spawn} from "./utils";
+import {db} from "./db";
+
 //import {spawn} from 'child_process';
 
 interface TrackInfo {
@@ -87,6 +90,7 @@ export class Session {
         var video:TrackInfo;
         var audio:TrackInfo[] = [];
         var subs:TrackInfo[] = [];
+
         for (var i = 0; i < this.track.streams.length; i++) {
             var stream = this.track.streams[i];
             var id = Math.random().toString(33).substr(2, 5);
@@ -171,6 +175,7 @@ export class Session {
         this.isDone = true;
         this.emit('upload-done', {});
         //console.log("done");
+        var that = this;
 
         Promise.all([
             //todo: what if only audio?
@@ -181,7 +186,21 @@ export class Session {
             var youtube = this.youtubeLink(res[0]);
             writeFileSync(this.folder + 'youtube.txt', youtube);
             this.emit('done', this.prepareMediaInfo());
-        }).catch(err => this.closeWithError(err));
+        }).then(()=>co(async ()=> {
+            try {
+                var transaction = await db.beginTransaction();
+                await transaction.query(db.insertSql('uploads', [{id: that.sid, info: that.stdout}]));
+                await transaction.query(db.insertSql('files', that.track.streams.map((track, i) => {
+                    var str = that.streamsMeta[i];
+                    return {id: str.id, startTime: that.startTime, duration: that.duration, type: track.type, info: JSON.stringify(track), sid: that.sid, filename: str.file}
+                })));
+                await transaction.commit();
+            }
+            catch (e) {
+                await transaction.rollback();
+                throw e;
+            }
+        })).catch(err => this.closeWithError(err));
     }
 
     closeConnection(id:string):void {
@@ -254,3 +273,4 @@ class SessionStore {
     }
 }
 export var sessions = new SessionStore();
+

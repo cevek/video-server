@@ -20,6 +20,9 @@ export interface MediaInfo {
 }
 
 export function mediaInfo(stdout:string) {
+    if (!stdout.match(/Stream mapping:/)) {
+        return null;
+    }
     var res = stdout.match(/Duration: (\d+):(\d+):(\d+)/) || [0, 0, 0, 0];
     var track:MediaInfo = {streams: [], duration: +res[1] * 3600 + +res[2] * 60 + +res[3]};
     var streams:string[] = stdout.match(/Stream \#.*\n(\s+Metadata:\n(\s{5,}.*\n)*)?/g) || [];
