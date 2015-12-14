@@ -10,6 +10,12 @@ import {exec} from "./utils";
 import {spawn} from "./utils";
 //import {spawn} from 'child_process';
 
+interface TrackInfo {
+    title: string;
+    id: string;
+    url: string;
+}
+
 export class Session {
     sid = (Date.now() / 1000 | 0) + '_' + Math.random().toString(33).substr(3, 5);
     currentTime = 0;
@@ -22,6 +28,7 @@ export class Session {
     folder:string;
     inputFile:string;
     track:MediaInfo;
+    streamsMeta:{id: string; url: string; file: string}[] = [];
     duration:number;
     startTime:number;
     socket:{emit: (name:string, obj:any)=>void};
@@ -30,6 +37,9 @@ export class Session {
     maxParts = 100;
     youtubeId:string;
     isDone = false;
+    isVideo = false;
+    isAudio = false;
+    isSub = false;
 
     constructor(data:{size: number; filename: string; duration: number; startTime: number}, socket:any) {
         //todo: check all props
@@ -41,11 +51,20 @@ export class Session {
         this.inputFile = this.folder + 'input.' + this.fileExt;
         this.duration = data.duration;
         this.startTime = data.startTime;
+        if (this.fileExt.match(/\.(avi|mp4|m4v|mkv|webm|flv|wmv|mpg)$/i)) {
+            this.isVideo = true;
+        }
+        else if (this.fileExt.match(/\.(mp3|m4a|ac3|aac|ogg|wav|wma|webm|flac)$/i)) {
+            this.isAudio = true;
+        }
+        else if (this.fileExt.match(/\.(srt|sub)$/i)) {
+            this.isSub = true;
+        }
         console.log(data);
         mkdirSync(this.folder);
     }
 
-    emit(name:string, data: any) {
+    emit(name:string, data:any) {
         this.socket.emit(name + '-' + this.sid, data);
     }
 
@@ -53,8 +72,7 @@ export class Session {
         return exec('ffmpeg -y -i ' + this.inputFile + ' ' +
             this.track.streams.map(track => {
                 var audioParams = track.type == ContentType.AUDIO ? ` -vn -sn -c:a libfdk_aac -profile:a aac_he_v2 -ac 2 -b:a 32k ${track.channels > 2 ? `-map_channel 0.${track.n}.2` : ''}` : '';
-                var ext = track.type == ContentType.VIDEO ? 'mp4' : (track.type == ContentType.AUDIO ? 'aac' : 'srt');
-                return '-c copy -map 0:' + track.n + audioParams + ' ' + this.folder + track.n + '.' + ext;
+                return '-c copy -map 0:' + track.n + audioParams + ' ' + this.streamsMeta[track.n].file;
             }).join(' '));
     }
 
@@ -65,23 +83,83 @@ export class Session {
         });
     }
 
+    prepareMediaInfo() {
+        var video:TrackInfo;
+        var audio:TrackInfo[] = [];
+        var subs:TrackInfo[] = [];
+        for (var i = 0; i < this.track.streams.length; i++) {
+            var stream = this.track.streams[i];
+            var id = Math.random().toString(33).substr(2, 5);
+            var item = {id: id, title: stream.title, url: this.streamsMeta[i].url};
+            if (stream.type == ContentType.VIDEO) {
+                video = item;
+            }
+            else if (stream.type == ContentType.AUDIO) {
+                audio.push(item);
+            }
+            else if (stream.type == ContentType.SUBS) {
+                subs.push(item);
+            }
+        }
+        return {video, audio, subs};
+    }
+
+    getMediaInfo() {
+        if (!this.track) {
+            this.track = mediaInfo(this.stdout);
+            if (this.track) {
+                for (var i = 0; i < this.track.streams.length; i++) {
+                    var stream = this.track.streams[i];
+                    if (stream.type == ContentType.VIDEO) {
+                        var ext = 'mp4';
+                    }
+                    else if (stream.type == ContentType.AUDIO) {
+                        ext = 'aac';
+                    }
+                    else if (stream.type == ContentType.SUBS) {
+                        ext = 'srt';
+                    }
+                    this.streamsMeta[i] = {
+                        id: Math.random().toString(33).substr(2, 5),
+                        file: this.folder + stream.n + '.' + ext,
+                        url: '/files/' + this.sid + '/' + stream.n + '.' + ext
+                    };
+                }
+
+                this.emit('info', this.prepareMediaInfo());
+            }
+        }
+    }
+
+    processTime(data:string) {
+        var t:string[] = data.match(/time=(\d+):(\d+):(\d+\.\d+)/) || [];
+        var time = +t[1] * 3600 + +t[2] * 60 + +t[3];
+        if (time > 0) {
+            this.currentTime = time;
+            this.sendProgress(time);
+            return time < this.duration;
+        }
+        return true;
+    }
+
     startFFmpeg() {
+        //console.log("startFFmpeg");
+
         spawn(`ffmpeg -y -ss ${this.startTime} -i http://localhost:1338/${this.sid} -c copy -map 0 ${this.inputFile}`,
             (data, cp) => {
                 this.stdout += data;
-                var t:string[] = data.match(/time=(\d+):(\d+):(\d+\.\d+)/) || [];
-                var time = +t[1] * 3600 + +t[2] * 60 + +t[3];
-                if (time > 0) {
-                    this.currentTime = time;
-                    this.sendProgress(time);
-                    if (time > this.duration) {
-                        cp.kill();
-                    }
+                this.getMediaInfo();
+                var time = this.processTime(data);
+                if (!time) {
+                    //console.log("kill");
+                    cp.kill();
                 }
             }, this.timeout).catch(err => this.closeWithError(err));
     }
 
     extractThumbs() {
+        //console.log("ExtractThumbs");
+
         var fld = this.folder;
         return exec(`ffmpeg -y -i ${this.inputFile} -qscale 1 -vsync 1 -r 1 ${fld}_raw%03d.jpg`).then(()=>
             exec(`convert ${fld}_raw*.jpg -thumbnail 200x100^ -auto-level -level 0,60%% -modulate 100,70 ${fld}_thumb.jpg`).then(() =>
@@ -91,17 +169,18 @@ export class Session {
 
     done() {
         this.isDone = true;
-        this.track = mediaInfo(this.stdout);
         this.emit('upload-done', {});
+        //console.log("done");
+
         Promise.all([
             //todo: what if only audio?
             upload(this.sid, this.inputFile),
-            this.extractThumbs(),
+            this.isVideo ? this.extractThumbs() : null,
             this.extract()
         ]).then((res) => {
             var youtube = this.youtubeLink(res[0]);
             writeFileSync(this.folder + 'youtube.txt', youtube);
-            this.emit('done', {track: this.track, youtube: youtube});
+            this.emit('done', this.prepareMediaInfo());
         }).catch(err => this.closeWithError(err));
     }
 
@@ -146,7 +225,9 @@ export class Session {
 
     youtubeLink(id:string) {
         this.youtubeId = id;
-        return 'https://www.youtube.com/watch?v=' + id;
+        var url = 'https://www.youtube.com/watch?v=' + id;
+        this.streamsMeta[0].url = url;
+        return url;
     }
 }
 

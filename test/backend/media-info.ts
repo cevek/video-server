@@ -64,5 +64,6 @@ export function mediaInfo(stdout:string) {
             aid++;
         }
     }
-    return track;
+
+    return track.streams.length ? track : null;
 }

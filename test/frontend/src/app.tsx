@@ -5,7 +5,7 @@ interface Socket {
     emit: (m:string, data:any, callback:(...args:any[])=>void)=>void;
     on: (m:string, data:any)=>void;
 }
-class Uploader extends React.Component<{}, {}> {
+class Uploader extends React.Component<{onDone?: ()=>void; onInfo?: (info:any)=>void;}, {}> {
     sid:string;
     startTime = 0;
     startExtractTime = 0;
@@ -20,6 +20,13 @@ class Uploader extends React.Component<{}, {}> {
     socket = io('http://localhost:7878');
     fileSelected = false;
     error = false;
+    interval:number;
+
+    getFile() {
+        var fileInput = React.findDOMNode(this.refs['fileInput']) as HTMLInputElement;
+        return fileInput.files[0];
+    }
+
     onChange = ()=> {
         this.fileSelected = true;
         this.forceUpdate();
@@ -37,12 +44,11 @@ class Uploader extends React.Component<{}, {}> {
         this.isSending = true;
         this.startTime = Date.now();
 
-        var interval = setInterval(()=>this.forceUpdate(), 600);
+        this.interval = setInterval(()=>this.forceUpdate(), 600);
         this.forceUpdate();
 
         return new Promise((resolve, reject) => {
-            var fileInput = React.findDOMNode(this.refs['fileInput']) as HTMLInputElement;
-            var file = fileInput.files[0];
+            var file = this.getFile();
             var info = {
                 startTime: Math.random() * 5000 | 0,
                 duration: 18,//(Math.random() * 300 | 0) + 60,
@@ -53,33 +59,51 @@ class Uploader extends React.Component<{}, {}> {
             console.time('process');
             this.socket.emit('start-upload', info, (sid:string) => {
                 this.sid = sid;
-                this.on('close', (data:{id: string}) => {
-                    this.stopStream(data.id);
-                });
-                this.on('data-need', (data:{start: number, id: string}) => {
-                    this.sendStream(file, data.start, data.id);
-                });
-                this.on('upload-done', (data:{}) => {
-                    console.timeEnd('process');
-                    this.startExtractTime = Date.now();
-                    this.uploadDone = true;
-                });
-                this.on('done', (data:{}) => {
-                    this.extractDone = true;
-                    clearInterval(interval);
-                });
-                this.on('progress', (data:{progress: number}) => {
-                    this.progress = data.progress;
-                });
-                this.on('err', (err:string) => {
-                    this.onError();
-                    console.error(err);
-                })
+                this.on('close', this.onClose);
+                this.on('data-need', this.onDataNeed);
+                this.on('info', this.onInfo);
+                this.on('upload-done', this.onUploadDone);
+                this.on('done', this.onDone);
+                this.on('progress', this.onProgress);
+                this.on('err', this.onError)
             });
         });
     }
 
-    onError() {
+    onClose = (data:{id: string}) => {
+        this.stopStream(data.id);
+    };
+
+    onDataNeed = (data:{start: number, id: string}) => {
+        this.sendStream(data.start, data.id);
+    };
+
+    onInfo = (info:any) => {
+        if (this.props.onInfo) {
+            this.props.onInfo(info);
+        }
+    };
+
+    onDone = () => {
+        this.extractDone = true;
+        clearInterval(this.interval);
+        if (this.props.onDone) {
+            this.props.onDone();
+        }
+    };
+
+    onUploadDone = () => {
+        console.timeEnd('process');
+        this.startExtractTime = Date.now();
+        this.uploadDone = true;
+    };
+
+    onProgress = (data:{progress: number}) => {
+        this.progress = data.progress;
+    };
+
+    onError = (err:string) => {
+        console.error(err);
         this.error = true;
         this.uploadDone = false;
         this.isSending = false;
@@ -87,14 +111,14 @@ class Uploader extends React.Component<{}, {}> {
         this.progress = 0;
         this.startExtractTime = 0;
         this.startTime = 0;
-    }
+    };
 
     stopStream(id:string) {
         console.log("stopStream", id);
         this.streams[id] = false;
     }
 
-    sendStream(file:File, start:number, id:string, partSize?:number) {
+    sendStream(start:number, id:string, partSize?:number) {
         if (this.uploadDone || this.error) {
             return;
         }
@@ -102,6 +126,7 @@ class Uploader extends React.Component<{}, {}> {
             partSize = 10000;
         }
         partSize = Math.min(partSize, 1000000);
+        var file = this.getFile();
 
         this.streams[id] = true;
         var reader = new FileReader();
@@ -119,7 +144,7 @@ class Uploader extends React.Component<{}, {}> {
                         file: reader.result
                     }, () => {
                         if (this.streams[id]) {
-                            this.sendStream(file, start + partSize, id, partSize * 2);
+                            this.sendStream(start + partSize, id, partSize * 2);
                         }
                     });
                 }
@@ -163,13 +188,14 @@ class Uploader extends React.Component<{}, {}> {
                 <progress value={this.calcProgress().toString()}/>
                     :
                 <div>
-                    <input ref="fileInput" onChange={this.onChange} type="file"/>
                     {this.fileSelected ?
                     <div>
                         <input type="text"/>
                         <input type="text"/>
                         <button onClick={()=>this.send()}>Submit</button>
-                    </div> : ''}
+                    </div>
+                        :
+                    <input ref="fileInput" onChange={this.onChange} type="file"/>}
                 </div>)}
         </div>
     }
