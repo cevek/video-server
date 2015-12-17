@@ -1,7 +1,7 @@
 'use strict';
 
 async function rawQuery(connection:any, query:string, params:any) {
-    return await (new Promise<any[]>((resolve, reject)=> {
+    return await (new Promise<any>((resolve, reject)=> {
         connection.query(query, params, (err:any, rows:any) => {
             if (err) {
                 err.message = err.message + '\n' + query;
@@ -53,6 +53,18 @@ class DB {
         return (await db.query(query, params))[0];
     }
 
+    async transaction(fn:(transaction: Transaction)=>Promise<any>) {
+        var transaction = await this.beginTransaction();
+        try {
+            await fn(transaction);
+            await transaction.commit();
+        }
+        catch (e) {
+            await transaction.rollback();
+            throw e;
+        }
+    }
+
     async beginTransaction():Promise<Transaction> {
         var connection = await db.getConnection();
         await (new Promise((resolve, reject)=> {
@@ -80,7 +92,7 @@ class DB {
 }
 export const db = new DB();
 
-class Transaction {
+export class Transaction {
     constructor(public connection:any) {}
 
     async query(query:string, params?:any) {
