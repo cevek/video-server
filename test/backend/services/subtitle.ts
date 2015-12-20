@@ -1,3 +1,5 @@
+"use strict";
+
 export class SubRow {
     start:number;
     duration:number;

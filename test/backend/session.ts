@@ -1,3 +1,4 @@
+import {uploadsDAO} from "./models/upload";
 "use strict";
 var co = require('co');
 import {mkdirSync} from "fs";
@@ -10,14 +11,11 @@ import {mediaInfo} from "./media-info";
 import {exec} from "./utils";
 import {spawn} from "./utils";
 import {db} from "./db";
+import {mediaFilesDAO} from "./models/media-file";
+import {Upload} from "./interfaces/upload";
+import {TrackInfo} from "./interfaces/track-info";
 
 //import {spawn} from 'child_process';
-
-interface TrackInfo {
-    title: string;
-    id: string;
-    url: string;
-}
 
 export class Session {
     sid = (Date.now() / 1000 | 0) + '_' + Math.random().toString(33).substr(3, 5);
@@ -94,7 +92,7 @@ export class Session {
         for (var i = 0; i < this.track.streams.length; i++) {
             var stream = this.track.streams[i];
             var id = Math.random().toString(33).substr(2, 5);
-            var item = {id: id, title: stream.title, url: this.streamsMeta[i].url};
+            var item = {id: id, title: stream.title, lang: stream.lang, url: this.streamsMeta[i].url};
             if (stream.type == ContentType.VIDEO) {
                 video = item;
             }
@@ -175,7 +173,6 @@ export class Session {
         this.isDone = true;
         this.emit('upload-done', {});
         //console.log("done");
-        var that = this;
 
         Promise.all([
             //todo: what if only audio?
@@ -187,19 +184,22 @@ export class Session {
             writeFileSync(this.folder + 'youtube.txt', youtube);
             this.emit('done', this.prepareMediaInfo());
         }).then(()=>co(async ()=> {
-            try {
-                var transaction = await db.beginTransaction();
-                await transaction.query(db.insertSql('uploads', [{id: that.sid, info: that.stdout}]));
-                await transaction.query(db.insertSql('files', that.track.streams.map((track, i) => {
+            var that = this; // todo: fix that
+            await db.transaction(async (trx) => {
+                await uploadsDAO.create({id: this.sid, info: this.stdout}, trx);
+                await mediaFilesDAO.createBulk(that.track.streams.map((track, i) => {
                     var str = that.streamsMeta[i];
-                    return {id: str.id, startTime: that.startTime, duration: that.duration, type: track.type, info: JSON.stringify(track), sid: that.sid, filename: str.file}
-                })));
-                await transaction.commit();
-            }
-            catch (e) {
-                await transaction.rollback();
-                throw e;
-            }
+                    return {
+                        id: str.id,
+                        startTime: that.startTime,
+                        duration: that.duration,
+                        type: track.type,
+                        info: JSON.stringify(track),
+                        uploadId: that.sid,
+                        filename: str.file
+                    }
+                }), trx);
+            });
         })).catch(err => this.closeWithError(err));
     }
 

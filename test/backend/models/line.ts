@@ -1,6 +1,6 @@
 import {db} from "../db";
 import {BaseModel} from "./base";
-export interface Line {}
+import {Line} from "../interfaces/line";
 export class LinesDAO extends BaseModel<Line> {
     table = 'lines';
 }

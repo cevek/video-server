@@ -1,17 +1,25 @@
+import {Post} from "../interfaces/post";
+"use strict";
+
 import {db} from "../db";
 import {parseSubtitles} from "./subtitle";
 import {SubtitleSync} from "./subtitle";
-import {TextLine} from "../models/text-line";
-import {Line} from "../models/line";
 import {genId} from "../utils";
 import {textLineDAO} from "../models/text-line";
 import {linesDAO} from "../models/line";
 import {postDAO} from "../models/post";
-async function createPost(title:string) {
-    var subtitleSync = new SubtitleSync(parseSubtitles(''), parseSubtitles(''));
+import {readFileSync} from "fs";
+import {getFileName} from "./file";
+import {TextLine} from "../interfaces/text-line";
+import {Line} from "../interfaces/line";
+
+export async function createPost(post:Post) {
+    var enSub = readFileSync(await getFileName(post.enSub)).toString();
+    var ruSub = readFileSync(await getFileName(post.ruSub)).toString();
+    var subtitleSync = new SubtitleSync(parseSubtitles(enSub), parseSubtitles(ruSub));
     var mergeLines = subtitleSync.merge();
     return await db.transaction(async (trx) => {
-        var post = {id: genId(), title: title};
+        post.id = genId();
         var textLines:TextLine[] = [];
         var lines:Line[] = [];
         for (var i = 0; i < mergeLines.length; i++) {

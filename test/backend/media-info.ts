@@ -27,7 +27,7 @@ export function mediaInfo(stdout:string) {
     var track:MediaInfo = {streams: [], duration: +res[1] * 3600 + +res[2] * 60 + +res[3]};
     var streams:string[] = stdout.match(/Stream \#.*\n(\s+Metadata:\n(\s{5,}.*\n)*)?/g) || [];
     for (var i = 0; i < streams.length; i++) {
-        var m:string[] = streams[i].replace(/\s+/g, ' ').match(/Stream \#0.(\d+)(\((.*?)\))?: ((Video): (.*?), .*?, (\d+x\d+)|(Audio): (.*?), .*?, (.*?), (.*? title : (.*?) $)?|(Subtitle): (.*? title : (.*?) $)?)/) || [];
+        var m:string[] = streams[i].replace(/\r?\n/g, '∆').replace(/\s+/g, ' ').match(/Stream \#0.(\d+)(\((.*?)\))?: ((Video): (.*?), .*?, (\d+x\d+)|(Audio): (.*?), .*?, (.*?), (.*? title : (.*?)∆)?|(Subtitle): (.*? title : (.*?)∆)?)/) || [];
         var k = +m[1];
         if (!track.streams[k]) {
             if (m[5]) {
@@ -48,14 +48,15 @@ export function mediaInfo(stdout:string) {
                     lang: m[3] || '',
                     format: m[9] || '',
                     channels: channels,
-                    title: m[12] || ''
+                    title: (m[12] || '').split(' : ').shift()
                 };
             }
             if (m[13]) {
                 track.streams[k] = {
                     n: k,
                     type: ContentType.SUBS,
-                    lang: m[3] || '', title: m[15] || '',
+                    lang: m[3] || '',
+                    title: (m[15] || '').split(' : ').shift(),
                 };
             }
         }

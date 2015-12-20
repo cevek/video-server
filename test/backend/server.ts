@@ -1,4 +1,6 @@
+import {Post} from "./interfaces/post";
 'use strict';
+import {createPost} from "./services/post";
 import {postDAO} from "./models/post";
 import {db} from './db';
 var fs = require('fs');
@@ -13,12 +15,9 @@ router.get('/', async () => {
 });
 
 router.post('/v1/post/', async function () {
-    await db.transaction(async (trx) => {
-        await postDAO.create({
-            title: ''
-        }, trx);
-    });
-    this.body = 'Hello World!';
+    var postData = <Post>this.params;
+    createPost(postData);
+    this.body = {success: true};
 });
 
 app.use(koaBody({multipart: true, formidable: {uploadDir: __dirname}}));
@@ -33,4 +32,3 @@ app.on('error', function (err:Error) {
     console.error(err.stack);
 });
 console.log("serving localhost:1335");
-

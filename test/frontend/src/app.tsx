@@ -1,11 +1,19 @@
 "use strict";
 import * as React from 'react';
+import {TrackInfo} from '../../backend/interfaces/track-info';
 declare var io:(url:string)=>Socket;
 interface Socket {
     emit: (m:string, data:any, callback:(...args:any[])=>void)=>void;
     on: (m:string, data:any)=>void;
 }
-class Uploader extends React.Component<{onDone?: ()=>void; onInfo?: (info:any)=>void;}, {}> {
+
+interface MediaResult {
+    video: TrackInfo;
+    subs: TrackInfo[];
+    audio: TrackInfo[];
+}
+
+class Uploader extends React.Component<{onDone?: (info:MediaResult)=>void; onInfo?: (info:any)=>void;}, {}> {
     sid:string;
     startTime = 0;
     startExtractTime = 0;
@@ -78,17 +86,17 @@ class Uploader extends React.Component<{onDone?: ()=>void; onInfo?: (info:any)=>
         this.sendStream(data.start, data.id);
     };
 
-    onInfo = (info:any) => {
+    onInfo = (info:MediaResult) => {
         if (this.props.onInfo) {
             this.props.onInfo(info);
         }
     };
 
-    onDone = () => {
+    onDone = (info:MediaResult) => {
         this.extractDone = true;
         clearInterval(this.interval);
         if (this.props.onDone) {
-            this.props.onDone();
+            this.props.onDone(info);
         }
     };
 
@@ -180,31 +188,65 @@ class Uploader extends React.Component<{onDone?: ()=>void; onInfo?: (info:any)=>
 
     render() {
         return <div>
-            {this.error ? 'Error occured' : null}
-            { this.extractDone ?
-                'Uploaded'
-                :
-                (this.isSending ?
-                <progress value={this.calcProgress().toString()}/>
+            {this.error ? 'Error occured' :
+                 this.extractDone ?
+                    'Uploaded'
                     :
-                <div>
-                    {this.fileSelected ?
-                    <div>
-                        <input type="text"/>
-                        <input type="text"/>
-                        <button onClick={()=>this.send()}>Submit</button>
-                    </div>
+                    (this.isSending ?
+                    <progress value={this.calcProgress().toString()}/>
                         :
-                    <input ref="fileInput" onChange={this.onChange} type="file"/>}
-                </div>)}
+                    <div>
+                        {this.fileSelected ?
+                        <div>
+                            <input type="text"/>
+                            <input type="text"/>
+                            <button onClick={()=>this.send()}>Submit</button>
+                        </div>
+                            :
+                        <input ref="fileInput" onChange={this.onChange} type="file"/>}
+                    </div>)
+            }
         </div>
     }
 }
-class Main extends React.Component<{},{}> {
+
+class SelectMedia extends React.Component<{items: TrackInfo[]; label: string},{}> {
+    onChange(item:TrackInfo) {
+        this.forceUpdate();
+    }
+
     render() {
         return <div>
-            <Uploader/>
-            <Uploader/>
+            <label>{this.props.label}</label>
+            {this.props.items.map(item => <div>
+                <label>
+                    <input name={this.props.label} onChange={()=>this.onChange(item)} type="radio"/>
+                    {`${item.title} (${item.lang})`}
+                </label>
+            </div>)}
+        </div>
+    }
+
+}
+class Main extends React.Component<{},{}> {
+    res:MediaResult;
+    videoDone = (res:MediaResult)=> {
+        this.res = res;
+        this.forceUpdate();
+    };
+
+    render() {
+        return <div>
+            {this.res ?
+            <div>
+                <SelectMedia label="En Audio" items={this.res.audio}/>
+                <SelectMedia label="Ru Audio" items={this.res.audio}/>
+                <SelectMedia label="En Subs" items={this.res.subs}/>
+                <SelectMedia label="Ru Subs" items={this.res.subs}/>
+            </div>
+                :
+            <Uploader onDone={this.videoDone}/> }
+
         </div>
     }
 }
