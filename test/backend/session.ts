@@ -42,7 +42,7 @@ export class Session {
     isAudio = false;
     isSub = false;
 
-    constructor(data:{size: number; filename: string; duration: number; startTime: number}, socket:any) {
+    constructor(data:{size: number; filename: string; endTime: string; startTime: string}, socket:any) {
         //todo: check all props
         this.socket = socket;
         this.size = data.size;
@@ -50,8 +50,8 @@ export class Session {
         this.fileExt = data.filename.split('.').pop();
         this.folder = config.dir + this.sid + '/';
         this.inputFile = this.folder + 'input.' + this.fileExt;
-        this.duration = data.duration;
-        this.startTime = data.startTime;
+        this.startTime = this.timeToSec(data.startTime);
+        this.duration = this.timeToSec(data.endTime) - this.startTime;
         if (this.fileExt.match(/\.(avi|mp4|m4v|mkv|webm|flv|wmv|mpg)$/i)) {
             this.isVideo = true;
         }
@@ -63,6 +63,11 @@ export class Session {
         }
         console.log(data);
         mkdirSync(this.folder);
+    }
+
+    timeToSec(time:string) {
+        var t = time.match(/^(\d+):(\d+):(\d+)$/);
+        return t ? (+t[1] * 3600 + +t[2] * 60 + +t[3]) : null;
     }
 
     emit(name:string, data:any) {
@@ -91,8 +96,7 @@ export class Session {
 
         for (var i = 0; i < this.track.streams.length; i++) {
             var stream = this.track.streams[i];
-            var id = Math.random().toString(33).substr(2, 5);
-            var item = {id: id, title: stream.title, lang: stream.lang, url: this.streamsMeta[i].url};
+            var item = {id: this.streamsMeta[i].id, title: stream.title, lang: stream.lang, url: this.streamsMeta[i].url};
             if (stream.type == ContentType.VIDEO) {
                 video = item;
             }
@@ -184,18 +188,17 @@ export class Session {
             writeFileSync(this.folder + 'youtube.txt', youtube);
             this.emit('done', this.prepareMediaInfo());
         }).then(()=>co(async ()=> {
-            var that = this; // todo: fix that
             await db.transaction(async (trx) => {
                 await uploadsDAO.create({id: this.sid, info: this.stdout}, trx);
-                await mediaFilesDAO.createBulk(that.track.streams.map((track, i) => {
-                    var str = that.streamsMeta[i];
+                await mediaFilesDAO.createBulk(this.track.streams.map((track, i) => {
+                    var str = this.streamsMeta[i];
                     return {
                         id: str.id,
-                        startTime: that.startTime,
-                        duration: that.duration,
+                        startTime: this.startTime,
+                        duration: this.duration,
                         type: track.type,
                         info: JSON.stringify(track),
-                        uploadId: that.sid,
+                        uploadId: this.sid,
                         filename: str.file
                     }
                 }), trx);

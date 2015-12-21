@@ -16,6 +16,10 @@ import {Line} from "../interfaces/line";
 export async function createPost(post:Post) {
     var enSub = readFileSync(await getFileName(post.enSub)).toString();
     var ruSub = readFileSync(await getFileName(post.ruSub)).toString();
+    var ss = parseSubtitles(enSub);
+    console.log(enSub);
+    console.log(ss);
+
     var subtitleSync = new SubtitleSync(parseSubtitles(enSub), parseSubtitles(ruSub));
     var mergeLines = subtitleSync.merge();
     return await db.transaction(async (trx) => {

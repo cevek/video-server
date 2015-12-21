@@ -1,6 +1,8 @@
+import MouseEvent = __React.MouseEvent;
 "use strict";
 import * as React from 'react';
 import {TrackInfo} from '../../backend/interfaces/track-info';
+import {Post} from '../../backend/interfaces/post';
 declare var io:(url:string)=>Socket;
 interface Socket {
     emit: (m:string, data:any, callback:(...args:any[])=>void)=>void;
@@ -15,7 +17,7 @@ interface MediaResult {
 
 class Uploader extends React.Component<{onDone?: (info:MediaResult)=>void; onInfo?: (info:any)=>void;}, {}> {
     sid:string;
-    startTime = 0;
+    startUploadTime = 0;
     startExtractTime = 0;
     preSize = 0.2;
     middleSize = 0.6;
@@ -50,7 +52,7 @@ class Uploader extends React.Component<{onDone?: (info:MediaResult)=>void; onInf
 
     send() {
         this.isSending = true;
-        this.startTime = Date.now();
+        this.startUploadTime = Date.now();
 
         this.interval = setInterval(()=>this.forceUpdate(), 600);
         this.forceUpdate();
@@ -58,8 +60,8 @@ class Uploader extends React.Component<{onDone?: (info:MediaResult)=>void; onInf
         return new Promise((resolve, reject) => {
             var file = this.getFile();
             var info = {
-                startTime: Math.random() * 5000 | 0,
-                duration: 18,//(Math.random() * 300 | 0) + 60,
+                startTime: this.startTime,
+                endTime: this.endTime,
                 filename: file.name,
                 size: file.size
             };
@@ -118,7 +120,7 @@ class Uploader extends React.Component<{onDone?: (info:MediaResult)=>void; onInf
         this.extractDone = false;
         this.progress = 0;
         this.startExtractTime = 0;
-        this.startTime = 0;
+        this.startUploadTime = 0;
     };
 
     stopStream(id:string) {
@@ -162,7 +164,7 @@ class Uploader extends React.Component<{onDone?: (info:MediaResult)=>void; onInf
 
     calcProgress() {
         var middlePercent = this.progress;
-        var timeElapsed = (Date.now() - this.startTime) / 100 | 0;
+        var timeElapsed = (Date.now() - this.startUploadTime) / 100 | 0;
         var prePercent = 0;
         var endPercent = 0;
         if (!middlePercent) {
@@ -186,10 +188,20 @@ class Uploader extends React.Component<{onDone?: (info:MediaResult)=>void; onInf
         return prePercent * this.preSize + middlePercent * this.middleSize + endPercent * this.endSize;
     }
 
+    _startTime = Math.random() * 1000 | 0;
+    _endTime = this._startTime + 20;
+
+    startTime:string;
+    endTime:string;
+
+    secToTime(sec:number) {
+        return ('0' + (sec / 3600 | 0)).substr(-2) + ':' + ('0' + (sec / 60 | 0)).substr(-2) + ':' + ('0' + (sec % 60)).substr(-2);
+    }
+
     render() {
         return <div>
             {this.error ? 'Error occured' :
-                 this.extractDone ?
+                this.extractDone ?
                     'Uploaded'
                     :
                     (this.isSending ?
@@ -198,29 +210,43 @@ class Uploader extends React.Component<{onDone?: (info:MediaResult)=>void; onInf
                     <div>
                         {this.fileSelected ?
                         <div>
-                            <input type="text"/>
-                            <input type="text"/>
+                            <input value={this.secToTime(this._startTime)}
+                                   ref={d => this.startTime = (React.findDOMNode(d) as HTMLInputElement).value}
+                                   type="text"/>
+                            <input value={this.secToTime(this._endTime)}
+                                   ref={d => this.endTime = (React.findDOMNode(d) as HTMLInputElement).value}
+                                   type="text"/>
                             <button onClick={()=>this.send()}>Submit</button>
                         </div>
                             :
                         <input ref="fileInput" onChange={this.onChange} type="file"/>}
                     </div>)
-            }
+                }
         </div>
     }
 }
 
-class SelectMedia extends React.Component<{items: TrackInfo[]; label: string},{}> {
+class SelectMedia extends React.Component<{onChange: (val:string)=>void; items: TrackInfo[]; label: string},{}> {
+    selected = this.props.items.length ? this.props.items[0] : null;
+
     onChange(item:TrackInfo) {
+        this.props.onChange(item.id);
+        this.selected = item;
         this.forceUpdate();
     }
 
     render() {
+        this.props.onChange(this.selected ? this.selected.id : null);
         return <div>
             <label>{this.props.label}</label>
-            {this.props.items.map(item => <div>
+            {this.props.items.map((item, i) => <div>
                 <label>
-                    <input name={this.props.label} onChange={()=>this.onChange(item)} type="radio"/>
+                    <input required
+                           name={this.props.label}
+                           checked={this.selected == item}
+                           value={item.id}
+                           onChange={()=>this.onChange(item)}
+                           type="radio"/>
                     {`${item.title} (${item.lang})`}
                 </label>
             </div>)}
@@ -230,19 +256,51 @@ class SelectMedia extends React.Component<{items: TrackInfo[]; label: string},{}
 }
 class Main extends React.Component<{},{}> {
     res:MediaResult;
+    form:Post = {title: 'Hello', enAudio: null, ruAudio: null, enSub: null, ruSub: null};
     videoDone = (res:MediaResult)=> {
         this.res = res;
         this.forceUpdate();
     };
 
+    onSubmit = () => {
+        fetch('http://localhost:1335/v1/post', {
+            method: "POST",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(this.form)
+        }).then(() => {
+            console.log('Success');
+        });
+        return false;
+    }
+
+    filterLang(items:TrackInfo[], lang:string) {
+        return items.filter(item => !item.lang || item.lang == lang);
+    }
+
     render() {
         return <div>
             {this.res ?
             <div>
-                <SelectMedia label="En Audio" items={this.res.audio}/>
-                <SelectMedia label="Ru Audio" items={this.res.audio}/>
-                <SelectMedia label="En Subs" items={this.res.subs}/>
-                <SelectMedia label="Ru Subs" items={this.res.subs}/>
+                <form onSubmit={this.onSubmit}>
+                    <SelectMedia label="En Audio"
+                                 onChange={val => this.form.enAudio = val}
+                                 items={this.filterLang(this.res.audio, 'eng')}/>
+                    <SelectMedia label="Ru Audio"
+                                 onChange={val => this.form.ruAudio = val}
+                                 items={this.filterLang(this.res.audio, 'rus')}/>
+                    <SelectMedia label="En Subs"
+                                 onChange={val => this.form.enSub = val}
+                                 items={this.filterLang(this.res.subs, 'eng')}/>
+                    <SelectMedia label="Ru Subs"
+                                 onChange={val => this.form.ruSub = val}
+                                 items={this.filterLang(this.res.subs, 'rus')}/>
+                    <div>
+                        <button>Create</button>
+                    </div>
+                </form>
             </div>
                 :
             <Uploader onDone={this.videoDone}/> }

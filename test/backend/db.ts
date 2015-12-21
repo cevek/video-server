@@ -1,17 +1,5 @@
 'use strict';
 
-async function rawQuery(connection:any, query:string, params:any) {
-    return await (new Promise<any>((resolve, reject)=> {
-        connection.query(query, params, (err:any, rows:any) => {
-            if (err) {
-                err.message = err.message + '\n' + query;
-                return reject(err);
-            }
-            resolve(rows || []);
-        });
-    }));
-}
-
 var mysql = require('mysql2');
 import {config} from './config';
 var pool = mysql.createPool({
@@ -20,11 +8,28 @@ var pool = mysql.createPool({
     password: config.db.password
 });
 
+interface Params {[key: string]: string | number}
+interface Connection {
+    query(q:string, params:Params, callback: (err:Error,values:any)=>void):void;
+    commit(callback: (err: Error)=>void):void;
+    rollback(callback: ()=>void):void;
+}
+
 class DB {
-    async query(query:string, params?:any) {
-        var connection = await db.getConnection();
-        var res = await rawQuery(connection, query, params);
-        connection.release();
+    async query<T>(query:string, params?:Params, trx?:Transaction) {
+        var connection = trx ? trx.connection : await db.getConnection();
+        var res = await (new Promise<T>((resolve, reject)=> {
+            var q = connection.query(query, params, (err:Error, rows:T) => {
+                if (err) {
+                    err.message = err.message + '\n' + q.sql;
+                    return reject(err);
+                }
+                resolve(rows);
+            });
+        }));
+        if (!trx) {
+            connection.release();
+        }
         return res;
     }
 
@@ -49,11 +54,14 @@ class DB {
             v => `${v.join(", ")}`).join("), (")});`;
     }
 
-    async queryOne(query:string, params?:any) {
-        return (await db.query(query, params))[0];
+    async queryOne<T>(query:string, params?:any, trx?: Transaction) {
+        return (await db.query<T[]>(query, params, trx))[0];
+    }
+    async queryAll<T>(query:string, params?:any, trx?: Transaction) {
+        return (await db.query<T[]>(query, params, trx)) || [];
     }
 
-    async transaction(fn:(transaction: Transaction)=>Promise<any>) {
+    async transaction(fn:(transaction:Transaction)=>Promise<any>) {
         var transaction = await this.beginTransaction();
         try {
             await fn(transaction);
@@ -93,21 +101,7 @@ class DB {
 export const db = new DB();
 
 export class Transaction {
-    constructor(public connection:any) {}
-
-    async query(query:string, params?:any) {
-        try {
-            return await rawQuery(this.connection, query, params);
-        }
-        catch (e) {
-            await this.rollback();
-            throw e;
-        }
-    }
-
-    async queryOne(query:string, params?:any) {
-        return (await this.query(query, params))[0];
-    }
+    constructor(public connection:Connection) {}
 
     async commit() {
         return await (new Promise((resolve, reject)=> {

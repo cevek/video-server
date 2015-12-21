@@ -15,8 +15,8 @@ router.get('/', async () => {
 });
 
 router.post('/v1/post/', async function () {
-    var postData = <Post>this.params;
-    createPost(postData);
+    var postData = <Post>this.request.body;
+    await createPost(postData);
     this.body = {success: true};
 });
 

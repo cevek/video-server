@@ -1,4 +1,6 @@
 import {config} from "../config";
+import {mediaFilesDAO} from "../models/media-file";
 export async function getFileName(id:string) {
-    return config.dir + id;
+    var row = await mediaFilesDAO.findById(id);
+    return row.filename;
 }

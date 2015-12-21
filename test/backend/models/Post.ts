@@ -9,7 +9,7 @@ import {genId} from "../utils";
 import {Post} from "../interfaces/post";
 
 class PostDAO extends BaseModel<Post> {
-    protected table = 'post';
+    protected table = 'posts';
 }
 
 export var postDAO = new PostDAO();
