@@ -35,5 +35,5 @@ export function spawn(exec:string, callback?:(output:string, cp?:ChildProcess)=>
 }
 
 export function genId() {
-    return Math.random().toString().substr(2, 10) + Math.random().toString().substr(2, 10);
+    return Math.random().toString().substr(2, 6) + Math.random().toString().substr(2, 6) + Math.random().toString().substr(2, 6);
 }
