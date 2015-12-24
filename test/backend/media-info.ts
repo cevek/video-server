@@ -1,5 +1,6 @@
 export enum ContentType {
     VIDEO,
+    THUMBS, // todo:
     AUDIO,
     SUBS,
 }

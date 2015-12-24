@@ -10,9 +10,9 @@ var pool = mysql.createPool({
 
 interface Params {[key: string]: string | number}
 interface Connection {
-    query(q:string, params:Params, callback: (err:Error,values:any)=>void):void;
-    commit(callback: (err: Error)=>void):void;
-    rollback(callback: ()=>void):void;
+    query(q:string, params:Params, callback:(err:Error, values:any)=>void):void;
+    commit(callback:(err:Error)=>void):void;
+    rollback(callback:()=>void):void;
 }
 
 class DB {
@@ -54,10 +54,22 @@ class DB {
             v => `${v.join(", ")}`).join("), (")});`;
     }
 
-    async queryOne<T>(query:string, params?:any, trx?: Transaction) {
+    whereSql(params:any) {
+        if (params && typeof params == 'object') {
+            var conditions = Object.keys(params)
+                .map(k => `${k} ${params[k] === null ? 'IS' : '='} ${mysql.escape(params[k])}`);
+            return conditions.length > 0 ? ('WHERE ' + conditions.join(' AND ')) : ''
+        }
+        if (typeof params == 'string') {
+            return params;
+        }
+    }
+
+    async queryOne<T>(query:string, params?:any, trx?:Transaction) {
         return (await db.query<T[]>(query, params, trx))[0];
     }
-    async queryAll<T>(query:string, params?:any, trx?: Transaction) {
+
+    async queryAll<T>(query:string, params?:any, trx?:Transaction) {
         return (await db.query<T[]>(query, params, trx)) || [];
     }
 

@@ -1,4 +1,4 @@
 export interface Upload {
-    id: string;
-    info: string;
+    id?: string;
+    info?: string;
 }

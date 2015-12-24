@@ -12,6 +12,21 @@ export class BaseModel<T> {
     }
 
     async findById(id:string | number, trx?:Transaction) {
-        return await db.queryOne<T>(`SELECT * FROM ${this.table} WHERE id=:id`, {id}, trx);
+        return await db.queryOne<T>(`SELECT * FROM \`${this.table}\` WHERE id=:id`, {id}, trx);
+    }
+
+    async findByIds(ids:(string | number)[], trx?:Transaction) {
+        if (ids.length) {
+            return await db.queryAll<T>(`SELECT * FROM \`${this.table}\` WHERE id IN (?)`, [ids], trx);
+        }
+        return [];
+    }
+
+    async findAll(params?:T | string, trx?:Transaction) {
+        return await db.queryAll<T>(`SELECT * FROM \`${this.table}\` ${db.whereSql(params)}`, {}, trx);
+    }
+
+    async findOne(params?:T | string, trx?:Transaction) {
+        return await db.queryOne<T>(`SELECT * FROM \`${this.table}\` ${db.whereSql(params)}`, {}, trx);
     }
 }

@@ -256,9 +256,10 @@ class SelectMedia extends React.Component<{onChange: (val:string)=>void; items: 
 }
 class Main extends React.Component<{},{}> {
     res:MediaResult;
-    form:Post = {title: 'Hello', enAudio: null, ruAudio: null, enSub: null, ruSub: null};
+    form:Post = {title: 'Hello', video: null, enAudio: null, ruAudio: null, enSub: null, ruSub: null};
     videoDone = (res:MediaResult)=> {
         this.res = res;
+        this.form.video = res.video.id;
         this.forceUpdate();
     };
 

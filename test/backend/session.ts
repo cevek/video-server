@@ -14,11 +14,13 @@ import {db} from "./db";
 import {mediaFilesDAO} from "./models/media-file";
 import {Upload} from "./interfaces/upload";
 import {TrackInfo} from "./interfaces/track-info";
+import {genId} from "./utils";
+import {MediaFile} from "./interfaces/media-file";
 
 //import {spawn} from 'child_process';
 
 export class Session {
-    sid = (Date.now() / 1000 | 0) + '_' + Math.random().toString(33).substr(3, 5);
+    sid = genId();
     currentTime = 0;
     stdout = '';
     videoServer:{[id:string]: {res: {writable: boolean; write:(data:Buffer)=>void}}} = {};
@@ -52,14 +54,18 @@ export class Session {
         this.inputFile = this.folder + 'input.' + this.fileExt;
         this.startTime = this.timeToSec(data.startTime);
         this.duration = this.timeToSec(data.endTime) - this.startTime;
-        if (this.fileExt.match(/\.(avi|mp4|m4v|mkv|webm|flv|wmv|mpg)$/i)) {
+
+        if (this.fileExt.match(/^(avi|mp4|m4v|mkv|webm|flv|wmv|mpg)$/i)) {
             this.isVideo = true;
         }
-        else if (this.fileExt.match(/\.(mp3|m4a|ac3|aac|ogg|wav|wma|webm|flac)$/i)) {
+        else if (this.fileExt.match(/^(mp3|m4a|ac3|aac|ogg|wav|wma|webm|flac)$/i)) {
             this.isAudio = true;
         }
-        else if (this.fileExt.match(/\.(srt|sub)$/i)) {
+        else if (this.fileExt.match(/^(srt|sub)$/i)) {
             this.isSub = true;
+        }
+        else {
+            console.error('Ext is not recognized');
         }
         console.log(data);
         mkdirSync(this.folder);
@@ -96,7 +102,12 @@ export class Session {
 
         for (var i = 0; i < this.track.streams.length; i++) {
             var stream = this.track.streams[i];
-            var item = {id: this.streamsMeta[i].id, title: stream.title, lang: stream.lang, url: this.streamsMeta[i].url};
+            var item = {
+                id: this.streamsMeta[i].id,
+                title: stream.title,
+                lang: stream.lang,
+                url: this.streamsMeta[i].url
+            };
             if (stream.type == ContentType.VIDEO) {
                 video = item;
             }
@@ -126,9 +137,9 @@ export class Session {
                         ext = 'srt';
                     }
                     this.streamsMeta[i] = {
-                        id: Math.random().toString(33).substr(2, 5),
+                        id: genId(),
                         file: this.folder + stream.n + '.' + ext,
-                        url: '/files/' + this.sid + '/' + stream.n + '.' + ext
+                        url: this.sid + '/' + stream.n + '.' + ext
                     };
                 }
 
@@ -164,7 +175,7 @@ export class Session {
     }
 
     extractThumbs() {
-        //console.log("ExtractThumbs");
+        console.log("ExtractThumbs");
 
         var fld = this.folder;
         return exec(`ffmpeg -y -i ${this.inputFile} -qscale 1 -vsync 1 -r 1 ${fld}_raw%03d.jpg`).then(()=>
@@ -176,7 +187,8 @@ export class Session {
     done() {
         this.isDone = true;
         this.emit('upload-done', {});
-        //console.log("done");
+        console.log("done", this.isVideo);
+        var videoId = this.isVideo ? this.streamsMeta[0].id : null;
 
         Promise.all([
             //todo: what if only audio?
@@ -190,7 +202,7 @@ export class Session {
         }).then(()=>co(async ()=> {
             await db.transaction(async (trx) => {
                 await uploadsDAO.create({id: this.sid, info: this.stdout}, trx);
-                await mediaFilesDAO.createBulk(this.track.streams.map((track, i) => {
+                var mediaFiles:MediaFile[] = this.track.streams.map((track, i) => {
                     var str = this.streamsMeta[i];
                     return {
                         id: str.id,
@@ -199,9 +211,25 @@ export class Session {
                         type: track.type,
                         info: JSON.stringify(track),
                         uploadId: this.sid,
-                        filename: str.file
+                        url: str.url,
+                        filename: str.file,
+                        videoFile: videoId,
                     }
-                }), trx);
+                });
+                if (this.isVideo) {
+                    mediaFiles.push({
+                        id: genId(),
+                        startTime: this.startTime,
+                        duration: this.duration,
+                        videoFile: videoId,
+                        filename: this.folder + 'thumbs.jpg',
+                        url: this.sid + '/thumbs.jpg',
+                        info: null,
+                        uploadId: this.sid,
+                        type: ContentType.THUMBS
+                    });
+                }
+                await mediaFilesDAO.createBulk(mediaFiles, trx);
             });
         })).catch(err => this.closeWithError(err));
     }

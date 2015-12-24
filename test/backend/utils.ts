@@ -37,3 +37,15 @@ export function spawn(exec:string, callback?:(output:string, cp?:ChildProcess)=>
 export function genId() {
     return Math.random().toString().substr(2, 6) + Math.random().toString().substr(2, 6) + Math.random().toString().substr(2, 6);
 }
+
+export function toMap<T>(items:T[], key?:string) {
+    if (!key) {
+        key = 'id';
+    }
+    var map:{[key: string]: T} = {};
+    for (var i = 0; i < items.length; i++) {
+        var item = <any>items[i];
+        map[item[key]] = item;
+    }
+    return map;
+}
