@@ -1,6 +1,6 @@
-import MouseEvent = __React.MouseEvent;
 "use strict";
 import * as React from 'react';
+import {IGetPost} from '../../backend/interfaces/transport';
 import {TrackInfo} from '../../backend/interfaces/track-info';
 import {Post} from '../../backend/interfaces/post';
 declare var io:(url:string)=>Socket;
@@ -256,6 +256,7 @@ class SelectMedia extends React.Component<{onChange: (val:string)=>void; items: 
 }
 class Main extends React.Component<{},{}> {
     res:MediaResult;
+    postId:string;
     form:Post = {title: 'Hello', video: null, enAudio: null, ruAudio: null, enSub: null, ruSub: null};
     videoDone = (res:MediaResult)=> {
         this.res = res;
@@ -271,7 +272,9 @@ class Main extends React.Component<{},{}> {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(this.form)
-        }).then(() => {
+        }).then(data => data.json()).then(data => {
+            this.postId = data.data;
+            this.forceUpdate();
             console.log('Success');
         });
         return false;
@@ -282,29 +285,56 @@ class Main extends React.Component<{},{}> {
     }
 
     render() {
-        return <div>
-            {this.res ?
-            <div>
-                <form onSubmit={this.onSubmit}>
-                    <SelectMedia label="En Audio"
-                                 onChange={val => this.form.enAudio = val}
-                                 items={this.filterLang(this.res.audio, 'eng')}/>
-                    <SelectMedia label="Ru Audio"
-                                 onChange={val => this.form.ruAudio = val}
-                                 items={this.filterLang(this.res.audio, 'rus')}/>
-                    <SelectMedia label="En Subs"
-                                 onChange={val => this.form.enSub = val}
-                                 items={this.filterLang(this.res.subs, 'eng')}/>
-                    <SelectMedia label="Ru Subs"
-                                 onChange={val => this.form.ruSub = val}
-                                 items={this.filterLang(this.res.subs, 'rus')}/>
-                    <div>
-                        <button>Create</button>
-                    </div>
-                </form>
-            </div>
+        return this.postId ?
+            <Viewer id={this.postId}/>
                 :
-            <Uploader onDone={this.videoDone}/> }
+            <div>
+                {this.res ?
+                <div>
+                    <form onSubmit={this.onSubmit}>
+                        <SelectMedia label="En Audio"
+                                     onChange={val => this.form.enAudio = val}
+                                     items={this.filterLang(this.res.audio, 'eng')}/>
+                        <SelectMedia label="Ru Audio"
+                                     onChange={val => this.form.ruAudio = val}
+                                     items={this.filterLang(this.res.audio, 'rus')}/>
+                        <SelectMedia label="En Subs"
+                                     onChange={val => this.form.enSub = val}
+                                     items={this.filterLang(this.res.subs, 'eng')}/>
+                        <SelectMedia label="Ru Subs"
+                                     onChange={val => this.form.ruSub = val}
+                                     items={this.filterLang(this.res.subs, 'rus')}/>
+                        <div>
+                            <button>Create</button>
+                        </div>
+                    </form>
+                </div>
+                    :
+                <Uploader onDone={this.videoDone}/>
+                    }
+            </div>
+
+    }
+}
+
+class Viewer extends React.Component<{id: string}, {}> {
+    data:IGetPost;
+
+    load() {
+        return fetch('http://localhost:1335/v1/post/' + this.props.id).then(data => data.json()).then(data => {
+            this.data = data.data;
+            this.forceUpdate();
+        });
+    }
+
+    loader = this.load();
+
+    render() {
+        if (!this.data) {
+            return <div>Loading...</div>
+        }
+        console.log(this.data);
+        return <div>
 
         </div>
     }

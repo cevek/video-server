@@ -1,3 +1,4 @@
+import {IGetPost} from "./interfaces/transport";
 'use strict';
 import {toMap} from "./utils";
 import {config} from "./config";
@@ -26,7 +27,8 @@ router.get('/v1/post/:id', async function () {
     if (post) {
         var lines = await linesDAO.findAll({postId: id});
         var textLines = await textLineDAO.findAll({postId: id});
-        this.body = {success: true, data: {post, lines: toMap(lines), textLines: toMap(textLines)}};
+        var data:IGetPost = {post, lines: lines, textLines: toMap(textLines)};
+        this.body = {success: true, data};
     }
     else {
         this.body = {success: false, error: 'Not Found'};
@@ -47,8 +49,8 @@ router.get('/v1/file/:id', async function(){
 
 router.post('/v1/post/', async function () {
     var postData = <Post>this.request.body;
-    await createPost(postData);
-    this.body = {success: true};
+    var post = await createPost(postData);
+    this.body = {success: true, data: post.id};
 });
 
 app.use(serve(config.dir));
