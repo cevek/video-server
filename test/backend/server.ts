@@ -26,8 +26,10 @@ router.get('/v1/post/:id', async function () {
     var post = await postDAO.findById(id);
     if (post) {
         var lines = await linesDAO.findAll({postId: id});
+        lines.sort((a, b) => a.seq < b.seq ? -1 : 1);
         var textLines = await textLineDAO.findAll({postId: id});
-        var data:IGetPost = {post, lines: lines, textLines: toMap(textLines)};
+        var mediaFiles = await mediaFilesDAO.findByIds([post.video, post.thumbs]);
+        var data:IGetPost = {post, lines: lines, textLines: toMap(textLines), mediaFiles: toMap(mediaFiles)};
         this.body = {success: true, data};
     }
     else {
@@ -35,12 +37,11 @@ router.get('/v1/post/:id', async function () {
     }
 });
 
-
-router.get('/v1/file/:id', async function(){
+router.get('/v1/file/:id', async function () {
     var id = this.params.id;
     var mediaFile = await mediaFilesDAO.findById(id);
     var url = mediaFile.url;
-    if (!url.match(/^http/)){
+    if (!url.match(/^http/)) {
         url = '/' + url;
     }
     this.redirect(url);

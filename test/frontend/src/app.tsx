@@ -279,7 +279,8 @@ class Main extends React.Component<{params: any, resolved: any},{}> {
             },
             body: JSON.stringify(this.form)
         }).then(data => data.json()).then(data => {
-            this.postId = data.data;
+            //this.postId = data.data;
+            postRoute.goto({id: data.data})
             this.forceUpdate();
             console.log('Success');
         });
@@ -325,18 +326,20 @@ class Viewer extends React.Component<{params: any, resolved: IGetPost}, {}> {
 
     static load(params:any):Promise<IGetPost> {
         console.log(params);
-        var id = params.id || '308351808248702476';
+        var id = params.id;
         return fetch('http://localhost:1335/v1/post/' + id).then(data => data.json()).then(data => data.data);
     }
 
     componentDidMount() {
+        var data = this.props.resolved;
+        var videoId = data.mediaFiles[data.post.video].url.split('=').pop();
         var div = document.createElement('div');
         div.id = Math.random().toString();
         this.videoWrapper.appendChild(div);
         var player = new YT.Player(div.id, {
             height: '390',
             width: '640',
-            videoId: '8K5_hcXTsAI',
+            videoId: videoId,
             p1layerVars: {'autoplay': 1, 'controls': 0, iv_load_policy: 3, modestbranding: 1, rel: 0, showinfo: 0},
             events: {
                 'onReady': (event:any) => {
@@ -345,7 +348,7 @@ class Viewer extends React.Component<{params: any, resolved: IGetPost}, {}> {
                         this.currentTime = player.getCurrentTime();
                         console.log(this.currentTime);
                         this.forceUpdate();
-                    }, 50)
+                    }, 100);
                 },
                 'onStateChange': onPlayerStateChange
             }
@@ -367,8 +370,11 @@ class Viewer extends React.Component<{params: any, resolved: IGetPost}, {}> {
 
     isSelected(line: Line){
         var data = this.props.resolved;
-        var textLine = data.textLines[line.en];
-        return (textLine.start / 100) <= this.currentTime && (this.currentTime / 100) <= (textLine.start + textLine.dur)
+        if (line.en) {
+            var textLine = data.textLines[line.en];
+            return ((textLine.start) / 100) <= this.currentTime && this.currentTime <= (textLine.start + textLine.dur) / 100
+        }
+        return false;
     }
 
 
@@ -379,8 +385,8 @@ class Viewer extends React.Component<{params: any, resolved: IGetPost}, {}> {
             <div ref={d => this.videoWrapper = React.findDOMNode(d)} className="video"></div>
             <div className="subtitles">
                 {data.lines.map(line => <div className={classNames("line", {selected: this.isSelected(line)})}>
-                    <div className="en">{data.textLines[line.en].text}</div>
-                    <div className="ru">{data.textLines[line.ru].text}</div>
+                    <div className="en">{line.en ? data.textLines[line.en].text : ''}</div>
+                    <div className="ru">{line.ru ? data.textLines[line.ru].text : ''}</div>
                 </div>)}
             </div>
         </div>

@@ -2,7 +2,7 @@
 
 import {exec as Exec, spawn as Spawn, ChildProcess} from 'child_process';
 export function exec(exec:string, params?:{timeout?: number}) {
-    return new Promise((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
         Exec(exec, params,
             (err:Error, stdout:Buffer, stderr:Buffer) =>
                 err ? reject(err) : resolve(stdout.toString() + stderr.toString()));

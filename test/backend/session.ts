@@ -34,6 +34,7 @@ export class Session {
     streamsMeta:{id: string; url: string; file: string}[] = [];
     duration:number;
     startTime:number;
+    subtitlesShift:number;
     socket:{emit: (name:string, obj:any)=>void};
     timeout = 10 * 60; // 10 min timeout;
     //todo: add check
@@ -81,11 +82,17 @@ export class Session {
     }
 
     extract() {
-        return exec('ffmpeg -y -i ' + this.inputFile + ' ' +
+        var promise = exec('ffmpeg -y -i ' + this.inputFile + ' ' +
             this.track.streams.map(track => {
                 var audioParams = track.type == ContentType.AUDIO ? ` -vn -sn -c:a libfdk_aac -profile:a aac_he_v2 -ac 2 -b:a 32k ${track.channels > 2 ? `-map_channel 0.${track.n}.2` : ''}` : '';
                 return '-c copy -map 0:' + track.n + audioParams + ' ' + this.streamsMeta[track.n].file;
             }).join(' '));
+        promise.then(s => {
+            var m = s.match(/Duration: [\d:.]+, start: ([\d.]+)/);
+            this.subtitlesShift = +m[1];
+            console.log("subtitlesShift", this.subtitlesShift);
+        });
+        return promise;
     }
 
     sendProgress(time:number) {
@@ -209,7 +216,7 @@ export class Session {
                         startTime: this.startTime,
                         duration: this.duration,
                         type: track.type,
-                        info: JSON.stringify(track),
+                        info: JSON.stringify(Object.assign(track, {subtitlesShift: this.subtitlesShift})),
                         uploadId: this.sid,
                         url: str.url,
                         filename: str.file,

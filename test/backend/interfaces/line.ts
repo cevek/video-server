@@ -3,4 +3,5 @@ export interface Line {
     ru?: string;
     en?: string;
     postId?: string;
+    seq?: number;
 }

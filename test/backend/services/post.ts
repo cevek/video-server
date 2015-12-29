@@ -17,9 +17,12 @@ import {mediaFilesDAO} from "../models/media-file";
 import {ContentType} from "../media-info";
 
 export async function createPost(post:Post) {
-    var enSub = readFileSync(await getFileName(post.enSub)).toString();
-    var ruSub = readFileSync(await getFileName(post.ruSub)).toString();
-    var subtitleSync = new SubtitleSync(parseSubtitles(enSub), parseSubtitles(ruSub));
+    var enFile = await mediaFilesDAO.findById(post.enSub);
+    var ruFile = await mediaFilesDAO.findById(post.ruSub);
+    var enSub = readFileSync(enFile.filename).toString();
+    var ruSub = readFileSync(ruFile.filename).toString();
+    var subtitlesShift = JSON.parse(enFile.info).subtitlesShift;
+    var subtitleSync = new SubtitleSync(parseSubtitles(enSub, subtitlesShift), parseSubtitles(ruSub, subtitlesShift));
     var mergeLines = subtitleSync.merge();
     await db.transaction(async (trx) => {
         post.id = genId();
@@ -27,7 +30,7 @@ export async function createPost(post:Post) {
         var lines:Line[] = [];
         for (var i = 0; i < mergeLines.length; i++) {
             var mergeLine = mergeLines[i];
-            var line:Line = {id: genId(), postId: post.id};
+            var line:Line = {id: genId(), postId: post.id, seq: i};
             for (var j = 0; j < mergeLine.length; j++) {
                 var ln = mergeLine[j];
                 //todo: why may null
