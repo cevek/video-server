@@ -1,0 +1,15 @@
+body{
+    font-family: Verdana, serif;
+}
+.video{
+    float: left;
+}
+.subtitles{
+    float: right;
+}
+.line{
+    padding: 5px 10px;
+}
+.selected{
+    background: yellow;
+}

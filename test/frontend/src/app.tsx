@@ -1,9 +1,15 @@
 "use strict";
+import "./app.css";
+import {Route} from "./Router";
+import {Router} from "./Router";
 import * as React from 'react';
+import * as classNames from 'classnames';
 import {IGetPost} from '../../backend/interfaces/transport';
 import {TrackInfo} from '../../backend/interfaces/track-info';
 import {Post} from '../../backend/interfaces/post';
+import {Line} from '../../backend/interfaces/line';
 declare var io:(url:string)=>Socket;
+declare var YT:any;
 interface Socket {
     emit: (m:string, data:any, callback:(...args:any[])=>void)=>void;
     on: (m:string, data:any)=>void;
@@ -254,7 +260,7 @@ class SelectMedia extends React.Component<{onChange: (val:string)=>void; items: 
     }
 
 }
-class Main extends React.Component<{},{}> {
+class Main extends React.Component<{params: any, resolved: any},{}> {
     res:MediaResult;
     postId:string;
     form:Post = {title: 'Hello', video: null, enAudio: null, ruAudio: null, enSub: null, ruSub: null};
@@ -285,62 +291,107 @@ class Main extends React.Component<{},{}> {
     }
 
     render() {
-        return this.postId ?
-            <Viewer id={this.postId}/>
-                :
-            <div>
-                {this.res ?
-                <div>
-                    <form onSubmit={this.onSubmit}>
-                        <SelectMedia label="En Audio"
-                                     onChange={val => this.form.enAudio = val}
-                                     items={this.filterLang(this.res.audio, 'eng')}/>
-                        <SelectMedia label="Ru Audio"
-                                     onChange={val => this.form.ruAudio = val}
-                                     items={this.filterLang(this.res.audio, 'rus')}/>
-                        <SelectMedia label="En Subs"
-                                     onChange={val => this.form.enSub = val}
-                                     items={this.filterLang(this.res.subs, 'eng')}/>
-                        <SelectMedia label="Ru Subs"
-                                     onChange={val => this.form.ruSub = val}
-                                     items={this.filterLang(this.res.subs, 'rus')}/>
-                        <div>
-                            <button>Create</button>
-                        </div>
-                    </form>
-                </div>
-                    :
-                <Uploader onDone={this.videoDone}/>
-                    }
-            </div>
-
-    }
-}
-
-class Viewer extends React.Component<{id: string}, {}> {
-    data:IGetPost;
-
-    load() {
-        return fetch('http://localhost:1335/v1/post/' + this.props.id).then(data => data.json()).then(data => {
-            this.data = data.data;
-            this.forceUpdate();
-        });
-    }
-
-    loader = this.load();
-
-    render() {
-        if (!this.data) {
-            return <div>Loading...</div>
-        }
-        console.log(this.data);
         return <div>
-
+            {this.res ?
+            <div>
+                <form onSubmit={this.onSubmit}>
+                    <SelectMedia label="En Audio"
+                                 onChange={val => this.form.enAudio = val}
+                                 items={this.filterLang(this.res.audio, 'eng')}/>
+                    <SelectMedia label="Ru Audio"
+                                 onChange={val => this.form.ruAudio = val}
+                                 items={this.filterLang(this.res.audio, 'rus')}/>
+                    <SelectMedia label="En Subs"
+                                 onChange={val => this.form.enSub = val}
+                                 items={this.filterLang(this.res.subs, 'eng')}/>
+                    <SelectMedia label="Ru Subs"
+                                 onChange={val => this.form.ruSub = val}
+                                 items={this.filterLang(this.res.subs, 'rus')}/>
+                    <div>
+                        <button>Create</button>
+                    </div>
+                </form>
+            </div>
+                :
+            <Uploader onDone={this.videoDone}/>
+                }
         </div>
     }
 }
 
-React.render(<Main/>, document.body);
+class Viewer extends React.Component<{params: any, resolved: IGetPost}, {}> {
+    currentTime:number;
+    videoWrapper:Element;
+
+    static load(params:any):Promise<IGetPost> {
+        console.log(params);
+        var id = params.id || '308351808248702476';
+        return fetch('http://localhost:1335/v1/post/' + id).then(data => data.json()).then(data => data.data);
+    }
+
+    componentDidMount() {
+        var div = document.createElement('div');
+        div.id = Math.random().toString();
+        this.videoWrapper.appendChild(div);
+        var player = new YT.Player(div.id, {
+            height: '390',
+            width: '640',
+            videoId: '8K5_hcXTsAI',
+            p1layerVars: {'autoplay': 1, 'controls': 0, iv_load_policy: 3, modestbranding: 1, rel: 0, showinfo: 0},
+            events: {
+                'onReady': (event:any) => {
+                    event.target.playVideo();
+                    setInterval(() => {
+                        this.currentTime = player.getCurrentTime();
+                        console.log(this.currentTime);
+                        this.forceUpdate();
+                    }, 50)
+                },
+                'onStateChange': onPlayerStateChange
+            }
+        });
+
+        var done = false;
+
+        function onPlayerStateChange(event:any) {
+            if (event.data == YT.PlayerState.PLAYING && !done) {
+                //setTimeout(stopVideo, 6000);
+                done = true;
+            }
+        }
+
+        function stopVideo() {
+            player.stopVideo();
+        }
+    }
+
+    isSelected(line: Line){
+        var data = this.props.resolved;
+        var textLine = data.textLines[line.en];
+        return (textLine.start / 100) <= this.currentTime && (this.currentTime / 100) <= (textLine.start + textLine.dur)
+    }
+
+
+    render() {
+        var data = this.props.resolved;
+        return <div>
+            {this.currentTime}
+            <div ref={d => this.videoWrapper = React.findDOMNode(d)} className="video"></div>
+            <div className="subtitles">
+                {data.lines.map(line => <div className={classNames("line", {selected: this.isSelected(line)})}>
+                    <div className="en">{data.textLines[line.en].text}</div>
+                    <div className="ru">{data.textLines[line.ru].text}</div>
+                </div>)}
+            </div>
+        </div>
+    }
+}
+
+var postRoute = new Route<{id:number}>('/post/:id');
+React.render(<Router pages={[
+    {route: new Route('/'), handler: Main},
+    {route: postRoute, handler: Viewer, resolver: Viewer.load}
+]}/>, document.body);
 
 
 
