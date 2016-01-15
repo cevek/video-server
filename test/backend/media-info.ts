@@ -1,13 +1,7 @@
-export enum ContentType {
-    VIDEO,
-    THUMBS, // todo:
-    AUDIO,
-    SUBS,
-}
-
+import {MediaType} from "./interfaces/media-types";
 export interface Stream {
     n: number;
-    type:ContentType;
+    type: MediaType;
     format?:string;
     aid?: number;
     size?: {w:number; h:number};
@@ -25,7 +19,8 @@ export function mediaInfo(stdout:string) {
         return null;
     }
     var res = stdout.match(/Duration: (\d+):(\d+):(\d+)/) || [0, 0, 0, 0];
-    var track:MediaInfo = {streams: [], duration: +res[1] * 3600 + +res[2] * 60 + +res[3]};
+    var duration = +res[1] * 3600 + +res[2] * 60 + +res[3];
+    var track:MediaInfo = {streams: [], duration: duration};
     var streams:string[] = stdout.match(/Stream \#.*\n(\s+Metadata:\n(\s{5,}.*\n)*)?/g) || [];
     for (var i = 0; i < streams.length; i++) {
         var m:string[] = streams[i].replace(/\r?\n/g, '∆').replace(/\s+/g, ' ').match(/Stream \#0.(\d+)(\((.*?)\))?: ((Video): (.*?), .*?, (\d+x\d+)|(Audio): (.*?), .*?, (.*?), (.*? title : (.*?)∆)?|(Subtitle): (.*? title : (.*?)∆)?)/) || [];
@@ -36,7 +31,7 @@ export function mediaInfo(stdout:string) {
                 var size = {w: +m2[1], h: +m2[2]};
                 track.streams[k] = {
                     n: k,
-                    type: ContentType.VIDEO,
+                    type: MediaType.VIDEO,
                     format: m[6] || '',
                     size: size,
                 };
@@ -45,7 +40,7 @@ export function mediaInfo(stdout:string) {
                 var channels = (m[10].match(/5.1/) ? 6 : (m[10].match(/mono/) ? 1 : 2) );
                 track.streams[k] = {
                     n: k,
-                    type: ContentType.AUDIO,
+                    type: MediaType.AUDIO,
                     lang: m[3] || '',
                     format: m[9] || '',
                     channels: channels,
@@ -55,7 +50,7 @@ export function mediaInfo(stdout:string) {
             if (m[13]) {
                 track.streams[k] = {
                     n: k,
-                    type: ContentType.SUBS,
+                    type: MediaType.SUBS,
                     lang: m[3] || '',
                     title: (m[15] || '').split(' : ').shift(),
                 };
@@ -64,7 +59,7 @@ export function mediaInfo(stdout:string) {
     }
     var aid = 0;
     for (var i = 0; i < track.streams.length; i++) {
-        if (track.streams[i].type == ContentType.AUDIO) {
+        if (track.streams[i].type == MediaType.AUDIO) {
             track.streams[i].aid = aid;
             aid++;
         }

@@ -14,7 +14,7 @@ import {TextLine} from "../interfaces/text-line";
 import {Line} from "../interfaces/line";
 import {uploadsDAO} from "../models/upload";
 import {mediaFilesDAO} from "../models/media-file";
-import {ContentType} from "../media-info";
+import {MediaType} from "../interfaces/media-types";
 
 export async function createPost(post:Post) {
     var enFile = await mediaFilesDAO.findById(post.enSub);
@@ -56,7 +56,7 @@ export async function createPost(post:Post) {
             lines.push(line);
         }
         if (post.video) {
-            var thumbs = await mediaFilesDAO.findOne({videoFile: post.video, type: ContentType.THUMBS});
+            var thumbs = await mediaFilesDAO.findOne({videoFile: post.video, type: MediaType.THUMBS});
             post.thumbs = thumbs.id;
         }
         await postDAO.create(post, trx);

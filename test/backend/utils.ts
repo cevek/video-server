@@ -1,16 +1,22 @@
 "use strict";
 
 import {exec as Exec, spawn as Spawn, ChildProcess} from 'child_process';
-export function exec(exec:string, params?:{timeout?: number}) {
-    return new Promise<string>((resolve, reject) => {
+export async function exec(exec:string, params?:{maxBuffer?: number, timeout?: number}) {
+    if (!params) {
+        params = {};
+    }
+    if (!params.maxBuffer) {
+        params.maxBuffer = 10000000;
+    }
+    return await (new Promise<string>((resolve, reject) => {
         Exec(exec, params,
             (err:Error, stdout:Buffer, stderr:Buffer) =>
                 err ? reject(err) : resolve(stdout.toString() + stderr.toString()));
-    });
+    }));
 }
 
-export function spawn(exec:string, callback?:(output:string, cp?:ChildProcess)=>void, timeout?:number) {
-    return new Promise((resolve, reject)=> {
+export async function spawn(exec:string, callback?:(output:string, cp?:ChildProcess)=>void, timeout?:number) {
+    return await (new Promise((resolve, reject)=> {
         var parts = exec.split(' ');
         var cp = Spawn(parts.shift(), parts);
         var stdout = '';
@@ -31,7 +37,7 @@ export function spawn(exec:string, callback?:(output:string, cp?:ChildProcess)=>
                 cp.kill();
             }, timeout * 1000);
         }
-    });
+    }));
 }
 
 export function genId() {

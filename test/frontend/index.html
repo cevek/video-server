@@ -7,6 +7,12 @@
 </head>
 <body>
 <script type="text/javascript" src="https://www.youtube.com/iframe_api"></script>
+<script type="text/javascript">
+    var onYouTubeIframeAPIReady;
+    var YTReady = new Promise(function(resolve){
+        onYouTubeIframeAPIReady = resolve;
+    });
+</script>
 <script src="http://localhost:7878/socket.io/socket.io.js"></script>
 <script src="build/bundle.js" type="text/javascript"></script>
 </body>

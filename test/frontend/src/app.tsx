@@ -8,8 +8,10 @@ import {IGetPost} from '../../backend/interfaces/transport';
 import {TrackInfo} from '../../backend/interfaces/track-info';
 import {Post} from '../../backend/interfaces/post';
 import {Line} from '../../backend/interfaces/line';
+import {MediaType} from '../../backend/interfaces/media-types';
 declare var io:(url:string)=>Socket;
 declare var YT:any;
+declare var YTReady:Promise<{}>;
 interface Socket {
     emit: (m:string, data:any, callback:(...args:any[])=>void)=>void;
     on: (m:string, data:any)=>void;
@@ -19,6 +21,16 @@ interface MediaResult {
     video: TrackInfo;
     subs: TrackInfo[];
     audio: TrackInfo[];
+}
+function getType(type:MediaType, mediaResult:MediaResult) {
+    switch (type) {
+        case MediaType.VIDEO:
+            return [mediaResult.video];
+        case MediaType.AUDIO:
+            return mediaResult.audio;
+        case MediaType.SUBS:
+            return mediaResult.subs;
+    }
 }
 
 class Uploader extends React.Component<{onDone?: (info:MediaResult)=>void; onInfo?: (info:any)=>void;}, {}> {
@@ -194,14 +206,14 @@ class Uploader extends React.Component<{onDone?: (info:MediaResult)=>void; onInf
         return prePercent * this.preSize + middlePercent * this.middleSize + endPercent * this.endSize;
     }
 
-    _startTime = Math.random() * 1000 | 0;
-    _endTime = this._startTime + 20;
+    _startTime = Math.random() * 7000 | 0;
+    _endTime = this._startTime + 50;
 
     startTime:string;
     endTime:string;
 
     secToTime(sec:number) {
-        return ('0' + (sec / 3600 | 0)).substr(-2) + ':' + ('0' + (sec / 60 | 0)).substr(-2) + ':' + ('0' + (sec % 60)).substr(-2);
+        return ('0' + (sec / 3600 | 0)).substr(-2) + ':' + ('0' + (sec / 60 % 60 | 0)).substr(-2) + ':' + ('0' + (sec % 60)).substr(-2);
     }
 
     render() {
@@ -232,7 +244,7 @@ class Uploader extends React.Component<{onDone?: (info:MediaResult)=>void; onInf
     }
 }
 
-class SelectMedia extends React.Component<{onChange: (val:string)=>void; items: TrackInfo[]; label: string},{}> {
+class SelectMedia extends React.Component<{type: MediaType; onChange: (val:string)=>void; items: TrackInfo[]; label: string},{}> {
     selected = this.props.items.length ? this.props.items[0] : null;
 
     onChange(item:TrackInfo) {
@@ -241,11 +253,19 @@ class SelectMedia extends React.Component<{onChange: (val:string)=>void; items: 
         this.forceUpdate();
     }
 
+    result:MediaResult;
+
+    uploadItems:TrackInfo[] = [];
+    onDone = (result:MediaResult) => {
+        this.uploadItems = getType(this.props.type, result);
+        this.forceUpdate();
+    }
+
     render() {
         this.props.onChange(this.selected ? this.selected.id : null);
         return <div>
             <label>{this.props.label}</label>
-            {this.props.items.map((item, i) => <div>
+            {this.props.items.concat(this.uploadItems).map((item, i) => <div>
                 <label>
                     <input required
                            name={this.props.label}
@@ -256,6 +276,10 @@ class SelectMedia extends React.Component<{onChange: (val:string)=>void; items: 
                     {`${item.title} (${item.lang})`}
                 </label>
             </div>)}
+            <div>
+                {this.uploadItems.length ? null :
+                <Uploader onDone={this.onDone}/>}
+            </div>
         </div>
     }
 
@@ -296,16 +320,16 @@ class Main extends React.Component<{params: any, resolved: any},{}> {
             {this.res ?
             <div>
                 <form onSubmit={this.onSubmit}>
-                    <SelectMedia label="En Audio"
+                    <SelectMedia type={MediaType.AUDIO} label="En Audio"
                                  onChange={val => this.form.enAudio = val}
                                  items={this.filterLang(this.res.audio, 'eng')}/>
-                    <SelectMedia label="Ru Audio"
+                    <SelectMedia type={MediaType.AUDIO} label="Ru Audio"
                                  onChange={val => this.form.ruAudio = val}
                                  items={this.filterLang(this.res.audio, 'rus')}/>
-                    <SelectMedia label="En Subs"
+                    <SelectMedia type={MediaType.SUBS} label="En Subs"
                                  onChange={val => this.form.enSub = val}
                                  items={this.filterLang(this.res.subs, 'eng')}/>
-                    <SelectMedia label="Ru Subs"
+                    <SelectMedia type={MediaType.SUBS} label="Ru Subs"
                                  onChange={val => this.form.ruSub = val}
                                  items={this.filterLang(this.res.subs, 'rus')}/>
                     <div>
@@ -336,39 +360,41 @@ class Viewer extends React.Component<{params: any, resolved: IGetPost}, {}> {
         var div = document.createElement('div');
         div.id = Math.random().toString();
         this.videoWrapper.appendChild(div);
-        var player = new YT.Player(div.id, {
-            height: '390',
-            width: '640',
-            videoId: videoId,
-            p1layerVars: {'autoplay': 1, 'controls': 0, iv_load_policy: 3, modestbranding: 1, rel: 0, showinfo: 0},
-            events: {
-                'onReady': (event:any) => {
-                    event.target.playVideo();
-                    setInterval(() => {
-                        this.currentTime = player.getCurrentTime();
-                        console.log(this.currentTime);
-                        this.forceUpdate();
-                    }, 100);
-                },
-                'onStateChange': onPlayerStateChange
+        YTReady.then(() => {
+            var player = new YT.Player(div.id, {
+                height: '390',
+                width: '640',
+                videoId: videoId,
+                p1layerVars: {'autoplay': 1, 'controls': 0, iv_load_policy: 3, modestbranding: 1, rel: 0, showinfo: 0},
+                events: {
+                    'onReady': (event:any) => {
+                        event.target.playVideo();
+                        setInterval(() => {
+                            this.currentTime = player.getCurrentTime();
+                            console.log(this.currentTime);
+                            this.forceUpdate();
+                        }, 100);
+                    },
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+
+            var done = false;
+
+            function onPlayerStateChange(event:any) {
+                if (event.data == YT.PlayerState.PLAYING && !done) {
+                    //setTimeout(stopVideo, 6000);
+                    done = true;
+                }
+            }
+
+            function stopVideo() {
+                player.stopVideo();
             }
         });
-
-        var done = false;
-
-        function onPlayerStateChange(event:any) {
-            if (event.data == YT.PlayerState.PLAYING && !done) {
-                //setTimeout(stopVideo, 6000);
-                done = true;
-            }
-        }
-
-        function stopVideo() {
-            player.stopVideo();
-        }
     }
 
-    isSelected(line: Line){
+    isSelected(line:Line) {
         var data = this.props.resolved;
         if (line.en) {
             var textLine = data.textLines[line.en];
@@ -376,7 +402,6 @@ class Viewer extends React.Component<{params: any, resolved: IGetPost}, {}> {
         }
         return false;
     }
-
 
     render() {
         var data = this.props.resolved;

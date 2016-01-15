@@ -4,7 +4,6 @@ var co = require('co');
 import {mkdirSync} from "fs";
 import {writeFileSync} from "fs";
 import {upload} from "./youtube/upload";
-import {ContentType} from "./media-info";
 import {config} from "./config";
 import {MediaInfo} from "./media-info";
 import {mediaInfo} from "./media-info";
@@ -16,6 +15,7 @@ import {Upload} from "./interfaces/upload";
 import {TrackInfo} from "./interfaces/track-info";
 import {genId} from "./utils";
 import {MediaFile} from "./interfaces/media-file";
+import {MediaType} from "./interfaces/media-types";
 
 //import {spawn} from 'child_process';
 
@@ -81,18 +81,17 @@ export class Session {
         this.socket.emit(name + '-' + this.sid, data);
     }
 
-    extract() {
-        var promise = exec('ffmpeg -y -i ' + this.inputFile + ' ' +
+    async extract() {
+        console.log("Extract");
+        var s = await exec('ffmpeg -y -i ' + this.inputFile + ' ' +
             this.track.streams.map(track => {
-                var audioParams = track.type == ContentType.AUDIO ? ` -vn -sn -c:a libfdk_aac -profile:a aac_he_v2 -ac 2 -b:a 32k ${track.channels > 2 ? `-map_channel 0.${track.n}.2` : ''}` : '';
+                var audioParams = track.type == MediaType.AUDIO ? ` -vn -sn -c:a libfdk_aac -profile:a aac_he_v2 -ac 2 -b:a 32k ${track.channels > 2 ? `-map_channel 0.${track.n}.2` : ''}` : '';
                 return '-c copy -map 0:' + track.n + audioParams + ' ' + this.streamsMeta[track.n].file;
             }).join(' '));
-        promise.then(s => {
-            var m = s.match(/Duration: [\d:.]+, start: ([\d.]+)/);
-            this.subtitlesShift = +m[1];
-            console.log("subtitlesShift", this.subtitlesShift);
-        });
-        return promise;
+        var m = s.match(/Duration: [\d:.]+, start: ([\d.]+)/);
+        this.subtitlesShift = +m[1];
+        console.log("subtitlesShift", this.subtitlesShift);
+        return s;
     }
 
     sendProgress(time:number) {
@@ -113,15 +112,16 @@ export class Session {
                 id: this.streamsMeta[i].id,
                 title: stream.title,
                 lang: stream.lang,
-                url: this.streamsMeta[i].url
+                url: this.streamsMeta[i].url,
+                type: stream.type,
             };
-            if (stream.type == ContentType.VIDEO) {
+            if (stream.type == MediaType.VIDEO) {
                 video = item;
             }
-            else if (stream.type == ContentType.AUDIO) {
+            else if (stream.type == MediaType.AUDIO) {
                 audio.push(item);
             }
-            else if (stream.type == ContentType.SUBS) {
+            else if (stream.type == MediaType.SUBS) {
                 subs.push(item);
             }
         }
@@ -134,13 +134,13 @@ export class Session {
             if (this.track) {
                 for (var i = 0; i < this.track.streams.length; i++) {
                     var stream = this.track.streams[i];
-                    if (stream.type == ContentType.VIDEO) {
+                    if (stream.type == MediaType.VIDEO) {
                         var ext = 'mp4';
                     }
-                    else if (stream.type == ContentType.AUDIO) {
+                    else if (stream.type == MediaType.AUDIO) {
                         ext = 'aac';
                     }
-                    else if (stream.type == ContentType.SUBS) {
+                    else if (stream.type == MediaType.SUBS) {
                         ext = 'srt';
                     }
                     this.streamsMeta[i] = {
@@ -168,45 +168,51 @@ export class Session {
 
     startFFmpeg() {
         //console.log("startFFmpeg");
+        return co(async () => {
+            await spawn(`ffmpeg -y -ss ${this.startTime} -i http://localhost:1338/${this.sid} -c copy -map 0 ${this.inputFile}`,
+                (data, cp) => {
+                    this.stdout += data;
+                    this.getMediaInfo();
+                    var time = this.processTime(data);
+                    if (!time) {
+                        //console.log("kill");
+                        cp.kill();
+                    }
+                }, this.timeout);
 
-        spawn(`ffmpeg -y -ss ${this.startTime} -i http://localhost:1338/${this.sid} -c copy -map 0 ${this.inputFile}`,
-            (data, cp) => {
-                this.stdout += data;
-                this.getMediaInfo();
-                var time = this.processTime(data);
-                if (!time) {
-                    //console.log("kill");
-                    cp.kill();
-                }
-            }, this.timeout).catch(err => this.closeWithError(err));
+            if (!this.track) {
+                throw new Error('Track is empty');
+            }
+        }).catch((err:Error) => this.closeWithError(err));
     }
 
-    extractThumbs() {
+    async extractThumbs() {
         console.log("ExtractThumbs");
-
         var fld = this.folder;
-        return exec(`ffmpeg -y -i ${this.inputFile} -qscale 1 -vsync 1 -r 1 ${fld}_raw%03d.jpg`).then(()=>
-            exec(`convert ${fld}_raw*.jpg -thumbnail 200x100^ -auto-level -level 0,60%% -modulate 100,70 ${fld}_thumb.jpg`).then(() =>
-                exec(`montage ${fld}_thumb*.jpg  -tile 20x -geometry +0+0 -gravity north ${fld}thumbs.jpg`).then(() =>
-                    exec(`rm ${fld}_*.jpg`))));
+        await exec(`ffmpeg -y -i ${this.inputFile} -qscale 1 -vsync 1 -r 1 ${fld}_raw%03d.jpg`);
+        await exec(`convert ${fld}_raw*.jpg -thumbnail 200x100^ -auto-level -level 0,60%% -modulate 100,70 ${fld}_thumb.jpg`);
+        await exec(`rm ${fld}_*.jpg`);
     }
 
     done() {
-        this.isDone = true;
-        this.emit('upload-done', {});
-        console.log("done", this.isVideo);
-        var videoId = this.isVideo ? this.streamsMeta[0].id : null;
+        return co(async ()=> {
+            this.isDone = true;
+            this.emit('upload-done', {});
+            console.log("done", this.isVideo);
+            var videoId = this.isVideo ? this.streamsMeta[0].id : null;
 
-        Promise.all([
             //todo: what if only audio?
-            upload(this.sid, this.inputFile),
-            this.isVideo ? this.extractThumbs() : null,
-            this.extract()
-        ]).then((res) => {
-            var youtube = this.youtubeLink(res[0]);
-            writeFileSync(this.folder + 'youtube.txt', youtube);
+            //todo: parallel
+            if (this.isVideo){
+                var ytLink = await (upload(this.sid, this.inputFile));
+                await this.extractThumbs();
+                var youtube = this.youtubeLink(ytLink);
+                writeFileSync(this.folder + 'youtube.txt', youtube);
+            }
+            await this.extract();
+
             this.emit('done', this.prepareMediaInfo());
-        }).then(()=>co(async ()=> {
+
             await db.transaction(async (trx) => {
                 await uploadsDAO.create({id: this.sid, info: this.stdout}, trx);
                 var mediaFiles:MediaFile[] = this.track.streams.map((track, i) => {
@@ -233,12 +239,12 @@ export class Session {
                         url: this.sid + '/thumbs.jpg',
                         info: null,
                         uploadId: this.sid,
-                        type: ContentType.THUMBS
+                        type: MediaType.THUMBS
                     });
                 }
                 await mediaFilesDAO.createBulk(mediaFiles, trx);
             });
-        })).catch(err => this.closeWithError(err));
+        }).catch((err:Error) => this.closeWithError(err));
     }
 
     closeConnection(id:string):void {
