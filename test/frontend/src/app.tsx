@@ -33,7 +33,13 @@ function getType(type:MediaType, mediaResult:MediaResult) {
     }
 }
 
-class Uploader extends React.Component<{onDone?: (info:MediaResult)=>void; onInfo?: (info:any)=>void;}, {}> {
+class Uploader extends React.Component<{
+    onDone?: (info:MediaResult)=>void;
+    onInfo?: (info:any)=>void;
+    startTime: number;
+    endTime: number;
+}, {}> {
+
     sid:string;
     startUploadTime = 0;
     startExtractTime = 0;
@@ -206,9 +212,6 @@ class Uploader extends React.Component<{onDone?: (info:MediaResult)=>void; onInf
         return prePercent * this.preSize + middlePercent * this.middleSize + endPercent * this.endSize;
     }
 
-    _startTime = Math.random() * 7000 | 0;
-    _endTime = this._startTime + 50;
-
     startTime:string;
     endTime:string;
 
@@ -228,10 +231,10 @@ class Uploader extends React.Component<{onDone?: (info:MediaResult)=>void; onInf
                     <div>
                         {this.fileSelected ?
                         <div>
-                            <input value={this.secToTime(this._startTime)}
+                            <input value={this.secToTime(this.props.startTime)}
                                    ref={d => this.startTime = (React.findDOMNode(d) as HTMLInputElement).value}
                                    type="text"/>
-                            <input value={this.secToTime(this._endTime)}
+                            <input value={this.secToTime(this.props.endTime)}
                                    ref={d => this.endTime = (React.findDOMNode(d) as HTMLInputElement).value}
                                    type="text"/>
                             <button onClick={()=>this.send()}>Submit</button>
@@ -244,7 +247,14 @@ class Uploader extends React.Component<{onDone?: (info:MediaResult)=>void; onInf
     }
 }
 
-class SelectMedia extends React.Component<{type: MediaType; onChange: (val:string)=>void; items: TrackInfo[]; label: string},{}> {
+class SelectMedia extends React.Component<{
+    type: MediaType;
+    onChange: (val:string)=>void;
+    items: TrackInfo[];
+    label: string;
+    startTime: number;
+    endTime: number;
+},{}> {
     selected = this.props.items.length ? this.props.items[0] : null;
 
     onChange(item:TrackInfo) {
@@ -279,7 +289,7 @@ class SelectMedia extends React.Component<{type: MediaType; onChange: (val:strin
             </div>)}
             <div>
                 {this.uploadItems.length ? null :
-                <Uploader onDone={this.onDone}/>}
+                <Uploader startTime={this.props.startTime} endTime={this.props.endTime} onDone={this.onDone}/>}
             </div>
         </div>
     }
@@ -316,21 +326,28 @@ class Main extends React.Component<{params: any, resolved: any},{}> {
         return items.filter(item => !item.lang || item.lang == lang);
     }
 
+    _startTime = Math.random() * 7000 | 0;
+    _endTime = this._startTime + 50;
+
     render() {
         return <div>
             {this.res ?
             <div>
                 <form onSubmit={this.onSubmit}>
                     <SelectMedia type={MediaType.AUDIO} label="En Audio"
+                                 startTime={this._startTime} endTime={this._endTime}
                                  onChange={val => this.form.enAudio = val}
                                  items={this.filterLang(this.res.audio, 'eng')}/>
                     <SelectMedia type={MediaType.AUDIO} label="Ru Audio"
+                                 startTime={this._startTime} endTime={this._endTime}
                                  onChange={val => this.form.ruAudio = val}
                                  items={this.filterLang(this.res.audio, 'rus')}/>
                     <SelectMedia type={MediaType.SUBS} label="En Subs"
+                                 startTime={this._startTime} endTime={this._endTime}
                                  onChange={val => this.form.enSub = val}
                                  items={this.filterLang(this.res.subs, 'eng')}/>
                     <SelectMedia type={MediaType.SUBS} label="Ru Subs"
+                                 startTime={this._startTime} endTime={this._endTime}
                                  onChange={val => this.form.ruSub = val}
                                  items={this.filterLang(this.res.subs, 'rus')}/>
                     <div>
@@ -339,7 +356,7 @@ class Main extends React.Component<{params: any, resolved: any},{}> {
                 </form>
             </div>
                 :
-            <Uploader onDone={this.videoDone}/>
+            <Uploader startTime={this._startTime} endTime={this._endTime} onDone={this.videoDone}/>
                 }
         </div>
     }

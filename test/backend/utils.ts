@@ -11,7 +11,7 @@ export async function exec(exec:string, params?:{maxBuffer?: number, timeout?: n
     return await (new Promise<string>((resolve, reject) => {
         Exec(exec, params,
             (err:Error, stdout:Buffer, stderr:Buffer) =>
-                err ? reject(err) : resolve(stdout.toString() + stderr.toString()));
+                err ? reject(exec + '\n' + err) : resolve(stdout.toString() + stderr.toString()));
     }));
 }
 
@@ -27,7 +27,7 @@ export async function spawn(exec:string, callback?:(output:string, cp?:ChildProc
         };
         cp.stdout.on('data', handler);
         cp.stderr.on('data', handler);
-        cp.on('error', reject);
+        cp.on('error', (err:Error)=>reject(exec + '\n' + err));
         cp.on('close', (code:number) => {
             resolve(stdout);
         });

@@ -53,22 +53,28 @@ export class Session {
         this.filename = data.filename;
         this.fileExt = data.filename.split('.').pop();
         this.folder = config.dir + this.sid + '/';
-        this.inputFile = this.folder + 'input.' + this.fileExt;
         this.startTime = this.timeToSec(data.startTime);
         this.duration = this.timeToSec(data.endTime) - this.startTime;
 
+        let ext = '';
         if (this.fileExt.match(/^(avi|mp4|m4v|mkv|webm|flv|wmv|mpg)$/i)) {
+            //todo: check all
+            ext = this.fileExt;
             this.isVideo = true;
         }
         else if (this.fileExt.match(/^(mp3|m4a|ac3|aac|ogg|wav|wma|webm|flac)$/i)) {
+            //todo: check all
+            ext = 'm4a'
             this.isAudio = true;
         }
-        else if (this.fileExt.match(/^(srt|sub)$/i)) {
+        else if (this.fileExt.match(/^(srt|sub|ass)$/i)) {
+            ext = 'ass';
             this.isSub = true;
         }
         else {
             console.error('Ext is not recognized');
         }
+        this.inputFile = this.folder + 'input.' + ext;
         console.log(data);
         mkdirSync(this.folder);
     }
@@ -87,7 +93,7 @@ export class Session {
         var s = await exec('ffmpeg -y -i ' + this.inputFile + ' ' +
             this.track.streams.map(track => {
                 var audioParams = track.type == MediaType.AUDIO ? ` -vn -sn -c:a libfdk_aac -profile:a aac_he_v2 -ac 2 -b:a 32k ${track.channels > 2 ? `-map_channel 0.${track.n}.2` : ''}` : '';
-                return '-c copy -map 0:' + track.n + audioParams + ' ' + this.streamsMeta[track.n].file;
+                return '-vcodec copy -acodec copy -map 0:' + track.n + audioParams + ' ' + this.streamsMeta[track.n].file;
             }).join(' '));
         var m = s.match(/Duration: [\d:.]+, start: ([\d.]+)/);
 
@@ -150,7 +156,7 @@ export class Session {
                         ext = 'aac';
                     }
                     else if (stream.type == MediaType.SUBS) {
-                        ext = 'srt';
+                        ext = 'ass';
                     }
                     this.streamsMeta[i] = {
                         id: genId(),
@@ -164,7 +170,7 @@ export class Session {
         }
     }
 
-    parseTime(data: string){
+    parseTime(data:string) {
         var t:string[] = data.match(/time=(-?)(\d+):(\d+):(\d+\.\d+)/) || [];
         var time = (t[1] ? -1 : 1) * (+t[2] * 3600 + +t[3] * 60 + +t[4]);
         if (time >= 0) {
@@ -187,7 +193,7 @@ export class Session {
         //console.log("startFFmpeg");
         return co(async () => {
             try {
-                await spawn(`ffmpeg -y -ss ${this.startTime} -i http://localhost:1338/${this.sid} -c copy -map 0 ${this.inputFile}`,
+                await spawn(`ffmpeg -y -ss ${this.startTime} -i http://localhost:1338/${this.sid} -t ${this.duration + 20} -vcodec copy -acodec copy -map 0 ${this.inputFile}`,
                     (data, cp) => {
                         this.stdout += data;
                         this.getMediaInfo();

@@ -6,7 +6,7 @@ export class SubRow {
     text:string;
 }
 
-export function parseSubtitles(subtitleText:string, shift: number) {
+export function parseSrtSubtitles(subtitleText:string, shift:number) {
     var re = /\d+\s+(-?)(\d{2}):(\d{2}):(\d{2})[,.](\d{3}) --> (-?)(\d{2}):(\d{2}):(\d{2})[,.](\d{3})\s+([\S\s]*?)(?=\d+\s+-?\d{2}:\d{2}:\d{2}|$)/g;
     var res:string[];
     var lines:SubRow[] = [];
@@ -15,6 +15,21 @@ export function parseSubtitles(subtitleText:string, shift: number) {
         var end = (res[6] ? -1 : 1) * (+res[7] * 360000 + +res[8] * 6000 + +res[9] * 100 + +res[10] / 10 | 0) - shift * 100;
         var duration = end - start;
         var text = res[11].trim();
+        lines.push({start, duration, text});
+    }
+    return lines;
+}
+
+export function parseSubtitles(subtitleText:string, shift:number) {
+    subtitleText = subtitleText.replace(/\\N/g, '\n');
+    var re = /^Dialogue: \d+,(-?\d+):(-?\d+):(-?\d+).(-?\d+),(-?\d+):(-?\d+):(-?\d+).(-?\d+),.*?,.*?,\d+,\d+,\d+,.*?,(.*?)$/mg;
+    var res:string[];
+    var lines:SubRow[] = [];
+    while (res = re.exec(subtitleText)) {
+        var start = (+res[1] * 360000 + +res[2] * 6000 + +res[3] * 100 + +res[4]);
+        var end = (+res[5] * 360000 + +res[6] * 6000 + +res[7] * 100 + +res[8]);
+        var duration = end - start;
+        var text = res[9].trim();
         lines.push({start, duration, text});
     }
     return lines;
