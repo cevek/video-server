@@ -262,6 +262,7 @@ class SelectMedia extends React.Component<{type: MediaType; onChange: (val:strin
     }
 
     render() {
+        //todo: show correct title if no lang and no title
         this.props.onChange(this.selected ? this.selected.id : null);
         return <div>
             <label>{this.props.label}</label>
@@ -290,7 +291,7 @@ class Main extends React.Component<{params: any, resolved: any},{}> {
     form:Post = {title: 'Hello', video: null, enAudio: null, ruAudio: null, enSub: null, ruSub: null};
     videoDone = (res:MediaResult)=> {
         this.res = res;
-        this.form.video = res.video.id;
+        this.form.video = res.video ? res.video.id : null;
         this.forceUpdate();
     };
 

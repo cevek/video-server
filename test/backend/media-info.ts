@@ -14,6 +14,7 @@ export interface MediaInfo {
     streams: Stream[];
 }
 
+//todo: what if Stream #0:1: Audio: ac3
 export function mediaInfo(stdout:string) {
     if (!stdout.match(/Stream mapping:/)) {
         return null;
