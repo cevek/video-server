@@ -50,7 +50,7 @@ class DB {
             }
             arrValues.push(arrValue);
         }
-        return `INSERT INTO \`${table}\` (${keys.map(k => `\`${k}\``).join(", ")}) VALUES (${arrValues.map(
+        return arrValues.length === 0 ? '' :  `INSERT INTO \`${table}\` (${keys.map(k => `\`${k}\``).join(", ")}) VALUES (${arrValues.map(
             v => `${v.join(", ")}`).join("), (")});`;
     }
 

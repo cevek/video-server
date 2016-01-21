@@ -93,14 +93,27 @@ export class Session {
         //todo: save extract results
         var s = await exec('ffmpeg -y -i ' + this.inputFile + ' ' +
             this.track.streams.map(track => {
-                var audioParams = track.type == MediaType.AUDIO ? ` -vn -sn -c:a libfdk_aac -profile:a aac_he_v2 -ac 2 -b:a 32k ${track.channels > 2 ? `-map_channel 0.${track.n}.2` : ''}` : '';
-                var file = track.type == MediaType.VIDEO ? this.streamsMeta[track.n].tempFile : this.streamsMeta[track.n].file;
-                return '-vcodec copy -acodec copy -map 0:' + track.n + audioParams + ' ' + file;
+                let params = '';
+                let file = this.streamsMeta[track.n].file;
+                switch(track.type) {
+                    case MediaType.VIDEO:
+                        params = `-an -sn -metadata:s:v:0 rotate=180`;
+                        //file = this.streamsMeta[track.n].tempFile;
+                        break;
+                    case MediaType.AUDIO:
+                        params = `-vn -sn -c:a libfdk_aac -profile:a aac_he_v2 -ac 2 -b:a 32k ${track.channels > 2 ? `-map_channel 0.${track.n}.2` : ''}`;
+                        break;
+                    case MediaType.SUBS:
+                        params = `-vn -an`;
+                        break;
+                }
+                return '-c copy -map 0:' + track.n + ' ' + params + ' ' + file;
             }).join(' '));
         var m = s.match(/Duration: [\d:.]+, start: ([\d.]+)/);
 
         if (this.isVideo) {
-            await exec(`mencoder -fps 12 -o ${this.streamsMeta[0].file} -ovc copy -nosound ${this.streamsMeta[0].tempFile}`);
+            await exec(`mencoder -speed 1 -o ${this.streamsMeta[0].tempFile} -ovc copy -nosound ${this.streamsMeta[0].file}`);
+            await exec(`ffmpeg -i ${this.streamsMeta[0].tempFile} -c copy -an -sn -metadata:s:v:0 rotate=90 -y ${this.streamsMeta[0].file}`);
         }
 
         if (m) {

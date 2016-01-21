@@ -20,7 +20,7 @@ export function parseSrtSubtitles(subtitleText:string, shift:number) {
     return lines;
 }
 
-export function parseSubtitles(subtitleText:string, shift:number) {
+export function parseSubtitles(subtitleText:string) {
     subtitleText = subtitleText.replace(/\\N/g, '\n');
     var re = /^Dialogue: \d+,(-?\d+):(-?\d+):(-?\d+).(-?\d+),(-?\d+):(-?\d+):(-?\d+).(-?\d+),.*?,.*?,\d+,\d+,\d+,.*?,(.*?)$/mg;
     var res:string[];

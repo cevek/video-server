@@ -17,14 +17,16 @@ import {mediaFilesDAO} from "../models/media-file";
 import {MediaType} from "../interfaces/media-types";
 
 export async function createPost(post:Post) {
-    var enFile = await mediaFilesDAO.findById(post.enSub);
-    var ruFile = await mediaFilesDAO.findById(post.ruSub);
-
     //todo: need validate
-    var enSub = readFileSync(enFile.filename).toString();
-    var ruSub = readFileSync(ruFile.filename).toString();
-    var subtitlesShift = JSON.parse(enFile.info).subtitlesShift || 0;
-    var subtitleSync = new SubtitleSync(parseSubtitles(enSub, subtitlesShift), parseSubtitles(ruSub, subtitlesShift));
+    var enSub = '', ruSub = '';
+
+    if (post.enSub && post.ruSub) {
+        var enFile = await mediaFilesDAO.findById(post.enSub);
+        var ruFile = await mediaFilesDAO.findById(post.ruSub);
+        var enSub = readFileSync(enFile.filename).toString();
+        var ruSub = readFileSync(ruFile.filename).toString();
+    }
+    var subtitleSync = new SubtitleSync(parseSubtitles(enSub), parseSubtitles(ruSub));
     var mergeLines = subtitleSync.merge();
     await db.transaction(async (trx) => {
         post.id = genId();

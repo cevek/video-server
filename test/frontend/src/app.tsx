@@ -363,8 +363,12 @@ class Main extends React.Component<{params: any, resolved: any},{}> {
 }
 
 class Viewer extends React.Component<{params: any, resolved: IGetPost}, {}> {
-    currentTime:number;
+    currentTime:number = 0;
+    duration:number = 0;
     videoWrapper:Element;
+    ytReady = false;
+    isPlaying = false;
+    player:any;
 
     static load(params:any):Promise<IGetPost> {
         console.log(params);
@@ -379,36 +383,29 @@ class Viewer extends React.Component<{params: any, resolved: IGetPost}, {}> {
         div.id = Math.random().toString();
         this.videoWrapper.appendChild(div);
         YTReady.then(() => {
-            var player = new YT.Player(div.id, {
-                height: '390',
-                width: '640',
+            this.player = new YT.Player(div.id, {
+                height: '640',
+                width: '390',
                 videoId: videoId,
-                p1layerVars: {'autoplay': 1, 'controls': 0, iv_load_policy: 3, modestbranding: 1, rel: 0, showinfo: 0},
+                playerVars: {'autoplay': 1, 'controls': 0, iv_load_policy: 3, modestbranding: 1, rel: 0, showinfo: 0},
                 events: {
                     'onReady': (event:any) => {
-                        event.target.playVideo();
+                        //event.target.playVideo();
+                        this.duration = this.player.getDuration();
+                        this.ytReady = true;
+                        this.forceUpdate();
                         setInterval(() => {
-                            this.currentTime = player.getCurrentTime();
+                            this.currentTime = this.player.getCurrentTime();
                             console.log(this.currentTime);
                             this.forceUpdate();
                         }, 100);
                     },
-                    'onStateChange': onPlayerStateChange
+                    'onStateChange': (event:any) => {
+                        this.isPlaying = event.data === YT.PlayerState.PLAYING;
+                        this.forceUpdate();
+                    }
                 }
             });
-
-            var done = false;
-
-            function onPlayerStateChange(event:any) {
-                if (event.data == YT.PlayerState.PLAYING && !done) {
-                    //setTimeout(stopVideo, 6000);
-                    done = true;
-                }
-            }
-
-            function stopVideo() {
-                player.stopVideo();
-            }
         });
     }
 
@@ -422,10 +419,25 @@ class Viewer extends React.Component<{params: any, resolved: IGetPost}, {}> {
     }
 
     render() {
+        console.log(this.currentTime, this.duration);
+
         var data = this.props.resolved;
         return <div>
             {this.currentTime}
-            <div ref={d => this.videoWrapper = React.findDOMNode(d)} className="video"></div>
+            <div ref={d => this.videoWrapper = React.findDOMNode(d)} className="video">
+                <div className="overlay"></div>
+            </div>
+            {this.ytReady ?
+            <div className="controls">
+                {this.isPlaying ?
+                <button onClick={()=>this.player.pauseVideo()}>Stop</button>
+                    :
+                <button onClick={()=>this.player.playVideo()}>Play</button>
+                    }
+            </div> : null}
+            <div>
+                <meter value={this.currentTime + ''} max={this.duration + ''}/>
+            </div>
             <div className="subtitles">
                 {data.lines.map(line => <div className={classNames("line", {selected: this.isSelected(line)})}>
                     <div className="en">{line.en ? data.textLines[line.en].text : ''}</div>
