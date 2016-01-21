@@ -5,8 +5,8 @@ var tokens = JSON.parse(readFileSync(__dirname + '/tokens.json').toString());
 oauth.setCredentials(tokens);
 
 //todo: need timeout
-export function upload(title:string, filename:string) {
-    return yt.videos.insertAsync({
+export async function upload(title:string, filename:string) {
+    return await (yt.videos.insertAsync({
         resource: {
             snippet: {
                 title: title,
@@ -20,5 +20,5 @@ export function upload(title:string, filename:string) {
         media: {
             body: createReadStream(filename)
         }
-    }).then((data:{id:string}) => data.id);
+    }).then((data:{id:string}) => data.id));
 }

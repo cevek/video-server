@@ -32,7 +32,7 @@ export class Session {
     folder:string;
     inputFile:string;
     track:MediaInfo;
-    streamsMeta:{id: string; url: string; file: string}[] = [];
+    streamsMeta:{id: string; url: string; file: string; tempFile: string}[] = [];
     duration:number;
     startTime:number;
     subtitlesShift:number;
@@ -90,12 +90,18 @@ export class Session {
 
     async extract() {
         console.log("Extract");
+        //todo: save extract results
         var s = await exec('ffmpeg -y -i ' + this.inputFile + ' ' +
             this.track.streams.map(track => {
                 var audioParams = track.type == MediaType.AUDIO ? ` -vn -sn -c:a libfdk_aac -profile:a aac_he_v2 -ac 2 -b:a 32k ${track.channels > 2 ? `-map_channel 0.${track.n}.2` : ''}` : '';
-                return '-vcodec copy -acodec copy -map 0:' + track.n + audioParams + ' ' + this.streamsMeta[track.n].file;
+                var file = track.type == MediaType.VIDEO ? this.streamsMeta[track.n].tempFile : this.streamsMeta[track.n].file;
+                return '-vcodec copy -acodec copy -map 0:' + track.n + audioParams + ' ' + file;
             }).join(' '));
         var m = s.match(/Duration: [\d:.]+, start: ([\d.]+)/);
+
+        if (this.isVideo) {
+            await exec(`mencoder -fps 12 -o ${this.streamsMeta[0].file} -ovc copy -nosound ${this.streamsMeta[0].tempFile}`);
+        }
 
         if (m) {
             this.subtitlesShift = +m[1];
@@ -161,6 +167,7 @@ export class Session {
                     this.streamsMeta[i] = {
                         id: genId(),
                         file: this.folder + stream.n + '.' + ext,
+                        tempFile: this.folder + stream.n + '_tmp.' + ext,
                         url: this.sid + '/' + stream.n + '.' + ext
                     };
                 }
@@ -234,13 +241,12 @@ export class Session {
                 //todo: parallel
 
                 var res = await ([
-                    this.isVideo ? upload(this.sid, this.inputFile) : null,
                     this.isVideo ? this.extractThumbs() : null,
                     this.extract()
                 ]);
 
                 if (this.isVideo) {
-                    var ytLink = res[0];
+                    var ytLink = await upload(this.sid, this.streamsMeta[0].file);
                     var youtube = this.youtubeLink(ytLink);
                     writeFileSync(this.folder + 'youtube.txt', youtube);
                 }
