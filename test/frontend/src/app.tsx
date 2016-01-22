@@ -10,69 +10,10 @@ import {Post} from '../../backend/interfaces/post';
 import {Line} from '../../backend/interfaces/line';
 import {MediaType} from '../../backend/interfaces/media-types';
 declare var io:(url:string)=>Socket;
-declare var YT:{
-    Player: new (name:any, params:any)=>YTPlayer;
-    PlayerState: typeof PlayerState;
-};
 declare var YTReady:Promise<{}>;
 interface Socket {
     emit: (m:string, data:any, callback:(...args:any[])=>void)=>void;
     on: (m:string, data:any)=>void;
-}
-interface YTPlayer {
-    playVideo():void;
-    pauseVideo():void;
-    stopVideo():void;
-    clearVideo():void;
-    nextVideo():void;
-    previousVideo():void;
-    playVideoAt(index:number):void;
-
-    setVolume(volume:number):void;
-    getVolume():number;
-    mute():void;
-    unMute():void;
-    isMuted():boolean;
-
-    setSize(width:number, height:number):void;
-
-    getPlaybackRate():number;
-    setPlaybackRate(suggestedRate:number):void;
-    getAvailablePlaybackRates():number[];
-
-    setLoop(loopPlaylists:boolean):void;
-    setShuffle(shufflePlaylist:boolean):void;
-
-    getVideoLoadedFraction():number;
-    getPlayerState():PlayerState;
-    getCurrentTime():number;
-
-    getPlaybackQuality():quality;
-    setPlaybackQuality(suggestedQuality:quality|'default'):void;
-    getAvailableQualityLevels():quality[];
-
-    getDuration():number;
-    getVideoUrl():string;
-    getVideoEmbedCode():string;
-    getPlaylist():string[];
-    getPlaylistIndex():number;
-
-    addEventListener(event:string, listener:string):void;
-    removeEventListener(event:string, listener:string):void
-    getIframe():HTMLElement;
-    destroy():void;
-
-    seekTo(seconds:number, allowSeekAhead:boolean):void;
-}
-
-type quality = 'small' | 'medium' | 'large' | 'hd720' | 'hd1080' | 'highres';
-
-enum PlayerState{
-    ENDED,
-    PLAYING,
-    PAUSED,
-    BUFFERING,
-    CUED
 }
 
 interface MediaResult {
