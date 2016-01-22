@@ -10,11 +10,69 @@ import {Post} from '../../backend/interfaces/post';
 import {Line} from '../../backend/interfaces/line';
 import {MediaType} from '../../backend/interfaces/media-types';
 declare var io:(url:string)=>Socket;
-declare var YT:any;
+declare var YT:{
+    Player: new (name:any, params:any)=>YTPlayer;
+    PlayerState: typeof PlayerState;
+};
 declare var YTReady:Promise<{}>;
 interface Socket {
     emit: (m:string, data:any, callback:(...args:any[])=>void)=>void;
     on: (m:string, data:any)=>void;
+}
+interface YTPlayer {
+    playVideo():void;
+    pauseVideo():void;
+    stopVideo():void;
+    clearVideo():void;
+    nextVideo():void;
+    previousVideo():void;
+    playVideoAt(index:number):void;
+
+    setVolume(volume:number):void;
+    getVolume():number;
+    mute():void;
+    unMute():void;
+    isMuted():boolean;
+
+    setSize(width:number, height:number):void;
+
+    getPlaybackRate():number;
+    setPlaybackRate(suggestedRate:number):void;
+    getAvailablePlaybackRates():number[];
+
+    setLoop(loopPlaylists:boolean):void;
+    setShuffle(shufflePlaylist:boolean):void;
+
+    getVideoLoadedFraction():number;
+    getPlayerState():PlayerState;
+    getCurrentTime():number;
+
+    getPlaybackQuality():quality;
+    setPlaybackQuality(suggestedQuality:quality|'default'):void;
+    getAvailableQualityLevels():quality[];
+
+    getDuration():number;
+    getVideoUrl():string;
+    getVideoEmbedCode():string;
+    getPlaylist():string[];
+    getPlaylistIndex():number;
+
+    addEventListener(event:string, listener:string):void;
+    removeEventListener(event:string, listener:string):void
+    getIframe():HTMLElement;
+    destroy():void;
+
+    seekTo(seconds:number, allowSeekAhead:boolean):void;
+}
+
+type quality = 'small' | 'medium' | 'large' | 'hd720' | 'hd1080' | 'highres';
+
+enum PlayerState{
+    ENDED,
+    PLAYING,
+    PAUSED,
+    BUFFERING,
+    CUED
 }
 
 interface MediaResult {
@@ -367,6 +425,8 @@ class Viewer extends React.Component<{params: any, resolved: IGetPost}, {}> {
     duration:number = 0;
     videoWrapper:Element;
     ytReady = false;
+    isStarted = false;
+    isEnded = false;
     isPlaying = false;
     player:any;
 
@@ -387,7 +447,7 @@ class Viewer extends React.Component<{params: any, resolved: IGetPost}, {}> {
                 height: '640',
                 width: '390',
                 videoId: videoId,
-                playerVars: {'autoplay': 1, 'controls': 0, iv_load_policy: 3, modestbranding: 1, rel: 0, showinfo: 0},
+                playerVars: {'a1utoplay': 1, 'controls': 0, iv_load_policy: 3, modestbranding: 1, rel: 0, showinfo: 0},
                 events: {
                     'onReady': (event:any) => {
                         //event.target.playVideo();
@@ -401,7 +461,14 @@ class Viewer extends React.Component<{params: any, resolved: IGetPost}, {}> {
                         }, 100);
                     },
                     'onStateChange': (event:any) => {
-                        this.isPlaying = event.data === YT.PlayerState.PLAYING;
+                        this.isPlaying = false;
+                        if (event.data == YT.PlayerState.ENDED) {
+                            this.isEnded = true;
+                        }
+                        if (event.data == YT.PlayerState.PLAYING) {
+                            this.isStarted = true;
+                            this.isPlaying = true;
+                        }
                         this.forceUpdate();
                     }
                 }
@@ -426,6 +493,8 @@ class Viewer extends React.Component<{params: any, resolved: IGetPost}, {}> {
             {this.currentTime}
             <div ref={d => this.videoWrapper = React.findDOMNode(d)} className="video">
                 <div className="overlay"></div>
+                {!this.isStarted || this.isEnded ?
+                <div className="cover"></div>: null}
             </div>
             {this.ytReady ?
             <div className="controls">
