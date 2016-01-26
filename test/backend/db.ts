@@ -19,13 +19,17 @@ class DB {
     async query<T>(query:string, params?:Params, trx?:Transaction) {
         var connection = trx ? trx.connection : await db.getConnection();
         var res = await (new Promise<T>((resolve, reject)=> {
-            var q = connection.query(query, params, (err:Error, rows:T) => {
-                if (err) {
-                    err.message = err.message + '\n' + q.sql;
-                    return reject(err);
-                }
-                resolve(rows);
-            });
+            if (query) {
+                var q = connection.query(query, params, (err:Error, rows:T) => {
+                    if (err) {
+                        err.message = err.message + '\n' + q.sql;
+                        return reject(err);
+                    }
+                    resolve(rows);
+                });
+            } else {
+                resolve(null);
+            }
         }));
         if (!trx) {
             connection.release();
@@ -50,7 +54,8 @@ class DB {
             }
             arrValues.push(arrValue);
         }
-        return arrValues.length === 0 ? '' :  `INSERT INTO \`${table}\` (${keys.map(k => `\`${k}\``).join(", ")}) VALUES (${arrValues.map(
+        return arrValues.length === 0 ? '' : `INSERT INTO \`${table}\` (${keys.map(
+            k => `\`${k}\``).join(", ")}) VALUES (${arrValues.map(
             v => `${v.join(", ")}`).join("), (")});`;
     }
 

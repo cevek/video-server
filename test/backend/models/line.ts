@@ -1,3 +1,5 @@
+"use strict";
+
 import {db} from "../db";
 import {BaseModel} from "./base";
 import {Line} from "../interfaces/line";

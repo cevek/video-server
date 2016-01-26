@@ -1,3 +1,5 @@
+"use strict";
+
 import {db} from "../db";
 import {Transaction} from "../db";
 export class BaseModel<T> {

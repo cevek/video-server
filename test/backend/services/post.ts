@@ -1,5 +1,5 @@
-import {Post} from "../interfaces/post";
 "use strict";
+import {Post} from "../interfaces/post";
 
 import {db} from "../db";
 import {parseSubtitles} from "./subtitle";

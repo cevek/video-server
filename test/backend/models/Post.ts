@@ -1,3 +1,5 @@
+"use strict";
+
 import {db} from "../db";
 import {BaseModel} from "./base";
 import {Transaction} from "../db";

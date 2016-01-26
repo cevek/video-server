@@ -4,7 +4,7 @@ import {TextLine} from "./text-line";
 import {MediaFile} from "./media-file";
 export interface IGetPost {
     post: Post;
-    lines: Line[],
+    lines: Line[];
     textLines: {[id: string]: TextLine}
     mediaFiles: {[id: string]: MediaFile}
 }
