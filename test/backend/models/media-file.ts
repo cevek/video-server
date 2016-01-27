@@ -1,7 +1,7 @@
 "use strict";
 
 import {db} from "../db";
-import {MediaFile} from "../interfaces/media-file";
+import {MediaFile} from "../../interfaces/media-file";
 import {BaseModel} from "./base";
 
 class MediaFilesDAO extends BaseModel<MediaFile> {

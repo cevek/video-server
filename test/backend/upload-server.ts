@@ -9,6 +9,7 @@ io.on('connection', socket => {
         if (session) {
             session.startFFmpeg();
             callback(session.sid);
+            console.log("AFS");
         }
         else {
             callback('');

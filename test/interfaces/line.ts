@@ -1,4 +1,4 @@
-export interface Line {
+export interface ILine {
     id?: string;
     ru?: string;
     en?: string;

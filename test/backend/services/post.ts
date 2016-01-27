@@ -1,5 +1,5 @@
 "use strict";
-import {Post} from "../interfaces/post";
+import {Post} from "../../interfaces/post";
 
 import {db} from "../db";
 import {parseSubtitles} from "./subtitle";
@@ -10,11 +10,11 @@ import {linesDAO} from "../models/line";
 import {postDAO} from "../models/post";
 import {readFileSync} from "fs";
 import {getFileName} from "./file";
-import {TextLine} from "../interfaces/text-line";
-import {Line} from "../interfaces/line";
+import {ITextLine} from "../../interfaces/text-line";
+import {ILine} from "../../interfaces/line";
 import {uploadsDAO} from "../models/upload";
 import {mediaFilesDAO} from "../models/media-file";
-import {MediaType} from "../interfaces/media-types";
+import {MediaType} from "../../interfaces/media-types";
 
 export async function createPost(post:Post) {
     //todo: need validate
@@ -30,11 +30,11 @@ export async function createPost(post:Post) {
     var mergeLines = subtitleSync.merge();
     await db.transaction(async (trx) => {
         post.id = genId();
-        var textLines:TextLine[] = [];
-        var lines:Line[] = [];
+        var textLines:ITextLine[] = [];
+        var lines:ILine[] = [];
         for (var i = 0; i < mergeLines.length; i++) {
             var mergeLine = mergeLines[i];
-            var line:Line = {id: genId(), postId: post.id, seq: i};
+            var line:ILine = {id: genId(), postId: post.id, seq: i};
             for (var j = 0; j < mergeLine.length; j++) {
                 var ln = mergeLine[j];
                 //todo: why may null

@@ -2,8 +2,8 @@
 
 import {db} from "../db";
 import {BaseModel} from "./base";
-import {Line} from "../interfaces/line";
-export class LinesDAO extends BaseModel<Line> {
+import {ILine} from "../../interfaces/line";
+export class LinesDAO extends BaseModel<ILine> {
     table = 'lines';
 }
 export var linesDAO = new LinesDAO();

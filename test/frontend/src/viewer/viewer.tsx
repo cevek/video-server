@@ -1,9 +1,9 @@
 import './viewer.css';
 import * as React from 'react';
 
-import {PostModel} from "./../post";
-import {Line} from "../../../backend/interfaces/line";
-import {IGetPost} from "../../../backend/interfaces/transport";
+import {PostModel} from "./../models/post";
+import {ILine} from "../../../interfaces/line";
+import {IGetPost} from "../../../interfaces/transport";
 export class Viewer extends React.Component<{params: any, resolved: PostModel}, {}> {
     currentTime:number = 0;
     duration:number = 0;
@@ -58,7 +58,7 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
         });
     }
 
-    isSelected(line:Line) {
+    isSelected(line:ILine) {
         var data = this.props.resolved.data;
         if (line.en) {
             var textLine = data.textLines[line.en];

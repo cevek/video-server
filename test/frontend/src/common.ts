@@ -1,2 +1,2 @@
-export * from '../../backend/interfaces/transport';
-export * from '../../backend/interfaces/line';
+export * from '../../interfaces/transport';
+export * from '../../interfaces/line';

@@ -14,8 +14,8 @@
     "fast-react": "^1.0.4",
     "fast-react-loader": "^1.0.0",
     "style-loader": "^0.13.0",
-    "ts-loader": "^0.7.0",
-    "typescript": "^1.6.2",
+    "ts-loader": "^0.7.2",
+    "typescript": "^1.9.0-dev.20160127",
     "webpack": "^1.12.3"
   }
 }

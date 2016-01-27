@@ -1,8 +1,8 @@
-import {IGetPost} from "./interfaces/transport";
+import {IGetPost} from "../interfaces/transport";
 'use strict';
 import {toMap} from "./utils";
 import {config} from "./config";
-import {Post} from "./interfaces/post";
+import {Post} from "../interfaces/post";
 import {createPost} from "./services/post";
 import {postDAO} from "./models/post";
 import {db} from './db';

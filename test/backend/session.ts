@@ -11,11 +11,11 @@ import {exec} from "./utils";
 import {spawn} from "./utils";
 import {db} from "./db";
 import {mediaFilesDAO} from "./models/media-file";
-import {Upload} from "./interfaces/upload";
-import {TrackInfo} from "./interfaces/track-info";
+import {Upload} from "../interfaces/upload";
+import {TrackInfo} from "../interfaces/track-info";
 import {genId} from "./utils";
-import {MediaFile} from "./interfaces/media-file";
-import {MediaType} from "./interfaces/media-types";
+import {MediaFile} from "../interfaces/media-file";
+import {MediaType} from "../interfaces/media-types";
 
 //import {spawn} from 'child_process';
 

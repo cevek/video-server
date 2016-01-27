@@ -1,9 +1,9 @@
 import './upload.css';
 import * as React from 'react';
-import {uploadRoute, postRoute, editorRoute} from "./../routes";
-import {TrackInfo} from '../../../backend/interfaces/track-info';
-import {Post} from '../../../backend/interfaces/post';
-import {MediaType} from '../../../backend/interfaces/media-types';
+import {TrackInfo} from '../../../interfaces/track-info';
+import {Post} from '../../../interfaces/post';
+import {MediaType} from '../../../interfaces/media-types';
+import {editorRoute} from "../routes";
 
 interface MediaResult {
     video: TrackInfo;
@@ -43,7 +43,7 @@ export class Upload extends React.Component<{params: any, resolved: any},{}> {
             body: JSON.stringify(this.form)
         }).then(data => data.json()).then(data => {
             //this.postId = data.data;
-            postRoute.goto({id: data.data})
+            editorRoute.goto({id: data.data})
             this.forceUpdate();
             console.log('Success');
         });

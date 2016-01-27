@@ -1,6 +1,6 @@
 "use strict";
 
-import {Upload} from "../interfaces/upload";
+import {Upload} from "../../interfaces/upload";
 import {db} from "../db";
 import {BaseModel} from "./base";
 

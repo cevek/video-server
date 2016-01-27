@@ -1,4 +1,4 @@
-export interface TextLine {
+export interface ITextLine {
     id?: string;
     lang?: number;
     start?: number;
