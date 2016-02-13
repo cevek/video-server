@@ -6,6 +6,7 @@
     "jsx": "react",
     "noLib": true,
     "noImplicitAny": true,
+    "experimentalDecorators": true,
     "sourceMap": true
   },
   "exclude": [

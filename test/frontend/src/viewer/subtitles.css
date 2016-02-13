@@ -1,0 +1,17 @@
+.ln{
+    position: absolute;
+    margin-left: 50px;
+    border: 1px solid black;
+    font-size: 8px;
+    height: 30px;
+    transform: translate(0, -50%);
+}
+.ln-real{
+    position: absolute;
+    border-top: 1px solid black;
+    font-size: 8px;
+}
+
+.render{
+    position: fixed;
+}

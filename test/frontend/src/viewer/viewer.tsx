@@ -1,9 +1,11 @@
 import './viewer.css';
 import * as React from 'react';
+import * as classNames from 'classnames';
 
 import {PostModel} from "./../models/post";
 import {ILine} from "../../../interfaces/line";
 import {IGetPost} from "../../../interfaces/transport";
+import {Subtitles} from "./subtitles";
 export class Viewer extends React.Component<{params: any, resolved: PostModel}, {}> {
     currentTime:number = 0;
     duration:number = 0;
@@ -72,6 +74,7 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
 
         var data = this.props.resolved.data;
         return <div>
+            <Subtitles/>
             {this.currentTime}
             <div ref={d => this.videoWrapper = React.findDOMNode(d)} className="video">
                 <div className="overlay"></div>

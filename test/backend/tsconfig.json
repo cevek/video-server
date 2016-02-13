@@ -5,6 +5,8 @@
     "noImplicitAny": true,
     "outDir": "built",
     "noEmitHelpers": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "sourceMap": true
   },
   "exclude": [

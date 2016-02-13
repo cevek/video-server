@@ -1,8 +1,8 @@
 "use strict";
 import "./app.css";
+import * as React from 'react';
 import {Index} from "./index/index";
 import {Editor} from "./editor/editor";
-import * as React from 'react';
 import {Router} from "./Router";
 import {uploadRoute, postRoute, editorRoute, indexRoute} from "./routes";
 import {Viewer} from "./viewer/viewer";
