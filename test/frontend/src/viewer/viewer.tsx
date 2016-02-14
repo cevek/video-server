@@ -20,7 +20,7 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
         return PostModel.fetch(params.id);
     }
 
-    componentDidMount() {
+    c1omponentDidMount() {
         var data = this.props.resolved.data;
         var videoId = data.mediaFiles[data.post.video].url.split('=').pop();
         var div = document.createElement('div');
@@ -70,7 +70,7 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
     }
 
     render() {
-        console.log(this.currentTime, this.duration);
+        // console.log(this.currentTime, this.duration);
 
         var data = this.props.resolved.data;
         return <div>

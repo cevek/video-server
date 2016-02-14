@@ -9,12 +9,22 @@ class Line {
 }
 const lineH = 30;
 const height = 1;
-const debug = false;
+const debug = true;
 export class Subtitles extends React.Component<{}, {}> {
     lines:Line[] = [];
 
     calc() {
-        const ab = [0, 10, 20, 30, 40, 110, 120, 130, 360, 370, 380, 390, 400, 510, 520, 530, 540, 550, 560, 570, 700, 800, 910, 920, 930]
+        let ab:number[] = [];
+        // ab = [0, 10, 20, 30, 40, 110, 120, 130, 360, 370, 380, 390, 400, 510, 520, 530, 540, 550, 560, 570, 700, 800, 910, 920, 930]
+        // ab = [0, 1035, 1056, 1091, 1105, 1119, 1176, 1201, 1218, 1291]
+        // ab = [0, 100, 200, 200, 200, 200, 200, 200, 200, 200, 200];
+        let last:number;
+        for (var i = 0; i < 50; i++) {
+            let item = last + Math.random() * 70 | 0;
+            ab.push(item);
+            last = item;
+        }
+        this.lines = [];
         const lines = this.lines;
         let lastTop = -Infinity;
         for (let k = 0; k < ab.length; k++) {
@@ -29,9 +39,9 @@ export class Subtitles extends React.Component<{}, {}> {
             let groupStart = lines.length - 1;
             for (let i = lines.length - 2; i >= 0; i--) {
                 let line = lines[i];
-                const bottomSpaceSize = lastLine.renderY - line.renderY;
+                const bottomSpaceSize = (lastLine.renderY - line.renderY) - lineH;
                 // we have a space
-                if (bottomSpaceSize > lineH) {
+                if (bottomSpaceSize > 0) {
                     const needSpace = groupSum / groupSize;
                     const isNeedSpaceFit = bottomSpaceSize > needSpace;
                     const moveSize = Math.min(needSpace, bottomSpaceSize);
@@ -61,28 +71,43 @@ export class Subtitles extends React.Component<{}, {}> {
                                 lineAfterRender: line.renderY - moveSize
                             });
                         }
+                        // groupSum -= line.renderY - line.y;
                         line.renderY -= moveSize;
+                        groupSum -= moveSize;
                     }
-                    groupSum -= moveSize;
 
                     if (isNeedSpaceFit) {
+                        if (debug) {
+                            if (groupSum != 0) {
+                                console.error('break', {groupSum});
+                            }
+                            else {
+                                console.log('break', {groupSum});
+                            }
+                        }
                         break;
                     }
+                    else {
+                        if (debug) {
+                            console.log('end of group', {groupSum});
+                        }
+                    }
+
                 }
                 groupSum += line.renderY - line.y;
                 groupSize++;
                 lastLine = line;
                 if (debug) {
-                    console.log('iter', {groupSum, groupSize});
+                    console.log('iter', {groupSum, groupSize, lnRY: line.renderY, lnY: line.y});
                 }
             }
+            lastTop = line.renderY;
             if (debug) {
-                console.log('after insert', k);
+                console.log('after insert', {k, lastTop});
             }
 
             this.forceUpdate();
-
-            lastTop = line.renderY;
+            123;
         }
 
         /*
