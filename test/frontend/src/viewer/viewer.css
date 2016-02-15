@@ -1,12 +1,18 @@
 .subtitles {
-    float: right;
 }
+
 .line {
     padding: 5px 10px;
+    position: absolute;
+    height: 50px;
+    margin-top: -25px;
+    left: 50px;
 }
+
 .selected {
     background: yellow;
 }
+
 .video {
     float: left;
     transform-origin: 0 0;
@@ -14,6 +20,7 @@
     position: relative;
     margin: 80px 0;
 }
+
 .video .overlay, .video .cover {
     position: absolute;
     left: 0;
@@ -22,6 +29,11 @@
     right: 0;
     background: transparent;
 }
+
 .video .cover {
     background: skyblue;
+}
+
+svg.timeline {
+    position: absolute;
 }

@@ -6,6 +6,9 @@ import {PostModel} from "./../models/post";
 import {ILine} from "../../../interfaces/line";
 import {IGetPost} from "../../../interfaces/transport";
 import {Subtitles} from "./subtitles";
+import {LineAllocator} from "../utils/time-allocate";
+import {svgPathGenerator} from "../utils/svg-path-generator";
+import {ITextLine} from "../../../interfaces/text-line";
 export class Viewer extends React.Component<{params: any, resolved: PostModel}, {}> {
     currentTime:number = 0;
     duration:number = 0;
@@ -60,22 +63,43 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
         });
     }
 
-    isSelected(line:ILine) {
-        var data = this.props.resolved.data;
-        if (line.en) {
-            var textLine = data.textLines[line.en];
-            return ((textLine.start) / 100) <= this.currentTime && this.currentTime <= (textLine.start + textLine.dur) / 100
-        }
-        return false;
+    isSelected(textLine:ITextLine) {
+        return ((textLine.start) / 100) <= this.currentTime && this.currentTime <= (textLine.start + textLine.dur) / 100
     }
 
     render() {
         // console.log(this.currentTime, this.duration);
-
         var data = this.props.resolved.data;
+        const lines = data.lines.filter(line => Boolean(data.textLines[line.en])).map(line => {
+            return {
+                en: data.textLines[line.en],
+                ru: data.textLines[line.ru],
+            }
+        });
+
+        const resizeKoef = 4;
+        const lineH = 50;
+        const connectorWidth = 50;
+        const halfLineH = lineH / 2;
+
+        const positions = lines.map(line => (line.en.start + line.en.dur / 2) / resizeKoef);
+        const renderLines = new LineAllocator(positions, 50).allocateRenderLines();
+        const svgWidth = 100;
+        const svgHeight = Math.max(positions[positions.length - 1] + 100, renderLines[renderLines.length - 1] + halfLineH);
+
         return <div>
-            <Subtitles/>
             {this.currentTime}
+            <svg className="timeline" width={svgWidth} height={svgHeight}>
+                {renderLines.map((pos, i) => {
+                    const textLine = lines[i].en;
+                    const tl = textLine.start / resizeKoef;
+                    const bl = (textLine.start + textLine.dur) / resizeKoef;
+                    const tr = pos - halfLineH;
+                    const br = pos + halfLineH;
+                    const color = 'hsla(' + (textLine.start) + ', 50%,60%, 1)';
+                    return  <path fill={color} d={svgPathGenerator(tl, bl, tr, br, connectorWidth)}/>
+                    })}
+            </svg>
             <div ref={d => this.videoWrapper = React.findDOMNode(d)} className="video">
                 <div className="overlay"></div>
                 {!this.isStarted || this.isEnded ?
@@ -93,9 +117,11 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
                 <meter value={this.currentTime + ''} max={this.duration + ''}/>
             </div>
             <div className="subtitles">
-                {data.lines.map(line => <div className={classNames("line", {selected: this.isSelected(line)})}>
-                    <div className="en">{line.en ? data.textLines[line.en].text : ''}</div>
-                    <div className="ru">{line.ru ? data.textLines[line.ru].text : ''}</div>
+                {lines.map((line, i) =>
+                <div className={classNames("line", {selected: this.isSelected(line.en)})}
+                     style={{top: renderLines[i]}}>
+                    <div className="en">{line.en ? line.en.text : ''}</div>
+                    <div className="ru">{line.ru ? line.ru.text : ''}</div>
                 </div>)}
             </div>
         </div>

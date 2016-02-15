@@ -8,7 +8,7 @@ export function generateRandomTimestamps(count = 50) {
     }
     return ab;
 }
-const debug = true;
+const debug = false;
 // ab = [0, 10, 20, 30, 40, 110, 120, 130, 360, 370, 380, 390, 400, 510, 520, 530, 540, 550, 560, 570, 700, 800, 910, 920, 930]
 // ab = [0, 1035, 1056, 1091, 1105, 1119, 1176, 1201, 1218, 1291]
 // ab = [0, 100, 200, 200, 200, 200, 200, 200, 200, 200, 200];
@@ -17,19 +17,18 @@ const debug = true;
 export class LineAllocator {
     private render:number[];
 
-    constructor(private timestamps:number[], private secPerPx:number, private lineHeight:number) {
-
+    constructor(private positions:number[], private lineHeight:number) {
     }
 
     private moveGroup(start:number, end:number, moveSize:number) {
         for (let j = start; j <= end; j++) {
-            const y = this.render[j];
+            const renderY = this.render[j];
             if (debug) {
                 console.log('move', {
                     j,
-                    lineTop: this.timestamps[j],
-                    lineRender: y,
-                    lineAfterRender: y - moveSize
+                    lineTop: this.positions[j],
+                    lineRender: renderY,
+                    lineAfterRender: renderY - moveSize
                 });
             }
             this.render[j] -= moveSize;
@@ -38,25 +37,23 @@ export class LineAllocator {
     }
 
     private fitToUp(startPos:number) {
-        const render = this.render;
-        const timestamps = this.timestamps;
-        let lastRenderY = render[startPos];
-        let groupWeight = lastRenderY - timestamps[startPos];
+        let lastRenderY = this.render[startPos];
+        let groupWeight = lastRenderY - this.positions[startPos];
         let groupSize = 1;
         const groupEndPos = startPos;
         for (let i = startPos - 1; i >= 0; i--) {
-            const y = render[i];
-            const bottomSpaceSize = (lastRenderY - y) - this.lineHeight;
+            const y = this.positions[i];
+            const renderY = this.render[i];
+            const bottomSpaceSize = (lastRenderY - renderY) - this.lineHeight;
             // we have a space
-            const timestamp = timestamps[i];
             if (bottomSpaceSize > 0) {
                 const needSpace = groupWeight / groupSize;
                 const isNeedSpaceFit = bottomSpaceSize > needSpace;
                 const moveSize = Math.min(needSpace, bottomSpaceSize);
                 if (debug) {
                     console.log('found space', {
-                        lineTop: timestamp,
-                        lineRender: y,
+                        lineTop: y,
+                        lineRender: renderY,
                         i,
                         isNeedSpaceFit,
                         moveSize,
@@ -65,7 +62,7 @@ export class LineAllocator {
                         groupEndPos,
                         bottomSpaceSize,
                         needSpace,
-                        lines: JSON.parse(JSON.stringify(render))
+                        lines: this.render.slice()
                     });
                 }
 
@@ -74,9 +71,12 @@ export class LineAllocator {
                 }
 
                 if (isNeedSpaceFit) {
+                    if (Math.abs(groupWeight) > 1) {
+                        console.error('break', {groupWeight});
+                    }
                     if (debug) {
                         if (groupWeight != 0) {
-                            console.error('break', {groupWeight});
+                            // console.error('break', {groupWeight});
                         }
                         else {
                             console.log('break', {groupWeight});
@@ -91,29 +91,27 @@ export class LineAllocator {
                 }
 
             }
-            groupWeight += y - timestamp;
+            groupWeight += renderY - y;
             groupSize++;
-            lastRenderY = y;
+            lastRenderY = renderY;
             if (debug) {
-                console.log('iter', {groupWeight, groupSize, lnRY: y, lnY: timestamp});
+                console.log('iter', {groupWeight, groupSize, lnRY: renderY, lnY: y});
             }
         }
     }
 
     allocateRenderLines() {
-        const timestamps = this.timestamps;
-        this.render = new Array(timestamps.length);
-        const render = this.render;
+        this.render = new Array(this.positions.length);
         let lastTop = -Infinity;
-        for (let k = 0; k < timestamps.length; k++) {
-            render[k] = Math.max(timestamps[k], lastTop + this.lineHeight);
+        for (let k = 0; k < this.positions.length; k++) {
+            this.render[k] = Math.max(this.positions[k], lastTop + this.lineHeight);
             this.fitToUp(k);
-            lastTop = render[k];
+            lastTop = this.render[k];
             if (debug) {
                 console.log('after insert', {k, lastTop});
             }
         }
-        return render;
+        return this.render;
     }
 
 }
