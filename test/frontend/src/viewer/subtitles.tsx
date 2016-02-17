@@ -20,7 +20,7 @@ export class Subtitles extends React.Component<{}, {}> {
         // const timestamps = [0, 360, 370]
 
 
-        const lines = new LineAllocator(timestamps, 1, 30).allocateRenderLines();
+        const lines = new LineAllocator(timestamps, 30).allocateRenderLines();
         return <div>
             <svg></svg>
             <div className="">

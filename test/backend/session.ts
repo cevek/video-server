@@ -239,6 +239,7 @@ export class Session {
         var fld = this.folder;
         await exec(`ffmpeg -y -i ${this.inputFile} -qscale 1 -vsync 1 -r 1 ${fld}_raw%03d.jpg`);
         await exec(`convert ${fld}_raw*.jpg -thumbnail 200x100^ -auto-level -level 0,60%% -modulate 100,70 ${fld}_thumb.jpg`);
+        await exec(`montage ${fld}_thumb*.jpg  -tile 20x -geometry +0+0 -gravity north ${fld}thumbs.jpg`);
         await exec(`rm ${fld}_*.jpg`);
     }
 

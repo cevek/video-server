@@ -86,7 +86,26 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
         const renderLines = new LineAllocator(positions, 50).allocateRenderLines();
         const svgWidth = 100;
         const svgHeight = Math.max(positions[positions.length - 1] + 100, renderLines[renderLines.length - 1] + halfLineH);
+        const duration = data.mediaFiles[data.post.video].duration;
+        const durationY = duration * 100 / resizeKoef;
+        console.log(durationY);
 
+
+        const thumbImg = `http://localhost:1335/` + data.mediaFiles[data.post.thumbs].url;
+        const thumbWidth = 200;
+        const thumbHeight = 100;
+        const thumbsPerLine = 20;
+        const thumbShift = -thumbHeight / 2;
+        const thumbsCount = durationY / thumbHeight | 0;
+        const thumbsItems:{top:number;imgTop:number;imgLeft:number}[] = [];
+        for (var i = 0; i < thumbsCount; i++) {
+            const k = Math.round(i * thumbHeight / durationY * duration);
+            thumbsItems.push({
+                top: i * thumbHeight + thumbShift,
+                imgTop: k / thumbsPerLine | 0,
+                imgLeft: k % thumbsPerLine * thumbWidth,
+            })
+        }
         return <div>
             {this.currentTime}
             <svg className="timeline" width={svgWidth} height={svgHeight}>
@@ -100,6 +119,10 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
                     return  <path fill={color} d={svgPathGenerator(tl, bl, tr, br, connectorWidth)}/>
                     })}
             </svg>
+            <div className="thumbs">
+                {thumbsItems.map(thumb => <div className="thumb" style={{top: thumb.top, background: `url(${thumbImg}) ${-thumb.imgLeft}px ${-thumb.imgTop}px`}}>
+                </div>)}
+            </div>
             <div ref={d => this.videoWrapper = React.findDOMNode(d)} className="video">
                 <div className="overlay"></div>
                 {!this.isStarted || this.isEnded ?

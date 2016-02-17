@@ -40,11 +40,13 @@ router.get('/v1/post/:id', async function () {
 router.get('/v1/file/:id', async function () {
     var id = this.params.id;
     var mediaFile = await mediaFilesDAO.findById(id);
-    var url = mediaFile.url;
-    if (!url.match(/^http/)) {
-        url = '/' + url;
+    if (mediaFile) {
+        var url = mediaFile.url;
+        if (!url.match(/^http/)) {
+            url = '/' + url;
+        }
+        this.redirect(url);
     }
-    this.redirect(url);
     //this.body = mediaFile ? {success: true, data: mediaFile.filename} : {success: false, error: 'Not Found'}
 });
 
