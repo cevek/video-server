@@ -102,8 +102,8 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
             const k = Math.round(i * thumbHeight / durationY * duration);
             thumbsItems.push({
                 top: i * thumbHeight + thumbShift,
-                imgTop: k / thumbsPerLine | 0,
-                imgLeft: k % thumbsPerLine * thumbWidth,
+                imgTop: (k / thumbsPerLine | 0) * thumbHeight,
+                imgLeft: (k % thumbsPerLine) * thumbWidth,
             })
         }
         return <div>

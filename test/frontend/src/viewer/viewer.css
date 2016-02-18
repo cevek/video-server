@@ -6,7 +6,7 @@
     position: absolute;
     height: 50px;
     margin-top: -25px;
-    left: 50px;
+    left: 300px;
 }
 
 .selected {
@@ -36,10 +36,17 @@
 
 svg.timeline {
     position: absolute;
+    left: 250px;
 }
 
 .thumb {
     position: absolute;
     width: 200px;
     height: 100px;
+    left: 0;
+    border: 1px solid black;
+    border-right: 2px solid black;
+    border-left: 2px solid black;
+    background-color: black !important;
+    -webkit-filter: brightness(200%);
 }
