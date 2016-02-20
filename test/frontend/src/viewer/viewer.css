@@ -34,7 +34,10 @@
     background: skyblue;
 }
 
-svg.timeline {
+.timeline {
+}
+
+svg.timeline-connector {
     position: absolute;
     left: 250px;
 }
@@ -49,4 +52,11 @@ svg.timeline {
     border-left: 2px solid black;
     background-color: black !important;
     -webkit-filter: brightness(200%);
+}
+
+canvas.spectrogram {
+    position: absolute;
+    left: 200px;
+    transform: rotate(90deg);
+    transform-origin: 25px 25px;
 }

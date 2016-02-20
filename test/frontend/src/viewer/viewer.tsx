@@ -9,6 +9,14 @@ import {Subtitles} from "./subtitles";
 import {LineAllocator} from "../utils/time-allocate";
 import {svgPathGenerator} from "../utils/svg-path-generator";
 import {ITextLine} from "../../../interfaces/text-line";
+import {AudioSelection} from "./audio-selection";
+
+import {SoundLoader} from "sound-utils/SoundLoader";
+import {Play} from "sound-utils/Play";
+import {Spectrogram} from "sound-utils/Spectrogram";
+import {config} from "../../../backend/config";
+
+var audioContext = new AudioContext();
 export class Viewer extends React.Component<{params: any, resolved: PostModel}, {}> {
     currentTime:number = 0;
     duration:number = 0;
@@ -17,7 +25,10 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
     isStarted = false;
     isEnded = false;
     isPlaying = false;
-    player:any;
+    player = new Play(audioContext);
+    videoPlayer: any;
+    soundLoaded = false;
+    spectrogram = new Spectrogram(128);
 
     static load(params:any) {
         return PostModel.fetch(params.id);
@@ -30,7 +41,7 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
         div.id = Math.random().toString();
         this.videoWrapper.appendChild(div);
         YTReady.then(() => {
-            this.player = new YT.Player(div.id, {
+            this.videoPlayer = new YT.Player(div.id, {
                 height: '640',
                 width: '390',
                 videoId: videoId,
@@ -38,11 +49,11 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
                 events: {
                     'onReady': (event:any) => {
                         //event.target.playVideo();
-                        this.duration = this.player.getDuration();
+                        this.duration = this.videoPlayer.getDuration();
                         this.ytReady = true;
                         this.forceUpdate();
                         setInterval(() => {
-                            this.currentTime = this.player.getCurrentTime();
+                            this.currentTime = this.videoPlayer.getCurrentTime();
                             console.log(this.currentTime);
                             this.forceUpdate();
                         }, 100);
@@ -61,6 +72,29 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
                 }
             });
         });
+    }
+
+    loadSound() {
+        var data = this.props.resolved.data;
+        const url = config.baseUrl + '/' + data.mediaFiles[data.post.enAudio].url;
+        new SoundLoader(audioContext).fromUrl(url).then(audioBuffer => {
+            this.player.setAudio(audioBuffer);
+            this.spectrogram.process(audioBuffer);
+            this.loadSpectrogram();
+            this.soundLoaded = true;
+            this.forceUpdate();
+        });
+    }
+
+    loadSpectrogram(){
+        const imdata = this.spectrogram.getImageData();
+        const canvas = React.findDOMNode(this.refs['spectrogram']) as HTMLCanvasElement;
+        const ctx = canvas.getContext('2d');
+        ctx.putImageData(imdata,0, 0, 0, 0, canvas.width, canvas.height);
+    }
+
+    componentDidMount() {
+        this.loadSound();
     }
 
     isSelected(textLine:ITextLine) {
@@ -108,19 +142,24 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
         }
         return <div>
             {this.currentTime}
-            <svg className="timeline" width={svgWidth} height={svgHeight}>
-                {renderLines.map((pos, i) => {
-                    const textLine = lines[i].en;
-                    const tl = textLine.start / resizeKoef;
-                    const bl = (textLine.start + textLine.dur) / resizeKoef;
-                    const tr = pos - halfLineH;
-                    const br = pos + halfLineH;
-                    const color = 'hsla(' + (textLine.start) + ', 50%,60%, 1)';
-                    return  <path fill={color} d={svgPathGenerator(tl, bl, tr, br, connectorWidth)}/>
-                    })}
-            </svg>
+            <div className="timeline" ref="timeline">
+                <canvas className="spectrogram" ref="spectrogram" width={durationY} height={50}/>
+                <svg className="timeline-connector" width={svgWidth} height={svgHeight}>
+                    {renderLines.map((pos, i) => {
+                        const textLine = lines[i].en;
+                        const tl = textLine.start / resizeKoef;
+                        const bl = (textLine.start + textLine.dur) / resizeKoef;
+                        const tr = pos - halfLineH;
+                        const br = pos + halfLineH;
+                        const color = 'hsla(' + (textLine.start) + ', 50%,60%, 1)';
+                        return  <path fill={color} d={svgPathGenerator(tl, bl, tr, br, connectorWidth)}/>
+                        })}
+                </svg>
+                <AudioSelection pxPerSec={100 / resizeKoef} player={this.player} duration={duration}/>
+            </div>
             <div className="thumbs">
-                {thumbsItems.map(thumb => <div className="thumb" style={{top: thumb.top, background: `url(${thumbImg}) ${-thumb.imgLeft}px ${-thumb.imgTop}px`}}>
+                {thumbsItems.map(thumb => <div className="thumb"
+                                               style={{top: thumb.top, background: `url(${thumbImg}) ${-thumb.imgLeft}px ${-thumb.imgTop}px`}}>
                 </div>)}
             </div>
             <div ref={d => this.videoWrapper = React.findDOMNode(d)} className="video">
@@ -131,9 +170,9 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
             {this.ytReady ?
             <div className="controls">
                 {this.isPlaying ?
-                <button onClick={()=>this.player.pauseVideo()}>Stop</button>
+                <button onClick={()=>this.videoPlayer.pauseVideo()}>Stop</button>
                     :
-                <button onClick={()=>this.player.playVideo()}>Play</button>
+                <button onClick={()=>this.videoPlayer.playVideo()}>Play</button>
                     }
             </div> : null}
             <div>

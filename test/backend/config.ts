@@ -4,5 +4,6 @@ export var config = {
         password: '',
         name: 'wordstep'
     },
-    dir: '/Users/cody/Downloads/lingo/'
+    dir: '/Users/cody/Downloads/lingo/',
+    baseUrl: 'http://localhost:1335'
 };

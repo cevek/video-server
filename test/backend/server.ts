@@ -28,7 +28,7 @@ router.get('/v1/post/:id', async function () {
         var lines = await linesDAO.findAll({postId: id});
         lines.sort((a, b) => a.seq < b.seq ? -1 : 1);
         var textLines = await textLineDAO.findAll({postId: id});
-        var mediaFiles = await mediaFilesDAO.findByIds([post.video, post.thumbs]);
+        var mediaFiles = await mediaFilesDAO.findByIds([post.video, post.thumbs, post.enAudio, post.ruAudio]);
         var data:IGetPost = {post, lines: lines, textLines: toMap(textLines), mediaFiles: toMap(mediaFiles)};
         this.body = {success: true, data};
     }
@@ -56,9 +56,9 @@ router.post('/v1/post/', async function () {
     this.body = {success: true, data: post.id};
 });
 
+app.use(cors({credentials: true}));
 app.use(serve(config.dir));
 app.use(koaBody({multipart: true, formidable: {uploadDir: __dirname}}));
-app.use(cors({credentials: true}));
 app.use(router.routes());
 app.use(router.allowedMethods());
 app.listen(1335);
