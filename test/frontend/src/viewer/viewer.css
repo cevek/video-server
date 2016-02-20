@@ -57,6 +57,5 @@ svg.timeline-connector {
 canvas.spectrogram {
     position: absolute;
     left: 200px;
-    transform: rotate(90deg);
-    transform-origin: 25px 25px;
+    width: 50px;
 }
