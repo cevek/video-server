@@ -80,12 +80,13 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
 
     loadSound() {
         var data = this.props.resolved.data;
-        const url = config.baseUrl + '/' + data.mediaFiles[data.post.enAudio].url;
+        const enAudio = data.mediaFiles[data.post.enAudio];
+        const url = config.baseUrl + '/' + enAudio.url;
         new SoundLoader(audioContext).fromUrl(url).then(audioBuffer => {
             this.audioBuffer = audioBuffer;
             this.duration = audioBuffer.duration;
             this.player.setAudio(audioBuffer);
-            this.spectrogramData = this.process(audioBuffer, 64);
+            this.spectrogramData = this.process(audioBuffer, 128);
             // this.spectrogram.process(audioBuffer);
             this.loadSpectrogram();
             this.soundLoaded = true;
@@ -160,6 +161,11 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
         return ((textLine.start) / 100) <= this.currentTime && this.currentTime <= (textLine.start + textLine.dur) / 100
     }
 
+    resizeKoef = 4;
+    timeToY(time: number){
+        return time * 100 / this.resizeKoef;
+    }
+
     render() {
         // console.log(this.currentTime, this.duration);
         var data = this.props.resolved.data;
@@ -170,12 +176,12 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
             }
         });
 
-        const resizeKoef = 4;
+        const resizeKoef = this.resizeKoef;
         const lineH = 50;
         const connectorWidth = 50;
         const halfLineH = lineH / 2;
 
-        const durationY = this.duration * 100 / resizeKoef;
+        const durationY = this.timeToY(this.duration);
 
         const positions = lines.map(line => (line.en.start + line.en.dur / 2) / resizeKoef);
         const renderLines = new LineAllocator(positions, 50).allocateRenderLines();
@@ -183,6 +189,10 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
         const svgHeight = durationY;
         console.log(durationY);
 
+        const video = data.mediaFiles[data.post.video];
+        const enAudio = data.mediaFiles[data.post.enAudio];
+        const shiftVideoY = this.timeToY(video.shiftTime);
+        const shiftAudioY = this.timeToY(enAudio.shiftTime);
 
         const thumbImg = config.baseUrl + '/' + data.mediaFiles[data.post.thumbs].url;
         const thumbWidth = 200;
@@ -202,7 +212,7 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
         return <div>
             {this.currentTime}
             <div className="timeline" ref="timeline">
-                <canvas className="spectrogram" ref="spectrogram" style={{height: durationY}}/>
+                <canvas className="spectrogram" ref="spectrogram" style={{top: shiftAudioY, height: durationY}}/>
                 <svg className="timeline-connector" width={svgWidth} height={svgHeight}>
                     {renderLines.map((pos, i) => {
                         const textLine = lines[i].en;
@@ -214,9 +224,9 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
                         return  <path fill={color} d={svgPathGenerator(tl, bl, tr, br, connectorWidth)}/>
                         })}
                 </svg>
-                <AudioSelection pxPerSec={100 / resizeKoef} player={this.player} duration={this.duration}/>
+                <AudioSelection shift={shiftAudioY} pxPerSec={100 / resizeKoef} player={this.player} duration={this.duration}/>
             </div>
-            <div className="thumbs">
+            <div className="thumbs" style={{top: shiftVideoY}}>
                 {thumbsItems.map(thumb =>
                 <div className="thumb"
                      style={{top: thumb.top, background: `url(${thumbImg}) ${-thumb.imgLeft}px ${-thumb.imgTop}px`}}>

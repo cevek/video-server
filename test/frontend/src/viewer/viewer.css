@@ -1,4 +1,6 @@
 .subtitles {
+    position: absolute;
+    top: 0;
 }
 
 .line {
@@ -35,11 +37,19 @@
 }
 
 .timeline {
+    position: absolute;
+    top: 0;
 }
 
 svg.timeline-connector {
     position: absolute;
     left: 250px;
+    top: 0;
+}
+
+.thumbs {
+    position: absolute;
+    left: 0;
 }
 
 .thumb {

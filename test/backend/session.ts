@@ -35,6 +35,7 @@ export class Session {
     streamsMeta:{id: string; url: string; file: string; tempFile: string}[] = [];
     duration:number;
     startTime:number;
+    shiftStartTime:number;
     subtitlesShift:number;
     socket:{emit: (name:string, obj:any)=>void};
     timeout = 10 * 60; // 10 min timeout;
@@ -163,6 +164,12 @@ export class Session {
     }
 
     getMediaInfo() {
+        const shiftMatch = this.stdout.match(/demuxer\+ffmpeg.*?pkt_dts_time:([\d\-.]+)/m);
+        if (this.shiftStartTime == null && shiftMatch) {
+            this.shiftStartTime = +shiftMatch[1];
+            console.log('shiftStartTime', this.shiftStartTime);
+        }
+
         if (!this.track) {
             this.track = mediaInfo(this.stdout);
             if (this.track) {
@@ -213,12 +220,11 @@ export class Session {
         //console.log("startFFmpeg");
         return co(async () => {
             try {
-                await spawn(`ffmpeg -y -ss ${this.startTime} -i http://localhost:1338/${this.sid} -t ${this.duration + 20} -vcodec copy -acodec copy -map 0 ${this.inputFile}`,
+                await spawn(`ffmpeg -debug_ts -y -ss ${this.startTime} -i http://localhost:1338/${this.sid} -t ${this.duration + 20} -vcodec copy -acodec copy -map 0 ${this.inputFile}`,
                     (data, cp) => {
                         this.stdout += data;
                         this.getMediaInfo();
-                        var time = this.processTime(data);
-                        if (!time) {
+                        if (!this.processTime(data)) {
                             //console.log("kill");
                             cp.kill();
                         }
@@ -237,10 +243,11 @@ export class Session {
     async extractThumbs() {
         console.log("ExtractThumbs");
         var fld = this.folder;
-        await exec(`ffmpeg -y -i ${this.inputFile} -qscale 1 -vsync 1 -r 1 ${fld}_raw%03d.jpg`);
-        await exec(`convert ${fld}_raw*.jpg -gravity center -thumbnail 200x100^ -extent 200x100 ${fld}_thumb.jpg`);
+        await exec(`ffmpeg -y -i ${this.inputFile} -qscale 1 -vsync 1 -r 1 ${fld}_raw%04d.jpg`);
+        await exec(`mogrify -thumbnail 200x100^ -extent 200x100 ${fld}*.jpg`);
+        // await exec(`convert ${fld}_raw*.jpg -gravity center -thumbnail 200x100^ -extent 200x100 ${fld}_thumb.jpg`);
         // await exec(`convert ${fld}_raw*.jpg -gravity center -thumbnail 200x100^ -extent 200x100 -auto-level -level 0,60%% -modulate 100,70 ${fld}_thumb.jpg`);
-        await exec(`montage ${fld}_thumb*.jpg  -tile 20x -geometry +0+0 -gravity north ${fld}thumbs.jpg`);
+        await exec(`montage ${fld}_raw*.jpg  -tile 20x -geometry +0+0 -gravity north ${fld}thumbs.jpg`);
         await exec(`rm ${fld}_*.jpg`);
     }
 
@@ -261,20 +268,22 @@ export class Session {
                 ]);
 
                 if (this.isVideo) {
-                    var ytLink = await upload(this.sid, this.streamsMeta[0].file);
-                    var youtube = this.youtubeLink(ytLink);
-                    writeFileSync(this.folder + 'youtube.txt', youtube);
+                    // var ytLink = await upload(this.sid, this.streamsMeta[0].file);
+                    // var youtube = this.youtubeLink(ytLink);
+                    // writeFileSync(this.folder + 'youtube.txt', youtube);
                 }
 
                 this.emit('done', this.prepareMediaInfo());
 
                 await db.transaction(async (trx) => {
+                    this.stdout = this.stdout.replace(/^(demuxer|muxer).*?$\n/mg, '');
                     await uploadsDAO.create({id: this.sid, info: this.stdout}, trx);
                     var mediaFiles:MediaFile[] = this.track.streams.map((track, i) => {
                         var str = this.streamsMeta[i];
                         return {
                             id: str.id,
                             startTime: this.startTime,
+                            shiftTime: this.shiftStartTime,
                             duration: this.duration,
                             type: track.type,
                             info: JSON.stringify(Object.assign(track, {subtitlesShift: this.subtitlesShift})),
@@ -288,6 +297,7 @@ export class Session {
                         mediaFiles.push({
                             id: genId(),
                             startTime: this.startTime,
+                            shiftTime: this.shiftStartTime,
                             duration: this.duration,
                             videoFile: videoId,
                             filename: this.folder + 'thumbs.jpg',

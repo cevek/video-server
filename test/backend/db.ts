@@ -7,21 +7,22 @@ var pool = mysql.createPool({
     user: config.db.user,
     password: config.db.password
 });
-
-interface Params {[key: string]: string | number}
+type Params = {[key: string]: string | number} | (string | number)[];
 interface Connection {
     query(q:string, params:Params, callback:(err:Error, values:any)=>void):void;
-    commit(callback:(err:Error)=>void):void;
-    rollback(callback:()=>void):void;
 }
 
 class DB {
-    async query<T>(query:string, params?:Params, trx?:Transaction) {
+    async query<T>(query:string, params?:Params, trx?:Transaction):Promise<T> {
         var connection = trx ? trx.connection : await db.getConnection();
         var res = await (new Promise<T>((resolve, reject)=> {
             if (query) {
                 var q = connection.query(query, params, (err:Error, rows:T) => {
                     if (err) {
+                        //Got a packet bigger than 'max_allowed_packet' bytes
+                        if ((<any>err).errno == 1153) {
+                            //todo: after this error all next queries is this connection freeze
+                        }
                         err.message = err.message + '\n' + q.sql;
                         return reject(err);
                     }
@@ -91,16 +92,8 @@ class DB {
     }
 
     async beginTransaction():Promise<Transaction> {
-        var connection = await db.getConnection();
-        await (new Promise((resolve, reject)=> {
-            connection.beginTransaction((err:Error)=> {
-                if (err) {
-                    return reject(err);
-                }
-                resolve();
-            })
-        }));
-        return new Transaction(connection);
+        const trx = new Transaction(this);
+        return await trx.begin();
     }
 
     async getConnection():Promise<any> {
@@ -118,29 +111,24 @@ class DB {
 export const db = new DB();
 
 export class Transaction {
-    constructor(public connection:Connection) {}
+    public connection:Connection;
+
+    constructor(public db:DB) {}
+
+    async begin() {
+        this.connection = await db.getConnection();
+        await this.db.query<void>('START TRANSACTION', null, this);
+        return this;
+    }
 
     async commit() {
-        return await (new Promise((resolve, reject)=> {
-            this.connection.commit((err:Error) => {
-                if (err) {
-                    this.rollback().then(()=> {
-                        reject(err);
-                    });
-                }
-                else {
-                    resolve();
-                }
-            });
-        }));
+        await this.db.query<void>('COMMIT', null, this);
+        return this;
     }
 
     async rollback() {
-        return await (new Promise((resolve, reject)=> {
-            this.connection.rollback(() => {
-                resolve();
-            });
-        }));
+        await this.db.query<void>('ROLLBACK', null, this);
+        return this;
     }
 }
 

@@ -55,7 +55,7 @@ export class Upload extends React.Component<{params: any, resolved: any},{}> {
     }
 
     _startTime = Math.random() * 7000 | 0;
-    _endTime = this._startTime + 50;
+    _endTime = this._startTime + 250;
 
     render() {
         return <div>

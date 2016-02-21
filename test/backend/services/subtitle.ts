@@ -21,7 +21,6 @@ export function parseSrtSubtitles(subtitleText:string, shift:number) {
 }
 
 export function parseSubtitles(subtitleText:string) {
-    subtitleText = subtitleText.replace(/\\N/g, '\n');
     var re = /^Dialogue: \d+,(-?\d+):(-?\d+):(-?\d+).(-?\d+),(-?\d+):(-?\d+):(-?\d+).(-?\d+),.*?,.*?,\d+,\d+,\d+,.*?,(.*?)$/mg;
     var res:string[];
     var lines:SubRow[] = [];
@@ -29,7 +28,7 @@ export function parseSubtitles(subtitleText:string) {
         var start = (+res[1] * 360000 + +res[2] * 6000 + +res[3] * 100 + +res[4]);
         var end = (+res[5] * 360000 + +res[6] * 6000 + +res[7] * 100 + +res[8]);
         var duration = end - start;
-        var text = res[9].trim();
+        var text = res[9].replace(/\\N/g, '\n').trim();
         lines.push({start, duration, text});
     }
     return lines;
