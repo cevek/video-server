@@ -13,7 +13,7 @@ import {AudioSelection} from "./audio-selection";
 
 import {FFT} from "sound-utils/FFT";
 import {SoundLoader} from "sound-utils/SoundLoader";
-import {Play} from "sound-utils/Play";
+import {Play, PlayingStatus} from "sound-utils/Play";
 import {Spectrogram} from "sound-utils/Spectrogram";
 import {config} from "../../../backend/config";
 
@@ -76,7 +76,7 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
     }
 
     spectrogramData:Uint8ClampedArray[];
-    audioBuffer: AudioBuffer;
+    audioBuffer:AudioBuffer;
 
     loadSound() {
         var data = this.props.resolved.data;
@@ -92,7 +92,27 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
             this.soundLoaded = true;
             this.forceUpdate();
         });
+        //todo: wtf
+        setInterval(()=> {
+            const currentTime = this.player.getCurrentTime();
+            let playingLine = -1;
+            if (this.player.getState() == PlayingStatus.PLAYING) {
+                for (var i = 0; i < this.lines.length; i++) {
+                    var line = this.lines[i];
+                    if (line.en.start / 100 <= currentTime && (line.en.start + line.en.dur) / 100 >= currentTime) {
+                        playingLine = i;
+                        break;
+                    }
+                }
+            }
+            if (this.playingLine !== playingLine) {
+                this.playingLine = playingLine;
+                this.forceUpdate();
+            }
+        }, 10);
     }
+
+    playingLine = -1;
 
 
     loadSpectrogram() {
@@ -162,19 +182,41 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
     }
 
     resizeKoef = 4;
-    timeToY(time: number){
+
+    timeToY(time:number) {
         return time * 100 / this.resizeKoef;
     }
+
+    playTextLine(textLine:ITextLine) {
+        //todo: audioselection
+        this.player.play(textLine.start / 100, textLine.dur / 100, false, ()=> {
+            console.log("EEEEnd");
+        });
+    }
+
+    openedRuTextLines:boolean[] = [];
+
+    showRuTextLine(i:number) {
+        this.openedRuTextLines[i] = true;
+        this.forceUpdate();
+    }
+
+    hideRuTextLine(i:number) {
+        this.openedRuTextLines[i] = false;
+        this.forceUpdate();
+    }
+
+    lines = this.props.resolved.data.lines.filter(line => Boolean(this.props.resolved.data.textLines[line.en])).map(line => {
+        return {
+            en: this.props.resolved.data.textLines[line.en],
+            ru: this.props.resolved.data.textLines[line.ru],
+        }
+    });
 
     render() {
         // console.log(this.currentTime, this.duration);
         var data = this.props.resolved.data;
-        const lines = data.lines.filter(line => Boolean(data.textLines[line.en])).map(line => {
-            return {
-                en: data.textLines[line.en],
-                ru: data.textLines[line.ru],
-            }
-        });
+        const lines = this.lines;
 
         const resizeKoef = this.resizeKoef;
         const lineH = 50;
@@ -213,7 +255,7 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
             {this.currentTime}
             <div className="timeline" ref="timeline">
                 <canvas className="spectrogram" ref="spectrogram" style={{top: shiftAudioY, height: durationY}}/>
-                <svg className="timeline-connector" width={svgWidth} height={svgHeight}>
+                <svg className="timeline-connector" width={svgWidth} height={svgHeight} style={{top: shiftAudioY}}>
                     {renderLines.map((pos, i) => {
                         const textLine = lines[i].en;
                         const tl = textLine.start / resizeKoef;
@@ -221,41 +263,45 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
                         const tr = pos - halfLineH;
                         const br = pos + halfLineH;
                         const color = 'hsla(' + (textLine.start) + ', 50%,60%, 1)';
-                        return  <path fill={color} d={svgPathGenerator(tl, bl, tr, br, connectorWidth)}/>
-                        })}
+                        return <path onClick={()=>this.playTextLine(textLine)} fill={color}
+                            d={svgPathGenerator(tl, bl, tr, br, connectorWidth)}/>
+                    })}
                 </svg>
                 <AudioSelection shift={shiftAudioY} pxPerSec={100 / resizeKoef} player={this.player} duration={this.duration}/>
-            </div>
+                </div>
             <div className="thumbs" style={{top: shiftVideoY}}>
                 {thumbsItems.map(thumb =>
-                <div className="thumb"
-                     style={{top: thumb.top, background: `url(${thumbImg}) ${-thumb.imgLeft}px ${-thumb.imgTop}px`}}>
-                </div>)}
-            </div>
+                    <div className="thumb"
+                        style={{top: thumb.top, background: `url(${thumbImg}) ${-thumb.imgLeft}px ${-thumb.imgTop}px`}}>
+                    </div>)}
+                </div>
             <div ref={d => this.videoWrapper = React.findDOMNode(d)} className="video">
                 <div className="overlay"></div>
                 {!this.isStarted || this.isEnded ?
-                <div className="cover"></div>: null}
-            </div>
+                    <div className="cover"></div>: null}
+                </div>
             {this.ytReady ?
-            <div className="controls">
-                {this.isPlaying ?
-                <button onClick={()=>this.videoPlayer.pauseVideo()}>Stop</button>
-                    :
-                <button onClick={()=>this.videoPlayer.playVideo()}>Play</button>
+                <div className="controls">
+                    {this.isPlaying ?
+                        <button onClick={()=>this.videoPlayer.pauseVideo()}>Stop</button>
+                        :
+                        <button onClick={()=>this.videoPlayer.playVideo()}>Play</button>
                     }
-            </div> : null}
+                </div> : null}
             <div>
                 <meter value={this.currentTime + ''} max={this.duration + ''}/>
-            </div>
-            <div className="subtitles">
+                </div>
+            <div className="subtitles" style={{top: shiftAudioY}}>
                 {lines.map((line, i) =>
-                <div className={classNames("line", {selected: this.isSelected(line.en)})}
-                     style={{top: renderLines[i]}}>
-                    <div className="en">{line.en ? line.en.text : ''}</div>
-                    <div className="ru">{line.ru ? line.ru.text : ''}</div>
-                </div>)}
-            </div>
+                    <div className={classNames("line", {playing: this.playingLine == i, selected: this.isSelected(line.en)})}
+                        onMouseDown={()=>this.showRuTextLine(i)}
+                        onMouseUp={()=>this.hideRuTextLine(i)}
+                        style={{top: renderLines[i]}}>
+                        <div className="en">{line.en ? line.en.text : ''}</div>
+                        {this.openedRuTextLines[i] ?
+                            <div className="ru">{line.ru ? line.ru.text : ''}</div> : null}
+                    </div>)}
+                </div>
         </div>
     }
 }
