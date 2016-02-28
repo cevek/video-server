@@ -15,7 +15,7 @@ function setAudioSelection(start:number, end:number) {
 import {Play} from "sound-utils/Play";
 
 
-export class AudioSelection extends React.Component<{shift: number; pxPerSec: number; duration: number; player: Play},{}> {
+export class AudioSelection extends React.Component<{pxPerSec: number; duration: number; player: Play},{}> {
     selecting = false;
     currentTime:HTMLElement;
     el:HTMLElement;
@@ -108,7 +108,7 @@ export class AudioSelection extends React.Component<{shift: number; pxPerSec: nu
     }
 
     render() {
-        return <div className="audio-selection-wrapper" ref="root" style={{top: this.props.shift, height: this.timeToPx(this.props.duration)}}>
+        return <div className="audio-selection-wrapper" ref="root" style={{height: this.timeToPx(this.props.duration)}}>
             <div className="audio-selection" ref="audioSelection"
                  style={{top: this.timeToPx(audioSelection.start), height: this.timeToPx(audioSelection.end - audioSelection.start)}}></div>
             <div className="current-time" ref="currentTime"></div>

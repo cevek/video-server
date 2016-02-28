@@ -206,12 +206,25 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
         this.forceUpdate();
     }
 
-    lines = this.props.resolved.data.lines.filter(line => Boolean(this.props.resolved.data.textLines[line.en])).map(line => {
-        return {
-            en: this.props.resolved.data.textLines[line.en],
-            ru: this.props.resolved.data.textLines[line.ru],
-        }
-    });
+    lines = this.getLines();
+
+    getLines(){
+        var data = this.props.resolved.data;
+        const shiftEnAudio = data.mediaFiles[data.post.enAudio].shiftTime * 100;
+        const shiftRuAudio = data.mediaFiles[data.post.ruAudio].shiftTime * 100;
+        return data.lines.filter(line => Boolean(data.textLines[line.en])).map(line => {
+            const en = data.textLines[line.en];
+            const ru = data.textLines[line.ru];
+            en.start -= shiftEnAudio;
+            if (ru && shiftRuAudio) {
+                ru.start -= shiftRuAudio;
+            }
+            return {
+                en: en,
+                ru: ru
+            }
+        });
+    }
 
     render() {
         // console.log(this.currentTime, this.duration);
@@ -243,10 +256,12 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
         const thumbShift = -thumbHeight / 2;
         const thumbsCount = durationY / thumbHeight | 0;
         const thumbsItems:{top:number;imgTop:number;imgLeft:number}[] = [];
+        var thumbK = thumbHeight / durationY * this.duration;
+
         for (var i = 0; i < thumbsCount; i++) {
-            const k = Math.round(i * thumbHeight / durationY * this.duration);
+            const k = Math.round(i * thumbK);
             thumbsItems.push({
-                top: i * thumbHeight + thumbShift,
+                top: i * thumbHeight + thumbShift + shiftAudioY - shiftVideoY,
                 imgTop: (k / thumbsPerLine | 0) * thumbHeight,
                 imgLeft: (k % thumbsPerLine) * thumbWidth,
             })
@@ -254,8 +269,8 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
         return <div>
             {this.currentTime}
             <div className="timeline" ref="timeline">
-                <canvas className="spectrogram" ref="spectrogram" style={{top: shiftAudioY, height: durationY}}/>
-                <svg className="timeline-connector" width={svgWidth} height={svgHeight} style={{top: shiftAudioY}}>
+                <canvas className="spectrogram" ref="spectrogram" style={{height: durationY}}/>
+                <svg className="timeline-connector" width={svgWidth} height={svgHeight}>
                     {renderLines.map((pos, i) => {
                         const textLine = lines[i].en;
                         const tl = textLine.start / resizeKoef;
@@ -267,9 +282,9 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
                             d={svgPathGenerator(tl, bl, tr, br, connectorWidth)}/>
                     })}
                 </svg>
-                <AudioSelection shift={shiftAudioY} pxPerSec={100 / resizeKoef} player={this.player} duration={this.duration}/>
+                <AudioSelection pxPerSec={100 / resizeKoef} player={this.player} duration={this.duration}/>
                 </div>
-            <div className="thumbs" style={{top: shiftVideoY}}>
+            <div className="thumbs">
                 {thumbsItems.map(thumb =>
                     <div className="thumb"
                         style={{top: thumb.top, background: `url(${thumbImg}) ${-thumb.imgLeft}px ${-thumb.imgTop}px`}}>
@@ -291,7 +306,7 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
             <div>
                 <meter value={this.currentTime + ''} max={this.duration + ''}/>
                 </div>
-            <div className="subtitles" style={{top: shiftAudioY}}>
+            <div className="subtitles">
                 {lines.map((line, i) =>
                     <div className={classNames("line", {playing: this.playingLine == i, selected: this.isSelected(line.en)})}
                         onMouseDown={()=>this.showRuTextLine(i)}

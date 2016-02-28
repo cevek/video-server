@@ -54,6 +54,7 @@ svg.timeline-connector {
 .thumbs {
     position: absolute;
     left: 0;
+    top: 0;
 }
 
 .thumb {
@@ -72,5 +73,6 @@ svg.timeline-connector {
 canvas.spectrogram {
     position: absolute;
     left: 200px;
+    top: 0;
     width: 50px;
 }
