@@ -165,9 +165,13 @@ export class Session {
 
     getMediaInfo() {
         const shiftMatch = this.stdout.match(/demuxer\+ffmpeg.*?pkt_dts_time:([\d\-.]+)/m);
-        if (this.shiftStartTime == null && shiftMatch) {
-            this.shiftStartTime = +shiftMatch[1];
-            console.log('shiftStartTime', this.shiftStartTime);
+        if (this.isVideo) {
+            if (this.shiftStartTime == null && shiftMatch) {
+                this.shiftStartTime = +shiftMatch[1];
+                console.log('shiftStartTime', this.shiftStartTime);
+            }
+        } else {
+            this.shiftStartTime = 0;
         }
 
         if (!this.track) {
@@ -243,8 +247,8 @@ export class Session {
     async extractThumbs() {
         console.log("ExtractThumbs");
         var fld = this.folder;
-        await exec(`ffmpeg -y -i ${this.inputFile} -qscale 1 -vsync 1 -r 1 ${fld}_raw%04d.jpg`);
-        await exec(`mogrify -thumbnail 200x100^ -extent 200x100 ${fld}*.jpg`);
+        await exec(`ffmpeg -y -i ${this.inputFile} -qscale 1 -vsync 1 -vf fps=1/8 ${fld}_raw%04d.jpg`);
+        await exec(`mogrify -thumbnail 400x200^ -extent 400x200 ${fld}*.jpg`);
         // await exec(`convert ${fld}_raw*.jpg -gravity center -thumbnail 200x100^ -extent 200x100 ${fld}_thumb.jpg`);
         // await exec(`convert ${fld}_raw*.jpg -gravity center -thumbnail 200x100^ -extent 200x100 -auto-level -level 0,60%% -modulate 100,70 ${fld}_thumb.jpg`);
         await exec(`montage ${fld}_raw*.jpg  -tile 20x -geometry +0+0 -gravity north ${fld}thumbs.jpg`);

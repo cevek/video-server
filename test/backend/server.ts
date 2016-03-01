@@ -28,7 +28,7 @@ router.get('/v1/post/:id', async function () {
         var lines = await linesDAO.findAll({postId: id});
         lines.sort((a, b) => a.seq < b.seq ? -1 : 1);
         var textLines = await textLineDAO.findAll({postId: id});
-        var mediaFiles = await mediaFilesDAO.findByIds([post.video, post.thumbs, post.enAudio, post.ruAudio]);
+        var mediaFiles = await mediaFilesDAO.findByIds([post.video, post.thumbs, post.enAudio, post.ruAudio, post.enSub, post.ruSub]);
         var data:IGetPost = {post, lines: lines, textLines: toMap(textLines), mediaFiles: toMap(mediaFiles)};
         this.body = {success: true, data};
     }

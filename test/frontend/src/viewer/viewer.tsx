@@ -210,14 +210,16 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
 
     getLines(){
         var data = this.props.resolved.data;
+        const shiftEnSubs = data.mediaFiles[data.post.enSub].shiftTime * 100;
+        const shiftRuSubs = data.mediaFiles[data.post.ruSub].shiftTime * 100;
         const shiftEnAudio = data.mediaFiles[data.post.enAudio].shiftTime * 100;
         const shiftRuAudio = data.mediaFiles[data.post.ruAudio].shiftTime * 100;
         return data.lines.filter(line => Boolean(data.textLines[line.en])).map(line => {
             const en = data.textLines[line.en];
             const ru = data.textLines[line.ru];
-            en.start -= shiftEnAudio;
+            en.start -= shiftEnAudio - shiftEnSubs;
             if (ru && shiftRuAudio) {
-                ru.start -= shiftRuAudio;
+                ru.start -= shiftRuAudio - shiftRuSubs;
             }
             return {
                 en: en,
@@ -250,16 +252,17 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
         const shiftAudioY = this.timeToY(enAudio.shiftTime);
 
         const thumbImg = config.baseUrl + '/' + data.mediaFiles[data.post.thumbs].url;
-        const thumbWidth = 200;
-        const thumbHeight = 100;
+        const thumbWidth = 400;
+        const thumbHeight = 200;
         const thumbsPerLine = 20;
         const thumbShift = -thumbHeight / 2;
+        const thumbCountPerSecond = 1/8;
         const thumbsCount = durationY / thumbHeight | 0;
         const thumbsItems:{top:number;imgTop:number;imgLeft:number}[] = [];
         var thumbK = thumbHeight / durationY * this.duration;
 
         for (var i = 0; i < thumbsCount; i++) {
-            const k = Math.round(i * thumbK);
+            const k = Math.round(i * thumbK * thumbCountPerSecond);
             thumbsItems.push({
                 top: i * thumbHeight + thumbShift + shiftAudioY - shiftVideoY,
                 imgTop: (k / thumbsPerLine | 0) * thumbHeight,
