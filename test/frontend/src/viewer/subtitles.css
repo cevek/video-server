@@ -1,17 +1,20 @@
-.ln{
+.subtitles {
     position: absolute;
-    margin-left: 50px;
-    border: 1px solid black;
-    font-size: 8px;
-    height: 30px;
-    transform: translate(0, -50%);
-}
-.ln-real{
-    position: absolute;
-    border-top: 1px solid black;
-    font-size: 8px;
+    top: 0;
 }
 
-.render{
-    position: fixed;
+.line {
+    padding: 5px 10px;
+    position: absolute;
+    height: 50px;
+    margin-top: -25px;
+    left: 500px;
+}
+
+.selected {
+    background: yellow;
+}
+
+.playing{
+    background: yellow;
 }

@@ -1,5 +1,6 @@
-import * as React from 'react';
-import './audio-selection.css';
+import * as React from "react";
+import {AudioPlayer} from "../utils/audio-player";
+import "./audio-selection.css";
 
 export class AudioSelectionData {
     start = 0;
@@ -12,10 +13,8 @@ function setAudioSelection(start:number, end:number) {
     audioSelection.end = end;
 }
 
-import {Play} from "sound-utils/Play";
 
-
-export class AudioSelection extends React.Component<{pxPerSec: number; duration: number; player: Play},{}> {
+export class AudioSelection extends React.Component<{pxPerSec: number; player: AudioPlayer},{}> {
     selecting = false;
     currentTime:HTMLElement;
     el:HTMLElement;
@@ -71,14 +70,14 @@ export class AudioSelection extends React.Component<{pxPerSec: number; duration:
 
     play() {
         this.startCurrentTime();
-        this.props.player.play(audioSelection.start, audioSelection.end - audioSelection.start);
+        this.props.player.player.play(audioSelection.start, audioSelection.end - audioSelection.start);
         console.log('play', audioSelection.start, audioSelection.end - audioSelection.start);
 
     }
 
     stop() {
         this.stopCurrentTime();
-        this.props.player.stop();
+        this.props.player.player.stop();
     }
 
     startCurrentTime() {
@@ -108,7 +107,7 @@ export class AudioSelection extends React.Component<{pxPerSec: number; duration:
     }
 
     render() {
-        return <div className="audio-selection-wrapper" ref="root" style={{height: this.timeToPx(this.props.duration)}}>
+        return <div className="audio-selection-wrapper" ref="root" style={{height: this.timeToPx(this.props.player.duration)}}>
             <div className="audio-selection" ref="audioSelection"
                  style={{top: this.timeToPx(audioSelection.start), height: this.timeToPx(audioSelection.end - audioSelection.start)}}></div>
             <div className="current-time" ref="currentTime"></div>

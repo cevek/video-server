@@ -1,0 +1,20 @@
+.video {
+    float: left;
+    transform-origin: 0 0;
+    transform: rotate(-90deg) translate(-100%, 0);
+    position: relative;
+    margin: 80px 0;
+}
+
+.video .overlay, .video .cover {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    background: transparent;
+}
+
+.video .cover {
+    background: skyblue;
+}

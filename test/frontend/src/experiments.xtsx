@@ -1,0 +1,318 @@
+class RouteSub<P> extends Route<P> {
+    component<R>(component:Cmp<P, R>):RouteSub<P> {
+        return null;
+    }
+
+    sub<G>(group:G):G & RouteSub<P> {
+        return null;
+    }
+
+}
+
+
+interface Cmp<P, R> {
+    new (p:IPage<P, R>): Component<IPage<P, R>>
+    resolve?(params:P): Promise<R>
+}
+function route<P, R>(path:string, component:Cmp<P, R>):Route<P> & RouteSub<P> {
+    return null;
+}
+function index<P>(component:any):Route<P> {
+    return null;
+}
+class Route<P> {
+    constructor(path:string, component:any) {
+
+    }
+
+    params:P;
+
+    go(params:P) {
+
+    }
+}
+
+
+interface IUserProps {userId: number}
+interface IUserResolve {user: Usr}
+type IUser = IPage<IUserProps, IUserResolve>;
+
+interface IUserEditProps extends IUserProps {force: boolean}
+interface IUserEditResolve extends IUserResolve {forcedData: number}
+
+interface IUserViewProps extends IUserProps {full: boolean}
+interface IUserViewResolve extends IUserResolve {fullData: number}
+
+class Usr {
+    name:string;
+}
+
+var Any:any;
+
+const ddd = route('/', Any).sub({
+    index: index(Index),
+    about: route('about', Any),
+    users: route('users', Users).sub({
+        index: index(Index),
+        id: route<IUserProps, IUserResolve>(':id', User).sub({
+            index: index(UserIndex),
+            edit: route<IUserEditProps, IUserEditResolve>(':force', UserEdit),
+            view: route<IUserViewProps, IUserViewResolve>(':full', UserView)
+        })
+    })
+});
+
+class Component<P> {
+    props:P;
+    state:any;
+    context:any;
+    refs:any;
+
+    setState(props:any) {
+
+    }
+
+    forceUpdate() {
+
+    }
+}
+
+interface IPage<P, R> {
+    params: P;
+    resolved: R;
+}
+
+class Index extends Component<IPage<{}, {}>> {
+    static resolve() {
+        return new Promise<{text: number}>(null);
+    }
+
+    render() {
+        this.props
+        //this.props.dfas;
+    }
+}
+
+class Users extends Component<IPage<{},{}>> {
+
+}
+
+
+class User extends Component<IPage<IUserProps, IUserResolve>> {
+
+}
+class UserIndex extends Component<IPage<{}, IUserResolve>> {
+
+}
+class UserEdit extends Component<IPage<IUserEditProps, IUserEditResolve>> {
+
+}
+class UserView extends Component<IPage<IUserViewProps, IUserViewResolve>> {
+    static resolve() {
+        return new Promise<{fullData: number}>(null);
+    }
+
+    render() {
+        this.props.resolved.fullData
+    }
+}
+
+ddd.users.id.go({userId: 234})
+
+var React:any;
+var redux:any;
+var pub:any;
+
+
+class League {
+    name:string;
+    abbreviation:string;
+}
+
+
+class Postition {
+    name:string;
+    abbreviation:string;
+}
+
+class IFantasyEvent extends Base{
+    @pub
+    name:string;
+    @pub
+    leagueId:number;
+    @pub
+    abbreviation:string;
+}
+
+class FantasyEvent extends IFantasyEvent {
+    store:Store;
+    fromJson(data: IFantasyEvent) {
+        return super.fromJson(data);
+        // return this;
+    }
+    getLeague() {
+        return this.store.leagues.getById(this.leagueId);
+    }
+}
+
+function factory<F extends T, T>(fn:new ()=>F, data:T):F {
+    const item = new fn() as any;
+    for (const i in data) {
+        item[i] = (data as any)[i];
+    }
+    item.store = null
+    return item;
+}
+
+
+class Events {
+    @redux
+    static parseMyEvents(data:IFantasyEvent[], store?:Store) {
+        store.sidebarEvents = new List(data.map(item => new FantasyEvent().fromJson(item)));
+    }
+
+    static parseEventId(id:number, data:IFantasyEvent, store?:Store) {
+        store.fantasyEvents.push(new FantasyEvent().fromJson(data));
+    }
+
+    static fetchMyEvents() {
+        fetch(`/events/my`).then((data:any) => data as FantasyEvent[]).then(Events.parseMyEvents);
+    }
+
+    static fetchEvent(id:number) {
+        fetch(`/events/${id}`).then((data:any) => data as FantasyEvent).then((data)=>Events.parseEventId(id, data));
+    }
+
+}
+
+class Base{
+    private _v = 0;
+    private _p:Base[] = [];
+    fromJson(json: any){
+        return this;
+    }
+}
+
+class BaseModel<T>{
+    constructor(args: T){
+
+    }
+}
+
+class DDD extends BaseModel<DDD>{
+
+}
+
+
+class List<T> extends Base{
+    constructor(arr?: T[]){
+        super();
+    }
+    push(...args:T[]){
+
+    }
+    map<R>(callback: (it:T, i?: number, thisArg?: this)=>R):R[]{
+        return null;
+    }
+
+    getById(id: number): T{
+        return null;
+    }
+}
+
+interface Array<T>{
+    toList(): List<T>;
+}
+
+
+class Store extends Base{
+    @pub
+    leagues:List<League>;
+    @pub
+    positions:List<Postition>;
+    @pub
+    sidebarEvents:List<FantasyEvent>;
+    @pub
+    fantasyEvents:List<FantasyEvent>;
+}
+
+function deepClone() {
+
+}
+
+class Waiting extends Component<{}> {
+    render() {
+        return <div></div>;
+    }
+}
+
+
+class Sidebar extends Component<{}> {
+    context:Store;
+
+    render() {
+        if (!this.context.sidebarEvents) {
+            Events.fetchMyEvents();
+            return <Waiting/>
+        }
+        return <div>
+            {this.context.sidebarEvents.map(event =>
+                <div>
+                    {event.abbreviation}
+                </div>
+            )}
+        </div>
+    }
+}
+
+class EventList extends Component<{}> {
+    context:Store
+
+    render() {
+        return <div>
+
+        </div>
+    }
+}
+
+class FantasyEventPage extends Component<{id: number}> {
+    context:Store
+
+    render() {
+        const fantasyEvent = this.context.fantasyEvents.getById(this.props.id);
+        if (!fantasyEvent) {
+            Events.fetchEvent(this.props.id);
+            return <Waiting/>
+        }
+
+        if (this.context)
+            return <div>
+
+            </div>
+    }
+}
+
+
+class App extends Component<{}> {
+    render() {
+        return <div>
+            <Sidebar/>
+            <EventList/>
+        </div>
+    }
+}
+
+
+
+/*
+ <Router history={browserHistory}>
+ <Route path="/" component={App}>
+ <IndexRoute component={Index}/>
+ <Route path="/about" component={About}/>
+ <Route path="users" component={Users}>
+ <IndexRoute component={UsersIndex}/>
+ <Route path=":id" component={User}/>
+ </Route>
+ </Route>
+ </Router>
+ */

@@ -1,37 +1,70 @@
-import './subtitles.css';
-import * as React from 'react';
-import * as classNames from 'classnames';
-import {LineAllocator, generateRandomTimestamps} from "../utils/time-allocate";
+import * as React from "react";
+import * as classNames from "classnames";
+import {PlayingStatus} from "sound-utils/Play";
+import {ITextLine} from "../../../interfaces/text-line";
+import {PostModel} from "../models/post";
+import {AudioPlayer} from "../utils/audio-player";
+import "./subtitles.css";
 
-class Line {
-    y:number;
-    renderY:number;
+export class Subtitles extends React.Component<{postModel: PostModel; player: AudioPlayer; resizeKoef: number; renderLines: number[]}, {}> {
+    duration:number = 0;
+   
+    timeToY(time:number) {
+        return time * 100 / this.props.resizeKoef;
+    }
 
-}
-const lineH = 30;
-const height = 1;
-const debug = false;
-export class Subtitles extends React.Component<{}, {}> {
-    lines:Line[] = [];
+    showRuTextLine(i:number) {
+        this.openedRuTextLines[i] = true;
+        this.forceUpdate();
+    }
+
+    hideRuTextLine(i:number) {
+        this.openedRuTextLines[i] = false;
+        this.forceUpdate();
+    }
+
+    openedRuTextLines:boolean[] = [];
+
+    componentDidMount(){
+        setInterval(()=> {
+            let playingLine = -1;
+            if (this.props.player.player.getState() == PlayingStatus.PLAYING) {
+                for (var i = 0; i < this.props.postModel.lines.length; i++) {
+                    var line = this.props.postModel.lines[i];
+                    if (this.isSelected(line.en)){
+                        playingLine = i;
+                        break;
+                    }
+                }
+            }
+            if (this.playingLine !== playingLine) {
+                this.playingLine = playingLine;
+                this.forceUpdate();
+            }
+        }, 10);
+    }
+    playingLine = -1;
+
+    isSelected(textLine:ITextLine) {
+        const currentTime = this.props.player.player.getCurrentTime();
+        return ((textLine.start) / 100) <= currentTime && currentTime <= (textLine.start + textLine.dur) / 100
+    }
+
+
 
     render() {
-        const timestamps = generateRandomTimestamps();
-        // const timestamps = [0, 10, 20, 30, 40, 110, 120, 130, 360, 370, 380, 390, 400, 510, 520, 530, 540, 550, 560, 570, 700, 800, 910, 920, 930]
-        // const timestamps = [0, 360, 370]
-
-
-        const lines = new LineAllocator(timestamps, 30).allocateRenderLines();
-        return <div>
-            <svg></svg>
-            <div className="">
-                {lines.map((line,i) =>
-                <div className="ln-real" style={{top: timestamps[i]}}>{timestamps[i]}</div>
-                    )}
-
-                {lines.map((line,i) =>
-                <div className="ln" style={{top: line}}>{timestamps[i]}</div>
-                    )}
-            </div>
-        </div>;
+        const durationY = this.timeToY(this.duration);
+        return <div className="subtitles">
+            {this.props.postModel.lines.map((line, i) =>
+                <div
+                    className={classNames("line", {playing: this.playingLine == i, selected: this.isSelected(line.en)})}
+                    onMouseDown={()=>this.showRuTextLine(i)}
+                    onMouseUp={()=>this.hideRuTextLine(i)}
+                    style={{top: this.props.renderLines[i]}}>
+                    <div className="en">{line.en ? line.en.text : ''}</div>
+                    {this.openedRuTextLines[i] ?
+                        <div className="ru">{line.ru ? line.ru.text : ''}</div> : null}
+                </div>)}
+        </div>
     }
 }
