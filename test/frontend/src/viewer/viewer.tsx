@@ -29,7 +29,7 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
     render() {
         const postModel = this.props.resolved;
         const lineH = 50;
-        const resizeKoef = 50;
+        const resizeKoef = 4;
 
         const positions = postModel.lines.map(line => (line.en.start + line.en.dur / 2) / resizeKoef);
         const renderLines = new LineAllocator(positions, 50).allocateRenderLines();

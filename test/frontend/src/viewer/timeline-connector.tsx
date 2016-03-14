@@ -6,8 +6,6 @@ import {AudioPlayer} from "../utils/audio-player";
 import "./timeline-connector.css";
 
 export class TimelineConnector extends React.Component<{postModel: PostModel; player: AudioPlayer; resizeKoef: number; lineH: number;renderLines:number[]}, {}> {
-    duration:number = 0;
-
     timeToY(time:number) {
         return time * 100 / this.props.resizeKoef;
     }
@@ -22,7 +20,7 @@ export class TimelineConnector extends React.Component<{postModel: PostModel; pl
     render() {
         const connectorWidth = 50;
         const svgWidth = 100;
-        const svgHeight = this.timeToY(this.duration);
+        const svgHeight = this.timeToY(this.props.player.duration);
         const lineH = this.props.lineH;
         const halfLineH = lineH / 2;
         const resizeKoef = this.props.resizeKoef;
