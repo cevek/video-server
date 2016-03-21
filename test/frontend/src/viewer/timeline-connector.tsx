@@ -3,9 +3,30 @@ import {svgPathGenerator} from "../utils/svg-path-generator";
 import {ITextLine} from "../../../interfaces/text-line";
 import {PostModel} from "../models/post";
 import {AudioPlayer} from "../utils/audio-player";
+import {EditorHistory} from "../utils/history";
 import "./timeline-connector.css";
 
-export class TimelineConnector extends React.Component<{postModel: PostModel; player: AudioPlayer; resizeKoef: number; lineH: number;renderLines:number[]}, {}> {
+
+export const EditorHistoryTimelineType = 'timeline';
+export interface EditorHistoryTimeline {
+    type: string;
+    id: string;
+    oldStart: number;
+    oldDur: number;
+    newStart: number;
+    newDur: number;
+}
+
+
+interface TimelineConnectorProps {
+    postModel: PostModel;
+    player: AudioPlayer;
+    resizeKoef: number;
+    lineH: number;
+    renderLines:number[];
+    history: EditorHistory;
+}
+export class TimelineConnector extends React.Component<TimelineConnectorProps, {}> {
     timeToY(time:number) {
         return time * 100 / this.props.resizeKoef;
     }
@@ -23,7 +44,7 @@ export class TimelineConnector extends React.Component<{postModel: PostModel; pl
     activeIsTop = false;
     y = 0;
 
-    moveResizeKoef = 1/2;
+    moveResizeKoef = 1 / 2;
 
     onMouseDown(e:MouseEvent, textLineN:number, isTop:boolean) {
         const textLine = this.props.postModel.lines[textLineN].en;
@@ -36,7 +57,17 @@ export class TimelineConnector extends React.Component<{postModel: PostModel; pl
         document.body.classList.add('resizing');
     }
 
+    historyListen = (data:EditorHistoryTimeline, isRedo:boolean) => {
+        if (data.type == EditorHistoryTimelineType) {
+            const textLine = this.props.postModel.data.textLines[data.id];
+            textLine.start = isRedo ? data.newStart : data.oldStart;
+            textLine.dur = isRedo ? data.newDur : data.oldDur;
+            this.forceUpdate();
+        }
+    }
+
     componentDidMount() {
+        this.props.history.listen(this.historyListen);
         document.addEventListener("mousemove", e => {
             if (this.activeTextLine > -1) {
                 const textLine = this.props.postModel.lines[this.activeTextLine].en;
@@ -64,6 +95,16 @@ export class TimelineConnector extends React.Component<{postModel: PostModel; pl
                 this.playTextLine(textLine);
                 this.activeTextLine = -1;
                 document.body.classList.remove('resizing');
+                if (this.activeTextLineStart != textLine.start || this.activeTextLineDur != textLine.dur) {
+                    this.props.history.add({
+                        id: textLine.id,
+                        type: EditorHistoryTimelineType,
+                        oldStart: this.activeTextLineStart,
+                        oldDur: this.activeTextLineDur,
+                        newStart: textLine.start,
+                        newDur: textLine.dur,
+                    } as EditorHistoryTimeline);
+                }
                 this.forceUpdate();
             }
         })
