@@ -8,9 +8,11 @@ import {Subtitles} from "./subtitles";
 import {AudioPlayer} from "../utils/audio-player";
 import "./viewer.css";
 import {config} from "../../../backend/config";
+import {EditorHistory} from "../utils/history";
 
 export class Viewer extends React.Component<{params: any, resolved: PostModel}, {}> {
     audioPlayer = new AudioPlayer();
+    history: EditorHistory;
 
     static load(params:any) {
         return PostModel.fetch(params.id);
