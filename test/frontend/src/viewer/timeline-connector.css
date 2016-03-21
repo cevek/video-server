@@ -3,3 +3,31 @@ svg.timeline-connector {
     left: 450px;
     top: 0;
 }
+
+svg.timeline-connector g:hover path, svg.timeline-connector g.resizing path {
+    fill: red;
+}
+
+svg.timeline-connector g:hover rect {
+    z-index: 100;
+}
+
+svg.timeline-connector rect {
+    x: 0;
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    fill: transparent;
+}
+
+svg.timeline-connector .top {
+    cursor: ns-resize;
+}
+
+svg.timeline-connector .bottom {
+    cursor: ns-resize;
+}
+
+body.resizing{
+    cursor: ns-resize;
+}
