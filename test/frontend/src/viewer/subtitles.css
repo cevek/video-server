@@ -1,9 +1,9 @@
-.subtitles {
+.viewer .subtitles {
     position: absolute;
     top: 0;
 }
 
-.line {
+.viewer .line {
     padding: 5px 10px;
     position: absolute;
     height: 50px;
@@ -11,10 +11,10 @@
     left: 500px;
 }
 
-.selected {
+.viewer .selected {
     background: yellow;
 }
 
-.playing{
+.viewer .playing{
     background: yellow;
 }

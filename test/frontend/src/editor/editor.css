@@ -1,4 +1,5 @@
-.line{
+
+.editor .line{
     border: 1px solid silver;
     border-radius: 10px;
     margin: 10px;
@@ -7,23 +8,23 @@
     text-align: center;
 }
 
-.line .textline{
+.editor .line .textline{
     padding: 1px 15px;
 }
 
-.line .en{
+.editor .line .en{
     font-size: 16px;
     padding-top: 10px;
 }
-.line .ru{
+.editor .line .ru{
     font-size: 13px;
     padding-bottom: 10px;
 }
-.line .textline span{
+.editor .line .textline span{
     cursor: default;
     padding: 4px 3px;
     margin: 0 -1px;
 }
-.line .textline span.selected{
+.editor .line .textline span.selected{
     background: lightskyblue;
 }
