@@ -6,9 +6,9 @@ import {TimelineConnector} from "./timeline-connector";
 import {LineAllocator} from "../utils/time-allocate";
 import {Subtitles} from "./subtitles";
 import {AudioPlayer} from "../utils/audio-player";
-import "./viewer.css";
 import {config} from "../../../backend/config";
 import {EditorHistory} from "../utils/history";
+import "./viewer.css";
 
 export class Viewer extends React.Component<{params: any, resolved: PostModel}, {}> {
     audioPlayer = new AudioPlayer();

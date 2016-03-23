@@ -1,55 +1,56 @@
 import * as React from "react";
-import * as classNames from "classnames";
-import {Lang} from "../../../interfaces/lang";
 import {PostModel} from "./../models/post";
-import {EditorModel, Word, TextLine} from "./editor-model";
-import {EditorKeyHandler} from "./editor-key-handler";
+import {EditorModel} from "./editor-model";
+import {Thumbs} from "../viewer/thumbs";
+import {Timeline} from "../viewer/timeline";
+import {TimelineConnector} from "../viewer/timeline-connector";
+import {AudioPlayer} from "../utils/audio-player";
+import {LineAllocator} from "../utils/time-allocate";
+import {EditorText} from "./editor-text";
+import {config} from "../../../backend/config";
 import "./editor.css";
 
 export class Editor extends React.Component<{params: any, resolved: EditorModel}, {}> {
     model = this.props.resolved;
+    audioPlayer = new AudioPlayer();
+
 
     static load(params:any) {
         return PostModel.fetch(params.id).then(data => new EditorModel(data));
     }
 
-    spanClassName(textLine:TextLine, word:Word) {
-        return classNames({'selected': this.model.selection.word == word && this.model.selection.textLine == textLine});
-    }
-
-    setWordNode(word:Word, node:React.DOMComponent<{}>) {
-        word.span = React.findDOMNode(node);
-    }
-
-    onWordClick(e:React.MouseEvent, linePos:number, lang:Lang, wordPos:number) {
-        this.model.selection.set(linePos, lang, wordPos);
-        this.forceUpdate();
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    onTextLineClick(linePos:number, lang:Lang) {
-        this.model.selection.set(linePos, lang, 0);
-        //this.selectedWordPos = 0;
-        this.forceUpdate()
+    componentDidMount() {
+        (window as any).editorHistory = this.model.history;
+        var data = this.model.postModel.data;
+        const enAudio = data.mediaFiles[data.post.enAudio];
+        const url = config.baseUrl + '/' + enAudio.url;
+        this.audioPlayer.loadSound(url).then(() => {
+            this.forceUpdate();
+        })
     }
 
     render() {
+        const postModel = this.model.postModel;
+
+        // const positions = this.model.postModel.lines.map(line => (line.en.start + line.en.dur / 2) / this.model.resizeKoef);
+        const positions = this.model.lines.map(line => (line.en.start + line.en.dur / 2) / this.model.resizeKoef);
+        // console.log(positions, positions2);
+
+        const renderLines = new LineAllocator(positions, 50).allocateRenderLines();
+
         return <div className="editor">
-            <EditorKeyHandler model={this.model} onAction={()=>this.forceUpdate()}/>
-            {this.model.lines.map((line,linePos) => <div className="line">
-                <div className="textline en" onClick={()=>this.onTextLineClick(linePos,Lang.EN)}>
-                    {line.en.words.map((w,wordPos) =>
-                    <span className={this.spanClassName(line.en, w)} ref={node => this.setWordNode(w, node)}
-                          onClick={e=>this.onWordClick(e, linePos, Lang.EN, wordPos)}>{w.word}</span>)}
-                </div>
-                <div className="textline ru" onClick={()=>this.onTextLineClick(linePos, Lang.RU)}>
-                    {line.ru.words.map((w,wordPos) =>
-                    <span className={this.spanClassName(line.ru, w)} ref={node => this.setWordNode(w, node)}
-                          onClick={e=>this.onWordClick(e, linePos, Lang.RU, wordPos)}>{w.word}</span>)}
-                </div>
-            </div>)}
+            {this.audioPlayer.soundLoaded ?
+                <div>
+                    <Timeline postModel={postModel} resizeKoef={this.model.resizeKoef} player={this.audioPlayer}/>
+                    <TimelineConnector postModel={postModel} lineH={this.model.lineH} resizeKoef={this.model.resizeKoef}
+                                       player={this.audioPlayer}
+                                       history={this.model.history}
+                                       renderLines={renderLines}/>
+                </div> : null
+            }
+            <Thumbs postModel={postModel} resizeKoef={this.model.resizeKoef}/>
+            <EditorText model={this.model} renderLines={renderLines}/>
         </div>
     }
-
 }
+

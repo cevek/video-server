@@ -34,7 +34,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
     playTextLine(textLine:ITextLine) {
         //todo: audioselection
         this.props.player.player.play(textLine.start / 100, textLine.dur / 100, false, ()=> {
-            console.log("EEEEnd");
+            // console.log("EEEEnd");
         });
     }
 
@@ -118,21 +118,23 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
         const halfLineH = lineH / 2;
         const resizeKoef = this.props.resizeKoef;
 
-
         return <svg className="timeline-connector" width={svgWidth} height={svgHeight}>
             {this.props.renderLines.map((pos, i) => {
                 const textLine = this.props.postModel.lines[i].en;
-                const tl = textLine.start / resizeKoef;
-                const bl = (textLine.start + textLine.dur) / resizeKoef;
-                const tr = pos - halfLineH;
-                const br = pos + halfLineH;
-                const color = 'hsla(' + (textLine.start) + ', 50%,60%, 1)';
-                return <g className={i == this.activeTextLine ? 'resizing' : ''}>
-                    <path onClick={()=>this.playTextLine(textLine)} fill={color}
-                          d={svgPathGenerator(tl, bl, tr, br, connectorWidth)}/>
-                    <rect onMouseDown={(e:any)=>this.onMouseDown(e, i, true)} className="top" y={tl}/>
-                    <rect onMouseDown={(e:any)=>this.onMouseDown(e, i, false)} className="bottom" y={bl-20}/>
-                </g>
+                if (textLine) {
+                    const tl = textLine.start / resizeKoef;
+                    const bl = (textLine.start + textLine.dur) / resizeKoef;
+                    const tr = pos - halfLineH;
+                    const br = pos + halfLineH;
+                    const color = 'hsla(' + (textLine.start) + ', 50%,60%, 1)';
+                    return <g className={i == this.activeTextLine ? 'resizing' : ''}>
+                        <path onClick={()=>this.playTextLine(textLine)} fill={color}
+                              d={svgPathGenerator(tl, bl, tr, br, connectorWidth)}/>
+                        <rect onMouseDown={(e:any)=>this.onMouseDown(e, i, true)} className="top" y={tl}/>
+                        <rect onMouseDown={(e:any)=>this.onMouseDown(e, i, false)} className="bottom" y={bl-20}/>
+                    </g>
+                }
+                return null;
             })}
         </svg>
 

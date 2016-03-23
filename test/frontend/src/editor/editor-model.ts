@@ -1,5 +1,6 @@
 import {Lang} from "../../../interfaces/lang";
 import {PostModel} from "../models/post";
+import {EditorHistory} from "../utils/history";
 export class Line {
     constructor(public en:TextLine = null, public ru:TextLine = null) {
         if (!en) {
@@ -77,7 +78,7 @@ const enum EditorAction{
     JOIN_MOVE  = 4
 }
 
-class EditorHistory {
+class EditorHistoryOld {
     action:EditorAction;
     linePos:number;
     lang:Lang;
@@ -124,13 +125,15 @@ export class Selection {
 export class EditorModel {
     lines:Line[] = [];
     selection:Selection;
+    history = new EditorHistory();
+    resizeKoef = 4;
+    lineH = 50;
 
-    constructor(postModel: PostModel) {
-        const data = postModel.data;
-        this.lines = postModel.data.lines.map(line =>
+    constructor(public postModel: PostModel) {
+        this.lines = postModel.lines.map(line =>
             new Line(
-                new TextLine(Lang.EN, null, null, line.en ? data.textLines[line.en].text.split(/\s+/).map(w => new Word(w)) : []),
-                new TextLine(Lang.RU, null, null, line.ru ? data.textLines[line.ru].text.split(/\s+/).map(w => new Word(w)) : [])
+                new TextLine(Lang.EN, line.en.start, line.en.dur, line.en ? line.en.text.split(/\s+/).map(w => new Word(w)) : []),
+                new TextLine(Lang.RU, line.ru.start, line.ru.dur, line.ru ? line.ru.text.split(/\s+/).map(w => new Word(w)) : [])
             ))
         this.selection = new Selection(this.lines)
     }
@@ -168,7 +171,7 @@ export class EditorModel {
         return {action: EditorAction.SPLIT_MOVE, lang: sel.lang, linePos: nextLinePos, wordPos: 0};
     }
 
-    undoSplitWithMove(undoItem:EditorHistory) {
+    undoSplitWithMove(undoItem:EditorHistoryOld) {
         this.undoToModify(undoItem);
         this.joinLineWithMove();
     }
@@ -189,7 +192,7 @@ export class EditorModel {
         return {action: EditorAction.SPLIT, lang: sel.lang, linePos: nextLinePos, wordPos: 0};
     }
 
-    undoSplitIntoNewLine(undoItem:EditorHistory) {
+    undoSplitIntoNewLine(undoItem:EditorHistoryOld) {
         this.undoToModify(undoItem);
         this.joinLine();
     }
@@ -216,12 +219,12 @@ export class EditorModel {
         return {action: EditorAction.JOIN, lang: sel.lang, linePos: prevLinePos, wordPos: newWordPos};
     }
 
-    undoJoinLine(undoItem:EditorHistory) {
+    undoJoinLine(undoItem:EditorHistoryOld) {
         this.undoToModify(undoItem);
         this.splitIntoNewLine();
     }
 
-    undoToModify(undoItem:EditorHistory) {
+    undoToModify(undoItem:EditorHistoryOld) {
         this.selection.set(undoItem.linePos, undoItem.lang, undoItem.wordPos);
     }
 
@@ -244,19 +247,19 @@ export class EditorModel {
         }
     }
 
-    undoJoinLineWithMove(undoItem:EditorHistory) {
+    undoJoinLineWithMove(undoItem:EditorHistoryOld) {
         this.undoToModify(undoItem);
         this.splitWithMove();
     }
 
-    addUndo(undo:EditorHistory) {
+    addUndo(undo:EditorHistoryOld) {
         if (undo) {
             console.log("Action", undo);
             this.undoStack.push(undo);
         }
     }
 
-    undoStack:EditorHistory[] = [];
+    undoStack:EditorHistoryOld[] = [];
 
     undo() {
         var undoItem = this.undoStack.pop();

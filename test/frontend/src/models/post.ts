@@ -16,7 +16,9 @@ export class PostModel {
         return data.lines.filter(line => Boolean(data.textLines[line.en])).map(line => {
             const en = data.textLines[line.en];
             const ru = data.textLines[line.ru];
-            en.start -= shiftEnAudio - shiftEnSubs;
+            if (en) {
+                en.start -= shiftEnAudio - shiftEnSubs;
+            }
             if (ru && shiftRuAudio) {
                 ru.start -= shiftRuAudio - shiftRuSubs;
             }
