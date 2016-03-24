@@ -1,13 +1,16 @@
 import {Lang} from "../../../interfaces/lang";
 import {PostModel} from "../models/post";
 import {EditorHistory} from "../utils/history";
-export class Line {
-    constructor(public en:TextLine = null, public ru:TextLine = null) {
+import {Line} from "../models/line";
+import {ITextLine} from "../../../interfaces/text-line";
+export class EditorLine extends Line{
+    constructor(public en:EditorTextLine = null, public ru:EditorTextLine = null) {
+        super();
         if (!en) {
-            this.en = new TextLine(Lang.EN, null, null, null);
+            this.en = new EditorTextLine(Lang.EN, null, null, null);
         }
         if (!ru) {
-            this.ru = new TextLine(Lang.RU, null, null, null);
+            this.ru = new EditorTextLine(Lang.RU, null, null, null);
         }
     }
 
@@ -19,7 +22,7 @@ export class Line {
         return this.en.isEmpty() && this.ru.isEmpty();
     }
 
-    setTextLine(lang:Lang, textLine:TextLine) {
+    setTextLine(lang:Lang, textLine:EditorTextLine) {
         if (lang == Lang.EN) {
             this.en = textLine;
         } else {
@@ -28,7 +31,7 @@ export class Line {
     }
 }
 
-export class TextLine {
+export class EditorTextLine implements ITextLine{
     words:Word[];
 
     getWord(i:number) {
@@ -86,14 +89,14 @@ class EditorHistoryOld {
 }
 
 export class Selection {
-    line:Line;
+    line:EditorLine;
     linePos:number;
-    textLine:TextLine;
+    textLine:EditorTextLine;
     lang:Lang;
     word:Word;
     wordPos:number;
 
-    constructor(public lines:Line[]) {}
+    constructor(public lines:EditorLine[]) {}
 
     set(linePos:number, lang:Lang, wordPos:number) {
         this.setLine(linePos);
@@ -123,7 +126,7 @@ export class Selection {
 }
 
 export class EditorModel {
-    lines:Line[] = [];
+    lines:EditorLine[] = [];
     selection:Selection;
     history = new EditorHistory();
     resizeKoef = 4;
@@ -131,15 +134,15 @@ export class EditorModel {
 
     constructor(public postModel: PostModel) {
         this.lines = postModel.lines.map(line =>
-            new Line(
-                new TextLine(Lang.EN, line.en.start, line.en.dur, line.en ? line.en.text.split(/\s+/).map(w => new Word(w)) : []),
-                new TextLine(Lang.RU, line.ru.start, line.ru.dur, line.ru ? line.ru.text.split(/\s+/).map(w => new Word(w)) : [])
+            new EditorLine(
+                new EditorTextLine(Lang.EN, line.en.start, line.en.dur, line.en ? line.en.text.split(/\s+/).map(w => new Word(w)) : []),
+                new EditorTextLine(Lang.RU, line.ru.start, line.ru.dur, line.ru ? line.ru.text.split(/\s+/).map(w => new Word(w)) : [])
             ))
         this.selection = new Selection(this.lines)
     }
 
 
-    findClosestNextWord(currWord:Word, nextTextLine:TextLine) {
+    findClosestNextWord(currWord:Word, nextTextLine:EditorTextLine) {
         var currRect = currWord.span.getBoundingClientRect();
         var currPos = currRect.left + currRect.width / 2;
         return nextTextLine.words.map((w, i) => {
@@ -151,21 +154,26 @@ export class EditorModel {
 
     splitWithMove() {
         var sel = this.selection;
-        var origWords = sel.textLine.words.slice();
+        const currentTextLine = sel.textLine;
+        const halfDur = currentTextLine.dur / 2;
+        var origWords = currentTextLine.words.slice();
 
         var lastLine = this.lines[this.lines.length - 1];
         if (!lastLine.getTextLine(sel.lang).isEmpty()) {
-            this.lines.push(new Line());
+            this.lines.push(new EditorLine());
         }
         for (var i = this.lines.length - 1; i > sel.linePos; i--) {
             this.lines[i].setTextLine(sel.lang, this.lines[i - 1].getTextLine(sel.lang));
         }
-        sel.line.setTextLine(sel.lang, new TextLine(sel.lang, null, null, origWords.slice(0, sel.wordPos)));
+        sel.line.setTextLine(sel.lang, new EditorTextLine(sel.lang, currentTextLine.start, halfDur, origWords.slice(0, sel.wordPos)));
+        //currentTextLine.start += currentTextLine.dur;
 
         var nextLinePos = sel.linePos + 1;
         var newLine = this.lines[nextLinePos];
-        var selLine = newLine.getTextLine(sel.lang);
-        selLine.setWords(origWords.slice(sel.wordPos));
+        var selTextLine = newLine.getTextLine(sel.lang);
+        selTextLine.setWords(origWords.slice(sel.wordPos));
+        selTextLine.start = currentTextLine.start + halfDur;
+        selTextLine.dur = halfDur;
 
         this.selection.set(nextLinePos, sel.lang, 0);
         return {action: EditorAction.SPLIT_MOVE, lang: sel.lang, linePos: nextLinePos, wordPos: 0};
@@ -179,15 +187,20 @@ export class EditorModel {
     splitIntoNewLine() {
         var sel = this.selection;
         var origWords = sel.textLine.words.slice();
+        const currentTextLine = sel.textLine;
 
-        sel.textLine.setWords(origWords.slice(0, sel.wordPos));
+        currentTextLine.setWords(origWords.slice(0, sel.wordPos));
         var nextLinePos = sel.linePos + 1;
         var nextLine = this.lines[nextLinePos];
         if (!nextLine.getTextLine(sel.lang).isEmpty()) {
-            nextLine = new Line();
+            nextLine = new EditorLine();
             this.lines.splice(nextLinePos, 0, nextLine);
         }
-        nextLine.getTextLine(sel.lang).setWords(origWords.slice(sel.wordPos));
+        const nextTextLine = nextLine.getTextLine(sel.lang);
+        nextTextLine.setWords(origWords.slice(sel.wordPos));
+        nextTextLine.start = currentTextLine.start + currentTextLine.dur / 2;
+        currentTextLine.dur /= 2;
+        nextTextLine.dur = currentTextLine.dur;
         this.selection.set(nextLinePos, sel.lang, 0);
         return {action: EditorAction.SPLIT, lang: sel.lang, linePos: nextLinePos, wordPos: 0};
     }
@@ -199,16 +212,18 @@ export class EditorModel {
 
     joinLine() {
         var sel = this.selection;
-        var origWords = sel.textLine.words.slice();
+        const currentTextLine = sel.textLine;
+        var origWords = currentTextLine.words.slice();
 
         if (sel.linePos < 1) {
             return null;
         }
         var prevLinePos = sel.linePos - 1;
         var prevLine = this.lines[prevLinePos];
-        var prevWords = prevLine.getTextLine(sel.lang).words;
+        var prevTextLine = prevLine.getTextLine(sel.lang);
+        var prevWords = prevTextLine.words;
         var newWords = [...prevWords, ...origWords];
-        var textLine = new TextLine(sel.lang, null, null, newWords);
+        var textLine = new EditorTextLine(sel.lang, prevTextLine.start, currentTextLine.start - prevTextLine.start + currentTextLine.dur, newWords);
         prevLine.setTextLine(sel.lang, textLine);
         sel.textLine.setWords(null);
         if (sel.line.isEmpty()) {
@@ -238,7 +253,7 @@ export class EditorModel {
                 this.lines[i - 1].setTextLine(lang, this.lines[i].getTextLine(lang));
             }
             var lastLine = this.lines[this.lines.length - 1];
-            lastLine.setTextLine(lang, new TextLine(lang, null, null, null));
+            lastLine.setTextLine(lang, new EditorTextLine(lang, null, null, null));
             if (lastLine.isEmpty()) {
                 this.lines.pop();
             }

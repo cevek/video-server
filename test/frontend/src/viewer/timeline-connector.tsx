@@ -1,16 +1,18 @@
 import * as React from "react";
 import {svgPathGenerator} from "../utils/svg-path-generator";
 import {ITextLine} from "../../../interfaces/text-line";
-import {PostModel} from "../models/post";
 import {AudioPlayer} from "../utils/audio-player";
 import {EditorHistory} from "../utils/history";
+import {Line} from "../models/line";
+import {Lang} from "../../../interfaces/lang";
 import "./timeline-connector.css";
 
 
 export const EditorHistoryTimelineType = 'timeline';
 export interface EditorHistoryTimeline {
     type: string;
-    id: string;
+    lineN: number;
+    lang: Lang;
     oldStart: number;
     oldDur: number;
     newStart: number;
@@ -19,7 +21,7 @@ export interface EditorHistoryTimeline {
 
 
 interface TimelineConnectorProps {
-    postModel: PostModel;
+    lines: Line[];
     player: AudioPlayer;
     resizeKoef: number;
     lineH: number;
@@ -38,20 +40,20 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
         });
     }
 
-    activeTextLine = -1;
-    activeTextLineStart = 0;
-    activeTextLineDur = 0;
+    activeLine = -1;
+    activeLineStart = 0;
+    activeLineDur = 0;
     activeIsTop = false;
     y = 0;
 
     moveResizeKoef = 1 / 2;
 
-    onMouseDown(e:MouseEvent, textLineN:number, isTop:boolean) {
-        const textLine = this.props.postModel.lines[textLineN].en;
+    onMouseDown(e:MouseEvent, lineN:number, isTop:boolean) {
+        const textLine = this.props.lines[lineN].en;
         this.activeIsTop = isTop;
-        this.activeTextLine = textLineN;
-        this.activeTextLineStart = textLine.start;
-        this.activeTextLineDur = textLine.dur;
+        this.activeLine = lineN;
+        this.activeLineStart = textLine.start;
+        this.activeLineDur = textLine.dur;
         this.y = e.pageY;
         e.preventDefault();
         document.body.classList.add('resizing');
@@ -59,7 +61,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
 
     historyListen = (data:EditorHistoryTimeline, isRedo:boolean) => {
         if (data.type == EditorHistoryTimelineType) {
-            const textLine = this.props.postModel.data.textLines[data.id];
+            const textLine = this.props.lines[data.lineN].en;
             textLine.start = isRedo ? data.newStart : data.oldStart;
             textLine.dur = isRedo ? data.newDur : data.oldDur;
             this.forceUpdate();
@@ -69,42 +71,43 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
     componentDidMount() {
         this.props.history.listen(this.historyListen);
         document.addEventListener("mousemove", e => {
-            if (this.activeTextLine > -1) {
-                const textLine = this.props.postModel.lines[this.activeTextLine].en;
+            if (this.activeLine > -1) {
+                const textLine = this.props.lines[this.activeLine].en;
                 // console.log((this.y - e.offsetY));
                 let diff = (this.y - e.pageY) * this.props.resizeKoef * this.moveResizeKoef;
                 const minH = 20 * this.props.resizeKoef;
                 if (this.activeIsTop) {
-                    if (this.activeTextLineStart - diff < 0) {
-                        diff = this.activeTextLineStart;
+                    if (this.activeLineStart - diff < 0) {
+                        diff = this.activeLineStart;
                     }
-                    if (this.activeTextLineDur + diff < minH) {
-                        diff = -(this.activeTextLineDur - minH);
+                    if (this.activeLineDur + diff < minH) {
+                        diff = -(this.activeLineDur - minH);
                     }
-                    textLine.start = this.activeTextLineStart - diff;
-                    textLine.dur = this.activeTextLineDur + diff;
+                    textLine.start = this.activeLineStart - diff;
+                    textLine.dur = this.activeLineDur + diff;
                 } else {
-                    textLine.dur = this.activeTextLineDur - diff > minH ? this.activeTextLineDur - diff : minH;
+                    textLine.dur = this.activeLineDur - diff > minH ? this.activeLineDur - diff : minH;
                 }
                 this.forceUpdate();
             }
         })
         document.addEventListener("mouseup", e => {
-            if (this.activeTextLine > -1) {
-                const textLine = this.props.postModel.lines[this.activeTextLine].en;
+            if (this.activeLine > -1) {
+                const textLine = this.props.lines[this.activeLine].en;
                 this.playTextLine(textLine);
-                this.activeTextLine = -1;
                 document.body.classList.remove('resizing');
-                if (this.activeTextLineStart != textLine.start || this.activeTextLineDur != textLine.dur) {
+                if (this.activeLineStart != textLine.start || this.activeLineDur != textLine.dur) {
                     this.props.history.add({
-                        id: textLine.id,
+                        lineN: this.activeLine,
+                        lang: Lang.EN,
                         type: EditorHistoryTimelineType,
-                        oldStart: this.activeTextLineStart,
-                        oldDur: this.activeTextLineDur,
+                        oldStart: this.activeLineStart,
+                        oldDur: this.activeLineDur,
                         newStart: textLine.start,
                         newDur: textLine.dur,
                     } as EditorHistoryTimeline);
                 }
+                this.activeLine = -1;
                 this.forceUpdate();
             }
         })
@@ -120,14 +123,14 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
 
         return <svg className="timeline-connector" width={svgWidth} height={svgHeight}>
             {this.props.renderLines.map((pos, i) => {
-                const textLine = this.props.postModel.lines[i].en;
+                const textLine = this.props.lines[i].en;
                 if (textLine) {
                     const tl = textLine.start / resizeKoef;
                     const bl = (textLine.start + textLine.dur) / resizeKoef;
                     const tr = pos - halfLineH;
                     const br = pos + halfLineH;
                     const color = 'hsla(' + (textLine.start) + ', 50%,60%, 1)';
-                    return <g className={i == this.activeTextLine ? 'resizing' : ''}>
+                    return <g className={i == this.activeLine ? 'resizing' : ''}>
                         <path onClick={()=>this.playTextLine(textLine)} fill={color}
                               d={svgPathGenerator(tl, bl, tr, br, connectorWidth)}/>
                         <rect onMouseDown={(e:any)=>this.onMouseDown(e, i, true)} className="top" y={tl}/>

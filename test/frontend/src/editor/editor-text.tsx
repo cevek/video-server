@@ -1,14 +1,14 @@
 import * as React from "react";
 import * as classNames from "classnames";
-import {EditorModel, TextLine, Word} from "./editor-model";
+import {EditorModel, EditorTextLine, Word} from "./editor-model";
 import {Lang} from "../../../interfaces/lang";
 import {EditorKeyHandler} from "./editor-key-handler";
 import "./editor-text.css";
 
-export class EditorText extends React.Component<{model: EditorModel; renderLines: number[]; }, {}> {
+export class EditorText extends React.Component<{model: EditorModel; renderLines: number[]; onChange:()=>void}, {}> {
     model = this.props.model;
 
-    spanClassName(textLine:TextLine, word:Word) {
+    spanClassName(textLine:EditorTextLine, word:Word) {
         return classNames({'selected': this.model.selection.word == word && this.model.selection.textLine == textLine});
     }
 
@@ -31,7 +31,7 @@ export class EditorText extends React.Component<{model: EditorModel; renderLines
 
     render() {
         return <div className="editor-text">
-            <EditorKeyHandler model={this.model} onAction={()=>this.forceUpdate()}/>
+            <EditorKeyHandler model={this.model} onAction={this.props.onChange}/>
 
             {this.model.lines.map((line, linePos) => <div className="line" style={{top: this.props.renderLines[linePos]}}>
                 <div className="textline en" onClick={()=>this.onTextLineClick(linePos,Lang.EN)}>

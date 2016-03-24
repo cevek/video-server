@@ -1,11 +1,9 @@
 import * as React from "react";
 import {AudioSelection} from "./audio-selection";
-import {config} from "../../../backend/config";
 import {AudioPlayer} from "../utils/audio-player";
-import {PostModel} from "../models/post";
 import "./timeline.css";
 
-export class Timeline extends React.Component<{postModel: PostModel; player: AudioPlayer; resizeKoef: number}, {}> {
+export class Timeline extends React.Component<{player: AudioPlayer; resizeKoef: number}, {}> {
     timeToY(time:number) {
         return time * 100 / this.props.resizeKoef;
     }
