@@ -2,15 +2,15 @@ import * as React from "react";
 import {svgPathGenerator} from "../utils/svg-path-generator";
 import {ITextLine} from "../../../interfaces/text-line";
 import {AudioPlayer} from "../utils/audio-player";
-import {EditorHistory} from "../utils/history";
+import {EditorHistory, EditorHistoryData} from "../utils/history";
 import {Line} from "../models/line";
 import {Lang} from "../../../interfaces/lang";
 import "./timeline-connector.css";
 
 
-export const EditorHistoryTimelineType = 'timeline';
-export interface EditorHistoryTimeline {
-    type: string;
+export class EditorHistoryTimeline extends EditorHistoryData{
+    static type = 'timeline';
+    type = EditorHistoryTimeline.type;
     lineN: number;
     lang: Lang;
     oldStart: number;
@@ -60,7 +60,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
     }
 
     historyListen = (data:EditorHistoryTimeline, isRedo:boolean) => {
-        if (data.type == EditorHistoryTimelineType) {
+        if (data.type == EditorHistoryTimeline.type) {
             const textLine = this.props.lines[data.lineN].en;
             textLine.start = isRedo ? data.newStart : data.oldStart;
             textLine.dur = isRedo ? data.newDur : data.oldDur;
@@ -97,15 +97,15 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
                 this.playTextLine(textLine);
                 document.body.classList.remove('resizing');
                 if (this.activeLineStart != textLine.start || this.activeLineDur != textLine.dur) {
-                    this.props.history.add({
+                    this.props.history.add(new EditorHistoryTimeline({
                         lineN: this.activeLine,
                         lang: Lang.EN,
-                        type: EditorHistoryTimelineType,
+                        type: EditorHistoryTimeline.type,
                         oldStart: this.activeLineStart,
                         oldDur: this.activeLineDur,
                         newStart: textLine.start,
                         newDur: textLine.dur,
-                    } as EditorHistoryTimeline);
+                    }));
                 }
                 this.activeLine = -1;
                 this.forceUpdate();

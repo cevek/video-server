@@ -1,9 +1,10 @@
 import {Lang} from "../../../interfaces/lang";
 import {PostModel} from "../models/post";
-import {EditorHistory} from "../utils/history";
+import {EditorHistory, EditorHistoryData} from "../utils/history";
 import {Line} from "../models/line";
 import {ITextLine} from "../../../interfaces/text-line";
-export class EditorLine extends Line{
+import {EditorHistoryTimeline} from "../viewer/timeline-connector";
+export class EditorLine extends Line {
     constructor(public en:EditorTextLine = null, public ru:EditorTextLine = null) {
         super();
         if (!en) {
@@ -31,7 +32,7 @@ export class EditorLine extends Line{
     }
 }
 
-export class EditorTextLine implements ITextLine{
+export class EditorTextLine implements ITextLine {
     words:Word[];
 
     getWord(i:number) {
@@ -75,13 +76,16 @@ function parse(s:string) {
 }
 
 const enum EditorAction{
-    SPLIT      = 1,
+    SPLIT = 1,
     SPLIT_MOVE = 2,
-    JOIN       = 3,
-    JOIN_MOVE  = 4
+    JOIN = 3,
+    JOIN_MOVE = 4
 }
 
-class EditorHistoryOld {
+
+class EditorHistoryOld extends EditorHistoryData{
+    static type = 'move-text';
+    type = EditorHistoryOld.type;
     action:EditorAction;
     linePos:number;
     lang:Lang;
@@ -132,15 +136,21 @@ export class EditorModel {
     resizeKoef = 4;
     lineH = 50;
 
-    constructor(public postModel: PostModel) {
+    constructor(public postModel:PostModel) {
         this.lines = postModel.lines.map(line =>
             new EditorLine(
                 new EditorTextLine(Lang.EN, line.en.start, line.en.dur, line.en ? line.en.text.split(/\s+/).map(w => new Word(w)) : []),
                 new EditorTextLine(Lang.RU, line.ru.start, line.ru.dur, line.ru ? line.ru.text.split(/\s+/).map(w => new Word(w)) : [])
             ))
         this.selection = new Selection(this.lines)
+        this.history.listen(this.onHistory)
     }
 
+    onHistory = (item:EditorHistoryOld, isRedo:boolean) => {
+        if (item.type == EditorHistoryOld.type) {
+            this.undo(item);
+        }
+    }
 
     findClosestNextWord(currWord:Word, nextTextLine:EditorTextLine) {
         var currRect = currWord.span.getBoundingClientRect();
@@ -176,7 +186,12 @@ export class EditorModel {
         selTextLine.dur = halfDur;
 
         this.selection.set(nextLinePos, sel.lang, 0);
-        return {action: EditorAction.SPLIT_MOVE, lang: sel.lang, linePos: nextLinePos, wordPos: 0};
+        return new EditorHistoryOld({
+            action: EditorAction.SPLIT_MOVE,
+            lang: sel.lang,
+            linePos: nextLinePos,
+            wordPos: 0
+        });
     }
 
     undoSplitWithMove(undoItem:EditorHistoryOld) {
@@ -202,7 +217,7 @@ export class EditorModel {
         currentTextLine.dur /= 2;
         nextTextLine.dur = currentTextLine.dur;
         this.selection.set(nextLinePos, sel.lang, 0);
-        return {action: EditorAction.SPLIT, lang: sel.lang, linePos: nextLinePos, wordPos: 0};
+        return new EditorHistoryOld({action: EditorAction.SPLIT, lang: sel.lang, linePos: nextLinePos, wordPos: 0});
     }
 
     undoSplitIntoNewLine(undoItem:EditorHistoryOld) {
@@ -231,7 +246,12 @@ export class EditorModel {
         }
         var newWordPos = prevWords.length - (prevWords[0].isEmpty ? 1 : 0);
         this.selection.set(prevLinePos, sel.lang, newWordPos);
-        return {action: EditorAction.JOIN, lang: sel.lang, linePos: prevLinePos, wordPos: newWordPos};
+        return new EditorHistoryOld({
+            action: EditorAction.JOIN,
+            lang: sel.lang,
+            linePos: prevLinePos,
+            wordPos: newWordPos
+        });
     }
 
     undoJoinLine(undoItem:EditorHistoryOld) {
@@ -270,30 +290,26 @@ export class EditorModel {
     addUndo(undo:EditorHistoryOld) {
         if (undo) {
             console.log("Action", undo);
-            this.undoStack.push(undo);
+            this.history.add(undo);
+            // this.undoStack.push(undo);
         }
     }
 
-    undoStack:EditorHistoryOld[] = [];
-
-    undo() {
-        var undoItem = this.undoStack.pop();
-        if (undoItem) {
-            console.log("Undo", undoItem);
-            switch (undoItem.action) {
-                case EditorAction.JOIN:
-                    this.undoJoinLine(undoItem);
-                    break;
-                case EditorAction.JOIN_MOVE:
-                    this.undoJoinLineWithMove(undoItem);
-                    break;
-                case EditorAction.SPLIT:
-                    this.undoSplitIntoNewLine(undoItem);
-                    break;
-                case EditorAction.SPLIT_MOVE:
-                    this.undoSplitWithMove(undoItem);
-                    break;
-            }
+    private undo(undoItem:EditorHistoryOld) {
+        console.log("Undo", undoItem);
+        switch (undoItem.action) {
+            case EditorAction.JOIN:
+                this.undoJoinLine(undoItem);
+                break;
+            case EditorAction.JOIN_MOVE:
+                this.undoJoinLineWithMove(undoItem);
+                break;
+            case EditorAction.SPLIT:
+                this.undoSplitIntoNewLine(undoItem);
+                break;
+            case EditorAction.SPLIT_MOVE:
+                this.undoSplitWithMove(undoItem);
+                break;
         }
     }
 

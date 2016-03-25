@@ -1,7 +1,13 @@
-export interface EditorHistoryData {
+export class EditorHistoryData {
     type: string;
+    constructor(json: any) {
+        for (const i in json) {
+            (this as any)[i] = json[i];
+        }
+    }
 }
 type Callback = (data:EditorHistoryData, isRedo:boolean)=>void;
+
 
 export class EditorHistory {
     private listeners:Callback[] = [];
@@ -16,6 +22,7 @@ export class EditorHistory {
 
     listen(callback:Callback) {
         this.listeners.push(callback);
+        return this;
     }
 
     unlisten(callback:Callback) {
@@ -23,6 +30,7 @@ export class EditorHistory {
         if (pos > -1) {
             this.listeners.splice(pos, 1);
         }
+        return this;
     }
 
     private callListeners(data:EditorHistoryData, isRedo:boolean) {
@@ -36,7 +44,9 @@ export class EditorHistory {
             const item = this.items[this.pos];
             this.callListeners(item, false);
             this.pos--;
+            return item;
         }
+        return null;
     }
 
     redo() {
@@ -44,6 +54,8 @@ export class EditorHistory {
             this.pos++;
             const item = this.items[this.pos];
             this.callListeners(item, true);
+            return item;
         }
+        return null;
     }
 }

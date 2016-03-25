@@ -42,7 +42,7 @@ export class EditorKeyHandler extends React.Component<{model: EditorModel; onAct
         }
 
         if (keyCode == KeyCodes.Z && isCtrl) {
-            model.undo();
+            model.history.undo();
             handled = true;
         }
         if (keyCode == KeyCodes.LEFT) {
