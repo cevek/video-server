@@ -15,28 +15,28 @@ export class EditorKeyHandler extends React.Component<{model: EditorModel; onAct
         const model = this.props.model;
 
         var handled = false;
-        if (!model.selection.line || !model.selection.textLine) {
-            model.selection.set(0, 0, 0);
+        if (!model.textModel.selection.line || !model.textModel.selection.textLine) {
+            model.textModel.selection.set(0, 0, 0);
         }
 
         var keyCode = e.keyCode;
         var isCtrl = e.metaKey || e.ctrlKey;
         if (keyCode == KeyCodes.ENTER) {
             if (e.shiftKey) {
-                model.addUndo(model.splitIntoNewLine());
+                model.textModel.addUndo(model.textModel.splitIntoNewLine());
             }
             else {
-                model.addUndo(model.splitWithMove());
+                model.textModel.addUndo(model.textModel.splitWithMove());
             }
             handled = true;
         }
 
         if (keyCode == KeyCodes.BACKSPACE) {
             if (e.shiftKey) {
-                model.addUndo(model.joinLine());
+                model.textModel.addUndo(model.textModel.joinLine());
             }
             else {
-                model.addUndo(model.joinLineWithMove());
+                model.textModel.addUndo(model.textModel.joinLineWithMove());
             }
             handled = true;
         }
@@ -46,19 +46,19 @@ export class EditorKeyHandler extends React.Component<{model: EditorModel; onAct
             handled = true;
         }
         if (keyCode == KeyCodes.LEFT) {
-            model.left();
+            model.textModel.left();
             handled = true;
         }
         if (keyCode == KeyCodes.RIGHT) {
-            model.right();
+            model.textModel.right();
             handled = true;
         }
         if (keyCode == KeyCodes.UP) {
-            model.up();
+            model.textModel.up();
             handled = true;
         }
         if (keyCode == KeyCodes.DOWN) {
-            model.down();
+            model.textModel.down();
             handled = true;
         }
 
@@ -71,7 +71,7 @@ export class EditorKeyHandler extends React.Component<{model: EditorModel; onAct
     };
 
     scroll() {
-        var wordSpan = this.props.model.selection.word.span as HTMLElement;
+        var wordSpan = this.props.model.textModel.selection.word.span as HTMLElement;
         var rect = wordSpan.getBoundingClientRect();
 
         if (rect.top < 0) {

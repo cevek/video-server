@@ -16,7 +16,7 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
 
 
     static load(params:any) {
-        return PostModel.fetch(params.id).then(data => new EditorModel(data));
+        return PostModel.fetch(params.id).then(data => new EditorModel().fromPostModel(data));
     }
 
     componentDidMount() {

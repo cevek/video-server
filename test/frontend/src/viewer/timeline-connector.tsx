@@ -17,6 +17,9 @@ export class EditorHistoryTimeline extends EditorHistoryData{
     oldDur: number;
     newStart: number;
     newDur: number;
+    constructor(json: EditorHistoryTimeline){
+        super(json);        
+    }
 }
 
 
