@@ -9,6 +9,9 @@ import {LineAllocator} from "../utils/time-allocate";
 import {EditorText} from "./editor-text";
 import {config} from "../../../backend/config";
 import "./editor.css";
+import {EditorToolbar} from "./editor-toolbar";
+import {EditorTitle} from "./editor-title";
+import {EditorTags} from "./editor-tags";
 
 export class Editor extends React.Component<{params: any, resolved: EditorModel}, {}> {
     model = this.props.resolved;
@@ -39,6 +42,8 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
         const renderLines = new LineAllocator(positions, 50).allocateRenderLines();
 
         return <div className="editor">
+            <EditorTitle model={this.model}/>
+            <EditorTags model={this.model}/>
             {this.audioPlayer.soundLoaded ?
                 <div>
                     <Timeline resizeKoef={this.model.resizeKoef} player={this.audioPlayer}/>
@@ -50,6 +55,7 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
             }
             <Thumbs postModel={postModel} resizeKoef={this.model.resizeKoef}/>
             <EditorText model={this.model} renderLines={renderLines} onChange={()=>this.forceUpdate()}/>
+            <EditorToolbar model={this.model}/>
         </div>
     }
 }

@@ -11,7 +11,9 @@ export class EditorModel {
     history = new EditorHistory();
     resizeKoef = 4;
     lineH = 50;
-    
+    title = '';
+    tags = '';
+
     textModel:EditorTextModel;
 
     fromPostModel(postModel:PostModel){
@@ -23,6 +25,10 @@ export class EditorModel {
             ))
         this.textModel = new EditorTextModel(this);
         return this;
+    }
+    
+    save() {
+        
     }
 }
 
