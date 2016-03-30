@@ -9,7 +9,7 @@ import {LineAllocator} from "../utils/time-allocate";
 import {EditorText} from "./editor-text";
 import {config} from "../../../backend/config";
 import "./editor.css";
-import {EditorToolbar} from "./editor-toolbar";
+import {EditorToolbar} from "./toolbar/editor-toolbar";
 import {EditorTitle} from "./editor-title";
 import {EditorTags} from "./editor-tags";
 

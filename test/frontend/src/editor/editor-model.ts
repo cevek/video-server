@@ -13,6 +13,7 @@ export class EditorModel {
     lineH = 50;
     title = '';
     tags = '';
+    speakers: string[] = [];
 
     textModel:EditorTextModel;
 
