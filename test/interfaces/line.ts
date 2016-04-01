@@ -4,4 +4,5 @@ export interface ILine {
     en?: string;
     postId?: string;
     seq?: number;
+    speaker?: string;
 }

@@ -38,3 +38,34 @@
 .editor-text .line .textline span.selected {
     background: lightskyblue;
 }
+
+.editor-text .speakers {
+    margin-top: -15px;
+}
+
+.editor-text .speaker {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 3px;
+    background: #EEE;
+    border: 1px solid silver;
+    margin-right: -1px;
+    cursor: pointer;
+}
+
+.editor-text .speaker:first-child {
+    border-radius: 3px 0 0 3px;
+}
+
+.editor-text .speaker:last-child {
+    border-radius: 0 3px 3px 0;
+}
+
+.editor-text .speaker:first-child:last-child {
+    border-radius: 3px;
+}
+
+.editor-text .speaker.selected {
+    background: silver;
+    color: white;
+}

@@ -2,7 +2,7 @@ import * as React from "react";
 import {EditorModel} from "../editor-model";
 import "./speaker.css";
 
-export class EditorToolbarSpeaker extends React.Component<{model: EditorModel; addMode?: boolean; speaker: string; pos: number; onUpdate: ()=>void}, {}> {
+export class EditorToolbarSpeaker extends React.Component<{model:EditorModel; addMode?:boolean; speaker:string; pos:number; onUpdate:()=>void}, {}> {
     editMode = false;
 
     onRemove(pos:number) {

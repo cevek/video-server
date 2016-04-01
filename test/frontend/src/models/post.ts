@@ -24,7 +24,8 @@ export class PostModel {
             }
             return {
                 en: en,
-                ru: ru
+                ru: ru,
+                speaker: line.speaker
             }
         });
     }

@@ -1,9 +1,9 @@
 import * as React from "react";
 import {EditorModel} from "./../editor-model";
 import {EditorToolbarSpeakers} from "./speakers";
-import "./editor-toolbar.css";
+import "./toolbar.css";
 
-export class EditorToolbar extends React.Component<{model: EditorModel}, {}> {
+export class EditorToolbar extends React.Component<{model: EditorModel; onUpdate: ()=>void}, {}> {
     onSave = () => {
         return this.props.model.save();
     }
@@ -11,7 +11,7 @@ export class EditorToolbar extends React.Component<{model: EditorModel}, {}> {
     render() {
         return <div className="editor-toolbar">
             <button onClick={this.onSave}>Save</button>
-            <EditorToolbarSpeakers model={this.props.model}/>
+            <EditorToolbarSpeakers model={this.props.model} onUpdate={this.props.onUpdate}/>
         </div>
     }
 }

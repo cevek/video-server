@@ -9,7 +9,7 @@ import {LineAllocator} from "../utils/time-allocate";
 import {EditorText} from "./editor-text";
 import {config} from "../../../backend/config";
 import "./editor.css";
-import {EditorToolbar} from "./toolbar/editor-toolbar";
+import {EditorToolbar} from "./toolbar/toolbar";
 import {EditorTitle} from "./editor-title";
 import {EditorTags} from "./editor-tags";
 
@@ -41,6 +41,8 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
 
         const renderLines = new LineAllocator(positions, 50).allocateRenderLines();
 
+        const up = ()=>this.forceUpdate();
+
         return <div className="editor">
             <EditorTitle model={this.model}/>
             <EditorTags model={this.model}/>
@@ -55,7 +57,7 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
             }
             <Thumbs postModel={postModel} resizeKoef={this.model.resizeKoef}/>
             <EditorText model={this.model} renderLines={renderLines} onChange={()=>this.forceUpdate()}/>
-            <EditorToolbar model={this.model}/>
+            <EditorToolbar model={this.model} onUpdate={up}/>
         </div>
     }
 }
