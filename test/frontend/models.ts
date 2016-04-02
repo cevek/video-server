@@ -14,11 +14,17 @@ function debug() {
     debugger;
 }
 
+const enum AtomStatus {
+    CREATED = 1,
+    INITED = 2,
+    DESTROYED = -1,
+}
+
 export class Atom {
     private id = ++atomId;
     private slaves:{[id:number]:Atom};
     private masters:{[id:number]:Atom};
-    private calculated:boolean;
+    private status:AtomStatus;
     field:string;
     value:any;
     owner:any;
@@ -33,18 +39,16 @@ export class Atom {
             this.owner = owner;
         }
         this.calcFn = calcFn;
-        if (calcFn) {
-            this.calculated = false;
-        }
+        this.status = AtomStatus.CREATED;
     }
 
     get() {
         if (activeSlave) {
             this.setSelfToActiveSlave()
         }
-        if (this.calcFn && !this.calculated) {
+        if (this.calcFn && this.status == AtomStatus.CREATED) {
             this.calc();
-            this.calculated = true;
+            this.status = AtomStatus.INITED;
         }
         return this.value;
     }
@@ -92,31 +96,61 @@ export class Atom {
             // console.info('update', this.field, this.value);
             if (this.slaves) {
                 for (const id in this.slaves) {
-                    this.slaves[id].update();
+                    const slave = this.slaves[id];
+                    if (slave) {
+                        this.slaves[id].update();
+                    }
                 }
             }
         }
     }
 
     destroy() {
+        if (debugAtoms && (debugAtoms[this.field] || debugAtoms[this.id])) {
+            debug();
+        }
         if (this.masters) {
             for (const id in this.masters) {
+                const master = this.masters[id];
+                if (master) {
+                    master.slaves[this.id] = null;
+                }
                 this.masters[id] = null;
             }
         }
+        this.status = AtomStatus.DESTROYED;
+        this.masters = null;
         this.slaves = null;
         this.value = null;
         this.owner = null;
     }
+
+    static getAtom(callback:()=>void, thisArg?:any) {
+        const oldActiveSlave = activeSlave;
+        const myselfSlave = new Atom('getAtom', null);
+        activeSlave = myselfSlave;
+        callback.call(thisArg);
+        activeSlave = oldActiveSlave;
+        if (myselfSlave.masters) {
+            for (const id in myselfSlave.masters) {
+                return myselfSlave.masters[id];
+            }
+        }
+        throw new Error('Atoms not found');
+    }
 }
+
 
 export class BaseModel {
 
 }
 
 class ComponentAtom extends Atom {
-    constructor(public cmp:any) {
+    private cmp:any;
+
+    constructor(cmp:any) {
         super(cmp.constructor.name, null, cmp, cmp.mainRender);
+        this.cmp = cmp;
     }
 
     get() {
@@ -175,21 +209,36 @@ export var prop:any = function (proto:any, prop:string, descriptor?:PropertyDesc
 };
 
 export class BaseArray<T> {
-    protected items:T[];
-    length = 0;
+    @prop protected items:T[] = [];
 
-    private _version = 1;
+    @prop get length() {
+        return this.items.length;
+    }
+
+    private getAtomCallback() {
+        return this.items;
+    }
+
+    private atom:Atom = Atom.getAtom(this.getAtomCallback, this);
+
 
     private mutate() {
-        this.length = this.items.length;
-        this._version++;
+        this.atom.update();
     }
 
     push(...items:T[]) {
         const result = this.items.push(...items);
         this.mutate();
         return result;
+    }
 
+    set(index:number, value:T) {
+        this.items[index] = value;
+        this.mutate();
+    }
+
+    get(index:number) {
+        return this.items[index];
     }
 
     pop() {
