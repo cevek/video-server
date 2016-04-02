@@ -5,29 +5,58 @@ import {Lang} from "../../../interfaces/lang";
 import {EditorKeyHandler} from "./editor-key-handler";
 import {Line} from "../models/line";
 import "./editor-text.css";
+import {BaseArray, prop, Atom, autowatch} from "../../models";
 
-export class EditorText extends React.Component<{model:EditorModel; renderLines:number[]; onChange:()=>void}, {}> {
-    model = this.props.model;
+class User {
+    @prop firstName:string;
+    @prop lastName:string;
+
+    @prop get fullName() {
+        return this.firstName + ' ' + this.lastName;
+    }
+}
+const user = new User();
+user.firstName = "John";
+user.lastName = "Miller";
+
+
+(window as any).user = user;
+@autowatch
+class Cmp {
+    render() {
+        console.log(user.fullName);
+    }
+
+    forceUpdate() {
+        this.render();
+    }
+}
+
+new Cmp().render();
+
+@autowatch
+export class EditorText extends React.Component<{model:EditorModel; renderLines:number[];}, {}> {
+    @prop model = this.props.model;
 
     render() {
         return <div className="editor-text">
-            <EditorKeyHandler model={this.model} onAction={this.props.onChange}/>
+            <EditorKeyHandler model={this.model}/>
 
             {this.model.lines.map((line, linePos) =>
                 <div className="line" style={{top: this.props.renderLines[linePos]}}>
-                    <Speakers model={this.model} line={line} onUpdate={()=>this.forceUpdate()}/>
-                    <TextLine model={this.model} line={line} linePos={linePos} lang={Lang.EN} onUpdate={()=>this.forceUpdate()}/>
-                    <TextLine model={this.model} line={line} linePos={linePos} lang={Lang.RU} onUpdate={()=>this.forceUpdate()}/>
+                    <Speakers model={this.model} line={line}/>
+                    <TextLine model={this.model} line={line} linePos={linePos} lang={Lang.EN}/>
+                    <TextLine model={this.model} line={line} linePos={linePos} lang={Lang.RU}/>
                 </div>
             )}
         </div>
     }
 }
 
-class Speakers extends React.Component<{model: EditorModel; line: EditorLine; onUpdate: ()=>void},{}> {
+@autowatch
+class Speakers extends React.Component<{model:EditorModel; line:EditorLine;},{}> {
     setSpeaker(line:Line, speaker:string) {
         line.speaker = speaker;
-        this.props.onUpdate();
     }
 
     render() {
@@ -42,10 +71,10 @@ class Speakers extends React.Component<{model: EditorModel; line: EditorLine; on
     }
 }
 
-class TextLine extends React.Component<{model: EditorModel; line: EditorLine; linePos: number; lang: Lang; onUpdate: ()=>void},{}> {
+@autowatch
+class TextLine extends React.Component<{model:EditorModel; line:EditorLine; linePos:number; lang:Lang;},{}> {
     setSpeaker(line:Line, speaker:string) {
         line.speaker = speaker;
-        this.props.onUpdate();
     }
 
     spanClassName(textLine:EditorTextLine, word:EditorWord) {
@@ -58,7 +87,6 @@ class TextLine extends React.Component<{model: EditorModel; line: EditorLine; li
 
     onWordClick(e:React.MouseEvent, linePos:number, lang:Lang, wordPos:number) {
         this.props.model.textModel.selection.set(linePos, lang, wordPos);
-        this.forceUpdate();
         e.preventDefault();
         e.stopPropagation();
     }
@@ -66,7 +94,6 @@ class TextLine extends React.Component<{model: EditorModel; line: EditorLine; li
     onTextLineClick(linePos:number, lang:Lang) {
         this.props.model.textModel.selection.set(linePos, lang, 0);
         //this.selectedWordPos = 0;
-        this.props.onUpdate();
     }
 
     render() {
@@ -75,7 +102,7 @@ class TextLine extends React.Component<{model: EditorModel; line: EditorLine; li
         const lang = this.props.lang;
         const textLine = lang == Lang.RU ? line.ru : line.en; // todo
         return  <div className="textline ru" onClick={()=>this.onTextLineClick(linePos, lang)}>
-            {textLine.words.map((w,wordPos) =>
+            {textLine.words.map((w, wordPos) =>
                 <span className={this.spanClassName(textLine, w)} ref={node => this.setWordNode(w, node)}
                       onClick={e=>this.onWordClick(e, linePos, this.props.lang, wordPos)}>{w.word}</span>)}
         </div>

@@ -12,10 +12,12 @@ import "./editor.css";
 import {EditorToolbar} from "./toolbar/toolbar";
 import {EditorTitle} from "./editor-title";
 import {EditorTags} from "./editor-tags";
+import {autowatch, prop} from "../../models";
 
+@autowatch
 export class Editor extends React.Component<{params: any, resolved: EditorModel}, {}> {
-    model = this.props.resolved;
-    audioPlayer = new AudioPlayer();
+    @prop model = this.props.resolved;
+    @prop audioPlayer = new AudioPlayer();
 
 
     static load(params:any) {
@@ -41,7 +43,6 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
 
         const renderLines = new LineAllocator(positions, 50).allocateRenderLines();
 
-        const up = ()=>this.forceUpdate();
 
         return <div className="editor">
             <EditorTitle model={this.model}/>
@@ -56,8 +57,8 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
                 </div> : null
             }
             <Thumbs postModel={postModel} resizeKoef={this.model.resizeKoef}/>
-            <EditorText model={this.model} renderLines={renderLines} onChange={()=>this.forceUpdate()}/>
-            <EditorToolbar model={this.model} onUpdate={up}/>
+            <EditorText model={this.model} renderLines={renderLines}/>
+            <EditorToolbar model={this.model}/>
         </div>
     }
 }

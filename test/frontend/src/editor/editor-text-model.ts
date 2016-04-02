@@ -1,6 +1,7 @@
 import {Lang} from "../../../interfaces/lang";
-import {EditorHistoryData} from "../utils/history";
+import {EditorHistoryData, EditorHistory} from "../utils/history";
 import {EditorSelection, EditorLine, EditorTextLine, EditorWord, EditorModel} from "./editor-model";
+import {prop} from "../../models";
 
 const enum EditorTextAction{
     SPLIT = 1,
@@ -16,23 +17,30 @@ class EditorHistoryText extends EditorHistoryData {
     linePos:number;
     lang:Lang;
     wordPos:number;
-    constructor(json: EditorHistoryText){
+
+    constructor(json:EditorHistoryText) {
         super(json);
     }
 }
 
 export class EditorTextModel {
-    constructor(public editorModel: EditorModel){}
+    @prop editorModel:EditorModel
+    @prop lines:EditorLine[];
+    @prop selection:EditorSelection;
+    @prop history:EditorHistory;
 
-    lines = this.editorModel.lines;
-    selection = new EditorSelection(this.editorModel.lines);
+    constructor(editorModel:EditorModel) {
+        this.editorModel = editorModel;
+        this.lines = editorModel.lines;
+        this.selection = new EditorSelection(this.editorModel.lines);
+        this.history = this.editorModel.history.listen(this.onHistory);
+    }
 
     onHistory = (item:EditorHistoryText, isRedo:boolean) => {
         if (item.type == EditorHistoryText.type) {
             this.undo(item);
         }
     }
-    history = this.editorModel.history.listen(this.onHistory);
 
     findClosestNextWord(currWord:EditorWord, nextTextLine:EditorTextLine) {
         var currRect = currWord.span.getBoundingClientRect();
@@ -71,27 +79,27 @@ export class EditorTextModel {
         selTextLine.dur = halfDur;
 
         this.selection.set(nextLinePos, sel.lang, 0);
-        
 
-       /* return new EditorHistoryTimeline({
-            type: EditorHistoryTimeline.type,
-            lineN: nextLinePos - 1,
-            lang: sel.lang,
-            oldStart: prevTextLine.start,
-            oldDur: oldDur,
-            newStart: prevTextLine.start,
-            newDur: prevTextLine.dur
-        });*/
+
+        /* return new EditorHistoryTimeline({
+         type: EditorHistoryTimeline.type,
+         lineN: nextLinePos - 1,
+         lang: sel.lang,
+         oldStart: prevTextLine.start,
+         oldDur: oldDur,
+         newStart: prevTextLine.start,
+         newDur: prevTextLine.dur
+         });*/
 
         /*new EditorHistoryTimeline({
-            type: EditorHistoryTimeline.type,
-            lineN: nextLinePos,
-            lang: sel.lang,
-            oldStart: 0,
-            oldDur: 0,
-            newStart: selTextLine.start,
-            newDur: selTextLine.dur
-        });*/
+         type: EditorHistoryTimeline.type,
+         lineN: nextLinePos,
+         lang: sel.lang,
+         oldStart: 0,
+         oldDur: 0,
+         newStart: selTextLine.start,
+         newDur: selTextLine.dur
+         });*/
 
         return new EditorHistoryText({
             type: EditorHistoryText.type,

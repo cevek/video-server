@@ -4,20 +4,20 @@ import {EditorHistory} from "../utils/history";
 import {Line} from "../models/line";
 import {ITextLine} from "../../../interfaces/text-line";
 import {EditorTextModel} from "./editor-text-model";
+import {prop, BaseArray} from "../../models";
 
 export class EditorModel {
-    postModel:PostModel;
-    lines:EditorLine[] = [];
-    history = new EditorHistory();
-    resizeKoef = 4;
-    lineH = 50;
-    title = '';
-    tags = '';
-    speakers: string[] = [];
+    @prop postModel:PostModel;
+    @prop lines:EditorLine[] = [];
+    @prop history = new EditorHistory();
+    @prop resizeKoef = 4;
+    @prop lineH = 50;
+    @prop title = '';
+    @prop tags = '';
+    @prop speakers = new BaseArray<string>();
+    @prop textModel:EditorTextModel;
 
-    textModel:EditorTextModel;
-
-    fromPostModel(postModel:PostModel){
+    fromPostModel(postModel:PostModel) {
         this.postModel = postModel;
         this.lines = this.postModel.lines.map(line =>
             new EditorLine(
@@ -27,21 +27,20 @@ export class EditorModel {
         this.textModel = new EditorTextModel(this);
         return this;
     }
-    
+
     save() {
-        
+
     }
 }
 
 export class EditorLine extends Line {
-    constructor(public en:EditorTextLine = null, public ru:EditorTextLine = null) {
+    @prop en:EditorTextLine = null;
+    @prop ru:EditorTextLine = null
+
+    constructor(en:EditorTextLine = null, ru:EditorTextLine = null) {
         super();
-        if (!en) {
-            this.en = new EditorTextLine(Lang.EN, null, null, null);
-        }
-        if (!ru) {
-            this.ru = new EditorTextLine(Lang.RU, null, null, null);
-        }
+        this.en = en ? en : new EditorTextLine(Lang.EN, null, null, null);
+        this.ru = ru ? ru : new EditorTextLine(Lang.RU, null, null, null);
     }
 
     getTextLine(lang:Lang) {
@@ -62,7 +61,10 @@ export class EditorLine extends Line {
 }
 
 export class EditorTextLine implements ITextLine {
-    words:EditorWord[];
+    @prop words:EditorWord[];
+    @prop lang:Lang;
+    @prop start:number;
+    @prop dur:number;
 
     getWord(i:number) {
         return this.words[i];
@@ -72,7 +74,10 @@ export class EditorTextLine implements ITextLine {
         return this.getWord(0).isEmpty;
     }
 
-    constructor(public lang:Lang, public start:number, public dur:number, words:EditorWord[]) {
+    constructor(lang:Lang, start:number, dur:number, words:EditorWord[]) {
+        this.lang = lang;
+        this.start = start;
+        this.dur = dur;
         this.setWords(words);
     }
 
@@ -90,9 +95,13 @@ export class EditorTextLine implements ITextLine {
 }
 
 export class EditorWord {
-    isEmpty = false;
+    @prop isEmpty = false;
+    @prop word:string;
+    @prop span:Element
 
-    constructor(public word:string, public span:Element = null) {
+    constructor(word:string, span:Element = null) {
+        this.word = word;
+        this.span = span;
         if (word == null) {
             this.isEmpty = true;
             this.word = '\u00A0';
@@ -101,14 +110,17 @@ export class EditorWord {
 }
 
 export class EditorSelection {
-    line:EditorLine;
-    linePos:number;
-    textLine:EditorTextLine;
-    lang:Lang;
-    word:EditorWord;
-    wordPos:number;
+    @prop line:EditorLine;
+    @prop linePos:number;
+    @prop textLine:EditorTextLine;
+    @prop lang:Lang;
+    @prop word:EditorWord;
+    @prop wordPos:number;
+    @prop lines:EditorLine[];
 
-    constructor(public lines:EditorLine[]) {}
+    constructor(lines:EditorLine[]) {
+        this.lines = lines;
+    }
 
     set(linePos:number, lang:Lang, wordPos:number) {
         this.setLine(linePos);

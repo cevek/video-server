@@ -1,29 +1,27 @@
 import * as React from "react";
 import {EditorModel} from "../editor-model";
 import "./speaker.css";
+import {prop, autowatch} from "../../../models";
 
-export class EditorToolbarSpeaker extends React.Component<{model:EditorModel; addMode?:boolean; speaker:string; pos:number; onUpdate:()=>void}, {}> {
-    editMode = false;
+@autowatch
+export class EditorToolbarSpeaker extends React.Component<{model:EditorModel; addMode?:boolean; speaker:string; pos:number;}, {}> {
+    @prop editMode = false;
 
     onRemove(pos:number) {
         this.props.model.speakers.splice(pos, 1);
-        this.props.onUpdate();
     }
 
     onEdit() {
         this.editMode = true;
-        this.props.onUpdate();
     }
 
     onSave(pos:number) {
         this.editMode = false;
-        this.props.model.speakers[pos] = (React.findDOMNode(this.refs['speaker']) as HTMLInputElement).value;
-        this.props.onUpdate();
+        this.props.model.speakers.set(pos, (React.findDOMNode(this.refs['speaker']) as HTMLInputElement).value);
     }
 
     onCancel() {
         this.editMode = false;
-        this.props.onUpdate();
     }
 
     render() {

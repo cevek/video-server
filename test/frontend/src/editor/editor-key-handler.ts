@@ -1,5 +1,6 @@
 import * as React from "react";
 import {EditorModel} from "./editor-model";
+import {autowatch} from "../../models";
 enum KeyCodes{
     ENTER     = 13,
     BACKSPACE = 8,
@@ -10,7 +11,8 @@ enum KeyCodes{
     Z         = 90,
 }
 
-export class EditorKeyHandler extends React.Component<{model: EditorModel; onAction: ()=>void},{}>{
+@autowatch
+export class EditorKeyHandler extends React.Component<{model: EditorModel;},{}>{
     keyHandler = (e:KeyboardEvent) => {
         const model = this.props.model;
 
@@ -63,9 +65,7 @@ export class EditorKeyHandler extends React.Component<{model: EditorModel; onAct
         }
 
         if (handled) {
-            this.forceUpdate();
             e.preventDefault();
-            this.props.onAction();
             this.scroll();
         }
     };
