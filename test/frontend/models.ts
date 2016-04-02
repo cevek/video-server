@@ -75,11 +75,7 @@ export class Atom {
 
     calc() {
         const oldActiveSlave = activeSlave;
-        if (this.masters) {
-            for (const id in this.masters) {
-                this.masters[id] = null;
-            }
-        }
+        this.clearMasters();
         activeSlave = this;
         const oldValue = this.value;
         this.value = this.calcFn.call(this.owner);
@@ -105,10 +101,7 @@ export class Atom {
         }
     }
 
-    destroy() {
-        if (debugAtoms && (debugAtoms[this.field] || debugAtoms[this.id])) {
-            debug();
-        }
+    clearMasters(){
         if (this.masters) {
             for (const id in this.masters) {
                 const master = this.masters[id];
@@ -118,6 +111,13 @@ export class Atom {
                 this.masters[id] = null;
             }
         }
+    }
+
+    destroy() {
+        if (debugAtoms && (debugAtoms[this.field] || debugAtoms[this.id])) {
+            debug();
+        }
+        this.clearMasters();
         this.status = AtomStatus.DESTROYED;
         this.masters = null;
         this.slaves = null;
@@ -136,7 +136,7 @@ export class Atom {
                 return myselfSlave.masters[id];
             }
         }
-        throw new Error('Atoms not found');
+        throw new Error('Atom not found');
     }
 }
 
