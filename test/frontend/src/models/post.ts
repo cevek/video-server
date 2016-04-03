@@ -1,9 +1,12 @@
 import {IGetPost} from "../../../interfaces/transport";
 import {Line} from "./line";
+import {prop} from "../../models";
 export class PostModel {
-    lines:Line[];
+    @prop lines:Line[];
+    @prop data: IGetPost;
 
-    constructor(public data:IGetPost) {
+    constructor(data:IGetPost) {
+        this.data = data;
         this.lines = this.getLines();
     }
 

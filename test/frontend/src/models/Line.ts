@@ -1,6 +1,7 @@
 import {ITextLine} from "../../../interfaces/text-line";
+import {prop} from "../../models";
 export class Line {
-    en: ITextLine;
-    ru: ITextLine;
-    speaker: string;
+    @prop en: ITextLine;
+    @prop ru: ITextLine;
+    @prop speaker: string;
 }
