@@ -20,10 +20,16 @@ const enum AtomStatus {
     DESTROYED = -1,
 }
 
+const enum AtomAffectStatus{
+    NEEDCALC = 1,
+    CALC = 5,
+    NEEDNOT_CALC = 10
+}
+
 export class Atom {
     private id = ++atomId;
-    private slaves:{[id:number]:Atom};
-    private masters:{[id:number]:Atom};
+    private slaves:{[id:number]:Atom} = null;
+    private masters:{[id:number]:Atom} = null;
     private status:AtomStatus;
     field:string;
     value:any;
@@ -43,6 +49,9 @@ export class Atom {
     }
 
     get() {
+        if (this.status === AtomStatus.DESTROYED) {
+            throw new Error('Try to use destroyed atom');
+        }
         if (activeSlave) {
             this.setSelfToActiveSlave()
         }
@@ -66,11 +75,22 @@ export class Atom {
 
 
     set(value:any) {
+        if (this.status === AtomStatus.DESTROYED) {
+            throw new Error('Try to use destroyed atom');
+        }
         if (this.value !== value) {
             this.value = value;
-            this.update();
+            this.scheduleUpdate();
         }
 
+    }
+
+    scheduleUpdate() {
+        if (!Atom.scheduled) {
+            Atom.scheduled = {};
+            Promise.resolve().then(Atom.updateScheduled);
+        }
+        Atom.scheduled[this.id] = this;
     }
 
     calc() {
@@ -80,28 +100,14 @@ export class Atom {
         const oldValue = this.value;
         this.value = this.calcFn.call(this.owner);
         activeSlave = oldActiveSlave;
+        if (debugAtoms && (debugAtoms[this.field] || debugAtoms[this.id])) {
+            debug();
+        }
+        console.info(this.field, this.id);
         return oldValue !== this.value;
     }
 
-    update() {
-        const changed = this.calcFn ? this.calc() : true;
-        if (changed) {
-            if (debugAtoms && (debugAtoms[this.field] || debugAtoms[this.id])) {
-                debug();
-            }
-            // console.info('update', this.field, this.value);
-            if (this.slaves) {
-                for (const id in this.slaves) {
-                    const slave = this.slaves[id];
-                    if (slave) {
-                        this.slaves[id].update();
-                    }
-                }
-            }
-        }
-    }
-
-    clearMasters(){
+    clearMasters() {
         if (this.masters) {
             for (const id in this.masters) {
                 const master = this.masters[id];
@@ -127,16 +133,82 @@ export class Atom {
 
     static getAtom(callback:()=>void, thisArg?:any) {
         const oldActiveSlave = activeSlave;
-        const myselfSlave = new Atom('getAtom', null);
-        activeSlave = myselfSlave;
+        const self = new Atom('getAtom', null);
+        activeSlave = self;
         callback.call(thisArg);
         activeSlave = oldActiveSlave;
-        if (myselfSlave.masters) {
-            for (const id in myselfSlave.masters) {
-                return myselfSlave.masters[id];
+        if (self.masters) {
+            for (const id in self.masters) {
+                const atom = self.masters[id];
+                self.destroy();
+                return atom;
             }
         }
         throw new Error('Atom not found');
+    }
+
+    private static scheduled:{[id:number]:Atom};
+    private static affectAtoms:{[id:number]:AtomAffectStatus};
+
+    private static affect(atom:Atom) {
+        Atom.affectAtoms[atom.id] = 1;
+        if (atom.slaves) {
+            for (const id in atom.slaves) {
+                const slave = atom.slaves[id];
+                if (slave) {
+                    Atom.affect(slave);
+                }
+            }
+        }
+    }
+
+    private static update(atom:Atom, topLevel:boolean) {
+        if (Atom.affectAtoms[atom.id] !== AtomAffectStatus.NEEDCALC) {
+            throw new Error('Something wrong');
+        }
+        let status = topLevel ? AtomAffectStatus.CALC : AtomAffectStatus.NEEDNOT_CALC;
+        if (!topLevel && atom.masters) {
+            for (const id in atom.masters) {
+                if (atom.masters[id]) {
+                    const masterAffectStatus = Atom.affectAtoms[id];
+                    if (masterAffectStatus === AtomAffectStatus.NEEDCALC) {
+                        return;
+                    }
+                    if (masterAffectStatus === AtomAffectStatus.CALC) {
+                        status = AtomAffectStatus.CALC;
+                    }
+                }
+            }
+        }
+        if (status === AtomAffectStatus.CALC && atom.calcFn) {
+            atom.calc();
+        }
+        Atom.affectAtoms[atom.id] = status;
+        if (atom.slaves) {
+            for (const id in atom.slaves) {
+                const slave = atom.slaves[id];
+                if (slave) {
+                    Atom.update(slave, false);
+                }
+            }
+        }
+    }
+
+    private static updateScheduled() {
+        Atom.affectAtoms = {};
+        const scheduled = Atom.scheduled;
+        Atom.scheduled = null;
+        for (const id in scheduled){
+            var atom = scheduled[id];
+            Atom.affect(atom);
+        }
+        for (const id in scheduled){
+            var atom = scheduled[id];
+            Atom.update(atom, true);
+        }
+        if (Atom.scheduled) {
+            Atom.updateScheduled();
+        }
     }
 }
 
@@ -149,7 +221,7 @@ class ComponentAtom extends Atom {
     private cmp:any;
 
     constructor(cmp:any) {
-        super(cmp.constructor.name, null, cmp, cmp.mainRender);
+        super(cmp.constructor.name + '.render', null, cmp, cmp.mainRender);
         this.cmp = cmp;
     }
 
@@ -167,6 +239,7 @@ class ComponentAtom extends Atom {
 }
 
 export const autowatch = function (cls:any) {
+    cls.prototype.componentAtom = null;
     cls.prototype.mainRender = cls.prototype.render;
     cls.prototype.shouldComponentUpdate = function () {
         return true;
@@ -175,7 +248,12 @@ export const autowatch = function (cls:any) {
         this.componentAtom.destroy();
     }
     cls.prototype.render = function () {
-        return (this.componentAtom || (this.componentAtom = new ComponentAtom(this))).get();
+        if (this.componentAtom) {
+            return this.componentAtom.get();
+        }
+        else {
+            return (this.componentAtom = new ComponentAtom(this)).get();
+        }
     }
 }
 
@@ -187,7 +265,14 @@ export var prop:any = function (proto:any, prop:string, descriptor?:PropertyDesc
         return {
             set: void 0,
             get: function () {
-                return ((this[_prop] || (this[_prop] = new Atom(fieldName, void 0, this, descriptor.get))) as Atom).get();
+                let atom:Atom = this[_prop];
+                if (atom) {
+                    return atom.get();
+                }
+                else {
+                    this[_prop] = atom = new Atom(fieldName, null, this, descriptor.get);
+                    return atom.get();
+                }
             }
         }
     }
@@ -199,11 +284,19 @@ export var prop:any = function (proto:any, prop:string, descriptor?:PropertyDesc
                 atom.set(value);
             }
             else {
-                this[_prop] = new Atom(fieldName, value);
+                atom = this[_prop] = new Atom(fieldName, null);
+                atom.set(value);
             }
         },
         get: function () {
-            return ((this[_prop] || (this[_prop] = new Atom(fieldName, void 0))) as Atom).get();
+            let atom:Atom = this[_prop];
+            if (atom) {
+                return atom.get();
+            }
+            else {
+                atom = this[_prop] = new Atom(fieldName, null);
+                return atom.get();
+            }
         }
     }
 };
@@ -223,7 +316,7 @@ export class BaseArray<T> {
 
 
     private mutate() {
-        this.atom.update();
+        this.atom.scheduleUpdate();
     }
 
     push(...items:T[]) {
@@ -335,3 +428,38 @@ export class BaseArray<T> {
     }
 }
 
+
+class User {
+    @prop firstName:string;
+    @prop lastName:string;
+
+
+    constructor(firstName:string, lastName:string) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+    }
+
+    @prop get fullName() {
+        return this.firstName + ' ' + this.lastName;
+    }
+}
+
+const users = new BaseArray<User>();
+users.push(new User('Ivan', 'Petrashev'));
+users.push(new User('Alex', 'Keffir'));
+users.push(new User('Sergio', 'Valse'));
+
+@autowatch
+class TempRender {
+    forceUpdate() {
+        this.render();
+    }
+
+    render() {
+        console.log('render', users.map(user => user.fullName).join());
+    }
+}
+
+new TempRender().forceUpdate();
+
+(window as any).users = users;
