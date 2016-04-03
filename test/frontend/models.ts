@@ -1,4 +1,6 @@
 let activeSlave:Atom;
+let lastGetted:Atom;
+let autoMasters = true;
 let atomId = 0;
 
 let debugAtoms:{[id:string]:boolean} = null;
@@ -23,18 +25,34 @@ const enum AtomStatus {
 const enum AtomAffectStatus{
     NEEDCALC = 1,
     CALC = 5,
-    NEEDNOT_CALC = 10
+    NEEDNOT_CALC = 10,
+    WAIT_PARENT_CALC = 30,
+}
+
+const enum TaskType{
+    CHANGE = 10,
+    CLEAR_MASTERS = 20,
+    MASTERS = 30,
+}
+interface Task {
+    type:TaskType;
+    atom:Atom;
+    slave?:Atom;
+}
+
+interface IDMap<T> {
+    [id:number]:T;
 }
 
 export class Atom {
-    private id = ++atomId;
-    private slaves:{[id:number]:Atom} = null;
-    private masters:{[id:number]:Atom} = null;
-    private status:AtomStatus;
-    field:string;
-    value:any;
-    owner:any;
-    calcFn:()=>void;
+    protected id = ++atomId;
+    protected slaves:IDMap<Atom> = null;
+    protected masters:IDMap<Atom> = null;
+    protected status:AtomStatus;
+    protected field:string;
+    protected value:any;
+    protected owner:any;
+    protected calcFn:()=>void;
 
     constructor(field:string, value:any, owner?:any, calcFn?:()=>void) {
         this.value = value;
@@ -49,11 +67,10 @@ export class Atom {
     }
 
     get() {
-        if (this.status === AtomStatus.DESTROYED) {
-            throw new Error('Try to use destroyed atom');
-        }
-        if (activeSlave) {
-            this.setSelfToActiveSlave()
+        this.checkForDestroy();
+        lastGetted = this;
+        if (activeSlave && autoMasters) {
+            this.addTask({type: TaskType.MASTERS, atom: this, slave: activeSlave});
         }
         if (this.calcFn && this.status == AtomStatus.CREATED) {
             this.calc();
@@ -62,61 +79,17 @@ export class Atom {
         return this.value;
     }
 
-    setSelfToActiveSlave() {
-        if (!activeSlave.masters) {
-            activeSlave.masters = {};
-        }
-        activeSlave.masters[this.id] = this;
-        if (!this.slaves) {
-            this.slaves = {};
-        }
-        this.slaves[activeSlave.id] = activeSlave;
-    }
-
-
     set(value:any) {
-        if (this.status === AtomStatus.DESTROYED) {
-            throw new Error('Try to use destroyed atom');
-        }
+        this.checkForDestroy();
         if (this.value !== value) {
             this.value = value;
-            this.scheduleUpdate();
+            this.change();
         }
-
     }
 
-    scheduleUpdate() {
-        if (!Atom.scheduled) {
-            Atom.scheduled = {};
-            Promise.resolve().then(Atom.updateScheduled);
-        }
-        Atom.scheduled[this.id] = this;
-    }
-
-    calc() {
-        const oldActiveSlave = activeSlave;
-        this.clearMasters();
-        activeSlave = this;
-        const oldValue = this.value;
-        this.value = this.calcFn.call(this.owner);
-        activeSlave = oldActiveSlave;
-        if (debugAtoms && (debugAtoms[this.field] || debugAtoms[this.id])) {
-            debug();
-        }
-        console.info(this.field, this.id);
-        return oldValue !== this.value;
-    }
-
-    clearMasters() {
-        if (this.masters) {
-            for (const id in this.masters) {
-                const master = this.masters[id];
-                if (master) {
-                    master.slaves[this.id] = null;
-                }
-                this.masters[id] = null;
-            }
-        }
+    change() {
+        this.checkForDestroy();
+        this.addTask({type: TaskType.CHANGE, atom: this});
     }
 
     destroy() {
@@ -132,47 +105,97 @@ export class Atom {
     }
 
     static getAtom(callback:()=>void, thisArg?:any) {
-        const oldActiveSlave = activeSlave;
-        const self = new Atom('getAtom', null);
-        activeSlave = self;
+        const oldAutoMasters = autoMasters;
+        const oldLastGetted = lastGetted;
+        autoMasters = false;
+        lastGetted = null;
         callback.call(thisArg);
-        activeSlave = oldActiveSlave;
-        if (self.masters) {
-            for (const id in self.masters) {
-                const atom = self.masters[id];
-                self.destroy();
-                return atom;
-            }
+        if (!lastGetted) {
+            throw new Error('Atom not found');
         }
-        throw new Error('Atom not found');
+        const atom = lastGetted;
+        lastGetted = oldLastGetted;
+        autoMasters = oldAutoMasters;
+        return atom;
     }
 
-    private static scheduled:{[id:number]:Atom};
-    private static affectAtoms:{[id:number]:AtomAffectStatus};
+    protected setSelfToActiveSlave(slave:Atom) {
+        this.checkForDestroy();
+        if (!slave.masters) {
+            slave.masters = {};
+        }
+        slave.masters[this.id] = this;
+        if (!this.slaves) {
+            this.slaves = {};
+        }
+        this.slaves[slave.id] = slave;
+    }
 
-    private static affect(atom:Atom) {
-        Atom.affectAtoms[atom.id] = 1;
-        if (atom.slaves) {
-            for (const id in atom.slaves) {
-                const slave = atom.slaves[id];
+    protected addTask(task:Task) {
+        if (!Atom.scheduledTasks) {
+            Atom.scheduledTasks = [];
+            Promise.resolve().then(Atom.updateScheduled);
+        }
+        Atom.scheduledTasks.push(task);
+    }
+
+
+    protected checkForDestroy() {
+        if (this.status == AtomStatus.DESTROYED) {
+            throw new Error('Try to use destroyed atom');
+        }
+    }
+
+    protected calc() {
+        this.checkForDestroy();
+        const oldActiveSlave = activeSlave;
+        this.addTask({type: TaskType.CLEAR_MASTERS, atom: this})
+        activeSlave = this;
+        const oldValue = this.value;
+        this.value = this.calcFn.call(this.owner);
+        activeSlave = oldActiveSlave;
+        if (debugAtoms && (debugAtoms[this.field] || debugAtoms[this.id])) {
+            debug();
+        }
+        console.info(this.field, this.id);
+        return oldValue !== this.value;
+    }
+
+    protected clearMasters() {
+        this.checkForDestroy();
+        if (this.masters) {
+            for (const id in this.masters) {
+                const master = this.masters[id];
+                if (master) {
+                    master.slaves[this.id] = null;
+                }
+                this.masters[id] = null;
+            }
+        }
+    }
+
+
+    protected affect(affectAtoms:IDMap<AtomAffectStatus>) {
+        affectAtoms[this.id] = 1;
+        if (this.slaves) {
+            for (const id in this.slaves) {
+                const slave = this.slaves[id];
                 if (slave) {
-                    Atom.affect(slave);
+                    slave.affect(affectAtoms);
                 }
             }
         }
     }
 
-    private static update(atom:Atom, topLevel:boolean) {
-        if (Atom.affectAtoms[atom.id] !== AtomAffectStatus.NEEDCALC) {
-            throw new Error('Something wrong');
-        }
-        let status = topLevel ? AtomAffectStatus.CALC : AtomAffectStatus.NEEDNOT_CALC;
-        if (!topLevel && atom.masters) {
-            for (const id in atom.masters) {
-                if (atom.masters[id]) {
-                    const masterAffectStatus = Atom.affectAtoms[id];
+    protected needToRecalc(affectAtoms:IDMap<AtomAffectStatus>) {
+        this.checkForDestroy();
+        let status = AtomAffectStatus.NEEDNOT_CALC;
+        if (this.masters) {
+            for (const id in this.masters) {
+                if (this.masters[id]) {
+                    const masterAffectStatus = affectAtoms[id];
                     if (masterAffectStatus === AtomAffectStatus.NEEDCALC) {
-                        return;
+                        return AtomAffectStatus.WAIT_PARENT_CALC;
                     }
                     if (masterAffectStatus === AtomAffectStatus.CALC) {
                         status = AtomAffectStatus.CALC;
@@ -180,45 +203,84 @@ export class Atom {
                 }
             }
         }
-        if (status === AtomAffectStatus.CALC && atom.calcFn) {
-            atom.calc();
+        return status;
+    }
+
+    protected update(topLevel:boolean, affectAtoms:IDMap<AtomAffectStatus>) {
+        this.checkForDestroy();
+        if (affectAtoms[this.id] !== AtomAffectStatus.NEEDCALC) {
+            throw new Error('Something wrong');
         }
-        Atom.affectAtoms[atom.id] = status;
-        if (atom.slaves) {
-            for (const id in atom.slaves) {
-                const slave = atom.slaves[id];
+        const status = topLevel ? AtomAffectStatus.CALC : this.needToRecalc(affectAtoms);
+        if (status === AtomAffectStatus.WAIT_PARENT_CALC) {
+            return;
+        }
+        if (status === AtomAffectStatus.CALC && this.calcFn) {
+            this.calc();
+        }
+        affectAtoms[this.id] = status;
+        if (this.slaves) {
+            for (const id in this.slaves) {
+                const slave = this.slaves[id];
                 if (slave) {
-                    Atom.update(slave, false);
+                    slave.update(false, affectAtoms);
                 }
             }
         }
     }
 
-    private static updateScheduled() {
-        Atom.affectAtoms = {};
-        const scheduled = Atom.scheduled;
-        Atom.scheduled = null;
-        for (const id in scheduled){
-            var atom = scheduled[id];
-            Atom.affect(atom);
+    protected static batchUpdate(changeAtoms:IDMap<Atom>) {
+        // Atom.affectAtoms = {};
+        const affectAtoms:IDMap<AtomAffectStatus> = {}
+        for (const id in changeAtoms) {
+            var atom = changeAtoms[id];
+            atom.affect(affectAtoms);
         }
-        for (const id in scheduled){
-            var atom = scheduled[id];
-            Atom.update(atom, true);
+        for (const id in changeAtoms) {
+            var atom = changeAtoms[id];
+            atom.update(true, affectAtoms);
         }
-        if (Atom.scheduled) {
+    }
+
+    protected static scheduledTasks:Task[];
+
+    protected static updateScheduled() {
+        console.log("start schedule runner");
+        let changeAtoms:IDMap<Atom> = {};
+        let lastType:TaskType = null;
+        let handledTaskCount = 0;
+        for (var i = 0; i < Atom.scheduledTasks.length; i++) {
+            var task = Atom.scheduledTasks[i];
+            if (task.type == TaskType.CHANGE) {
+                changeAtoms[task.atom.id] = task.atom;
+            } else if (lastType == TaskType.CHANGE) {
+                Atom.batchUpdate(changeAtoms);
+                changeAtoms = {};
+            }
+            if (task.type == TaskType.CLEAR_MASTERS) {
+                task.atom.clearMasters();
+            }
+            if (task.type == TaskType.MASTERS) {
+                task.atom.setSelfToActiveSlave(task.slave);
+            }
+            lastType = task.type;
+            handledTaskCount++;
+        }
+        if (lastType == TaskType.CHANGE) {
+            Atom.batchUpdate(changeAtoms);
+        }
+        Atom.scheduledTasks.splice(0, handledTaskCount);
+        if (Atom.scheduledTasks.length) {
             Atom.updateScheduled();
         }
+        Atom.scheduledTasks = null;
+        console.log("stop schedule runner");
     }
 }
 
 
-export class BaseModel {
-
-}
-
 class ComponentAtom extends Atom {
-    private cmp:any;
+    protected cmp:any;
 
     constructor(cmp:any) {
         super(cmp.constructor.name + '.render', null, cmp, cmp.mainRender);
@@ -226,23 +288,45 @@ class ComponentAtom extends Atom {
     }
 
     get() {
-        if (activeSlave) {
-            this.setSelfToActiveSlave()
+        this.checkForDestroy();
+        if (activeSlave && autoMasters) {
+            this.addTask({type: TaskType.MASTERS, atom: this, slave: activeSlave});
         }
         this.calc();
         return this.value;
     }
 
-    update() {
-        this.cmp.forceUpdate();
+    protected update(topLevel:boolean, affectAtoms:IDMap<AtomAffectStatus>) {
+        this.checkForDestroy();
+        if (affectAtoms[this.id] !== AtomAffectStatus.NEEDCALC) {
+            throw new Error('Something wrong');
+        }
+        const status = topLevel ? AtomAffectStatus.CALC : this.needToRecalc(affectAtoms);
+        if (status === AtomAffectStatus.WAIT_PARENT_CALC) {
+            return;
+        }
+        if (status === AtomAffectStatus.CALC && this.calcFn) {
+            this.cmp.forceUpdate();
+        }
+        affectAtoms[this.id] = status;
     }
 }
 
 export const autowatch = function (cls:any) {
     cls.prototype.componentAtom = null;
     cls.prototype.mainRender = cls.prototype.render;
-    cls.prototype.shouldComponentUpdate = function () {
-        return true;
+    cls.prototype.shouldComponentUpdate = function (nextProps:any) {
+        for (const prop in nextProps) {
+            if (this.props[prop] !== nextProps[prop]) {
+                return true;
+            }
+        }
+        for (const prop in this.props) {
+            if (this.props[prop] !== nextProps[prop]) {
+                return true;
+            }
+        }
+        return false;
     }
     cls.prototype.componentWillUnmount = function () {
         this.componentAtom.destroy();
@@ -308,15 +392,15 @@ export class BaseArray<T> {
         return this.items.length;
     }
 
-    private getAtomCallback() {
+    protected getAtomCallback() {
         return this.items;
     }
 
-    private atom:Atom = Atom.getAtom(this.getAtomCallback, this);
+    protected atom:Atom = Atom.getAtom(this.getAtomCallback, this);
 
 
-    private mutate() {
-        this.atom.scheduleUpdate();
+    protected mutate() {
+        this.atom.change();
     }
 
     push(...items:T[]) {
