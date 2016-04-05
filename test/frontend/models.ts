@@ -17,8 +17,9 @@ function debug() {
 }
 
 const enum AtomStatus {
-    CREATED = 1,
-    INITED = 2,
+    PROP = 1,
+    GETTER_NO_VAL = 2,
+    GETTER = 3,
     DESTROYED = -1,
 }
 
@@ -96,24 +97,31 @@ class TaskList {
 
 export class Atom {
     protected id = ++atomId;
-    protected slaves:IDMap<Atom> = null;
-    protected masters:IDMap<Atom> = null;
+    protected slaves:IDMap<Atom>;
+    protected masters:IDMap<Atom>;
     protected status:AtomStatus;
     protected field:string;
     protected value:any;
     protected owner:any;
     protected calcFn:()=>void;
 
-    constructor(field:string, value:any, owner?:any, calcFn?:()=>void) {
+    prop(field: string, value: any){
         this.value = value;
-        if (field) {
-            this.field = field;
-        }
-        if (owner) {
-            this.owner = owner;
-        }
+        this.field = field;
+        this.slaves = null;
+        this.status = AtomStatus.PROP;
+        return this;
+    }
+
+    getter(field:string, owner:any, calcFn:()=>void){
+        this.value = null;
+        this.field = field;
+        this.slaves = null;
         this.calcFn = calcFn;
-        this.status = AtomStatus.CREATED;
+        this.owner = owner;
+        this.masters = null;
+        this.status = AtomStatus.GETTER_NO_VAL;
+        return this;
     }
 
     get() {
@@ -122,9 +130,9 @@ export class Atom {
         if (activeSlave && autoMasters) {
             Atom.scheduledTasks.addTask(TaskType.MASTERS, this, activeSlave);
         }
-        if (this.calcFn && this.status == AtomStatus.CREATED) {
+        if (this.status == AtomStatus.GETTER_NO_VAL) {
             this.calc();
-            this.status = AtomStatus.INITED;
+            this.status = AtomStatus.GETTER;
         }
         return this.value;
     }
@@ -274,7 +282,7 @@ export class Atom {
         if (status === AtomAffectStatus.WAIT_PARENT_CALC) {
             return;
         }
-        if (status === AtomAffectStatus.CALC && this.calcFn) {
+        if (status === AtomAffectStatus.CALC && this.status === AtomStatus.GETTER) {
             this.calc();
         }
         affectAtoms[this.id] = status;
@@ -339,7 +347,8 @@ class ComponentAtom extends Atom {
     protected cmp:any;
 
     constructor(cmp:any) {
-        super(cmp.constructor.name + '.render', null, cmp, cmp.mainRender);
+        super();
+        this.getter(cmp.constructor.name + '.render', cmp, cmp.mainRender);
         this.cmp = cmp;
     }
 
@@ -360,7 +369,7 @@ class ComponentAtom extends Atom {
         if (status === AtomAffectStatus.WAIT_PARENT_CALC) {
             return;
         }
-        if (status === AtomAffectStatus.CALC && this.calcFn) {
+        if (status === AtomAffectStatus.CALC && this.status === AtomStatus.GETTER) {
             this.cmp.forceUpdate();
         }
         affectAtoms[this.id] = status;
@@ -407,7 +416,7 @@ export var prop:any = function (proto:any, prop:string, descriptor?:PropertyDesc
                 return atom.get();
             }
             else {
-                atom = this.${_prop} = new AtomGlob('${fieldName}', null);
+                atom = this.${_prop} = new AtomGlob().prop('${fieldName}', null);
                 return atom.get();
             }
             `);
@@ -417,7 +426,7 @@ export var prop:any = function (proto:any, prop:string, descriptor?:PropertyDesc
                 atom.set(value);
             }
             else {
-                this.${_prop} = new AtomGlob('${fieldName}', value);
+                this.${_prop} = new AtomGlob().prop('${fieldName}', value);
             }
             `);
     if (descriptor && descriptor.get) {
@@ -428,7 +437,7 @@ export var prop:any = function (proto:any, prop:string, descriptor?:PropertyDesc
                 return atom.get();
             }
             else {
-                atom = this.${_prop} = new AtomGlob('${fieldName}', null, this, this.${_prop}Getter);
+                atom = this.${_prop} = new AtomGlob().getter('${fieldName}', this, this.${_prop}Getter);
                 return atom.get();
             }
             `);
@@ -573,19 +582,6 @@ export class BaseArray<T> {
 
 class User {
 
-    _firstName:string = null;
-    _lastName:string = null;
-    _fullName:string = null;
-    _a1:string = null;
-    _b2:string = null;
-    _c3:string = null;
-    _d4:string = null;
-    _e5:string = null;
-    _e6:string = null;
-    _e7:string = null;
-    _e8:string = null;
-
-
     @prop firstName:string;
     @prop lastName:string;
 
@@ -606,8 +602,6 @@ class User {
     @prop e6 = '123';
     @prop e7 = '123';
     @prop e8 = '123';
-
-
 }
 
 const users = new BaseArray<User>();
@@ -682,6 +676,6 @@ function abc(fn:any) {
     console.timeEnd(name);
     // console.profileEnd(name);
 }
-// abc(createModel);
+abc(createModel);
 // abc(queue);
 // abc(queueObj);
