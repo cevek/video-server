@@ -51,13 +51,12 @@ class TaskList {
     donePos = 0;
     asyncRunned = false;
     queue:any[];
-    static size = 30000;
+    size = 30000;
 
     get list() {
-        const size = TaskList.size;
         const items:any = [];
         for (var i = this.donePos; i < this.pos; i += 3) {
-            const pos = i % size;
+            const pos = i % this.size;
             const type:TaskType = this.queue[pos];
             items.push({type: type, atom: this.queue[pos + 1], slave: this.queue[pos + 2]});
         }
@@ -65,7 +64,7 @@ class TaskList {
     }
 
     constructor(public taskRunner:()=>void) {
-        this.queue = new Array(TaskList.size);
+        this.queue = new Array(this.size);
     }
 
 
@@ -74,7 +73,7 @@ class TaskList {
             this.asyncRunned = true;
             Promise.resolve().then(this.taskRunner);
         }
-        const pos = this.pos % TaskList.size;
+        const pos = this.pos % this.size;
         this.queue[pos] = taskType;
         this.queue[pos + 1] = atom;
         if (slave) {
@@ -84,9 +83,11 @@ class TaskList {
     }
 
     iterateUndone(callback:(type:TaskType, atom:Atom, slave:Atom, isLast:boolean)=>void) {
-        const size = TaskList.size;
+        if (this.pos - this.donePos > this.size) {
+            throw new Error('Out of range');
+        }
         for (var i = this.donePos; i < this.pos; i += 3) {
-            const pos = i % size;
+            const pos = i % this.size;
             const type:TaskType = this.queue[pos];
             callback(type, this.queue[pos + 1], type == TaskType.MASTERS ? this.queue[pos + 2] : null, i == this.pos - 3);
             this.donePos += 3;
@@ -132,7 +133,6 @@ export class Atom {
         }
         if (this.status == AtomStatus.GETTER_NO_VAL) {
             this.calc();
-            this.status = AtomStatus.GETTER;
         }
         return this.value;
     }
@@ -211,6 +211,7 @@ export class Atom {
         if (debugAtoms && (debugAtoms[this.field] || debugAtoms[this.id])) {
             debug();
         }
+        this.status = AtomStatus.GETTER;
         // console.info(this.field, this.id);
         return oldValue !== this.value;
     }
