@@ -33,6 +33,7 @@ const enum TaskType{
     CHANGE = 10,
     CLEAR_MASTERS = 20,
     MASTERS = 30,
+    DESTROY = 50,
 }
 interface Task {
     type:TaskType;
@@ -42,6 +43,55 @@ interface Task {
 
 interface IDMap<T> {
     [id:number]:T;
+}
+
+class TaskList {
+    pos = 0;
+    donePos = 0;
+    asyncRunned = false;
+    queue:any[];
+    static size = 30000;
+
+    get list() {
+        const size = TaskList.size;
+        const items:any = [];
+        for (var i = this.donePos; i < this.pos; i += 3) {
+            const pos = i % size;
+            const type:TaskType = this.queue[pos];
+            items.push({type: type, atom: this.queue[pos + 1], slave: this.queue[pos + 2]});
+        }
+        return items;
+    }
+
+    constructor(public taskRunner:()=>void) {
+        this.queue = new Array(TaskList.size);
+    }
+
+
+    addTask(taskType:TaskType, atom:Atom, slave?:Atom) {
+        if (!this.asyncRunned) {
+            this.asyncRunned = true;
+            Promise.resolve().then(this.taskRunner);
+        }
+        const pos = this.pos % TaskList.size;
+        this.queue[pos] = taskType;
+        this.queue[pos + 1] = atom;
+        if (slave) {
+            this.queue[pos + 2] = slave;
+        }
+        this.pos += 3;
+    }
+
+    iterateUndone(callback:(type:TaskType, atom:Atom, slave:Atom, isLast:boolean)=>void) {
+        const size = TaskList.size;
+        for (var i = this.donePos; i < this.pos; i += 3) {
+            const pos = i % size;
+            const type:TaskType = this.queue[pos];
+            callback(type, this.queue[pos + 1], type == TaskType.MASTERS ? this.queue[pos + 2] : null, i == this.pos - 3);
+            this.donePos += 3;
+        }
+        this.asyncRunned = false;
+    }
 }
 
 export class Atom {
@@ -70,7 +120,7 @@ export class Atom {
         this.checkForDestroy();
         lastGetted = this;
         if (activeSlave && autoMasters) {
-            this.addTask({type: TaskType.MASTERS, atom: this, slave: activeSlave});
+            Atom.scheduledTasks.addTask(TaskType.MASTERS, this, activeSlave);
         }
         if (this.calcFn && this.status == AtomStatus.CREATED) {
             this.calc();
@@ -89,19 +139,24 @@ export class Atom {
 
     change() {
         this.checkForDestroy();
-        this.addTask({type: TaskType.CHANGE, atom: this});
+        Atom.scheduledTasks.addTask(TaskType.CHANGE, this);
     }
 
     destroy() {
+        this.checkForDestroy();
         if (debugAtoms && (debugAtoms[this.field] || debugAtoms[this.id])) {
             debug();
         }
-        this.clearMasters();
         this.status = AtomStatus.DESTROYED;
-        this.masters = null;
-        this.slaves = null;
-        this.value = null;
+        Atom.scheduledTasks.addTask(TaskType.DESTROY, this);
+    }
+
+    protected realDestroy() {
+        this.clearMasters();
+        this.clearSlaves();
+        // this.value = null;
         this.owner = null;
+        this.calcFn = null;
     }
 
     static getAtom(callback:()=>void, thisArg?:any) {
@@ -131,15 +186,6 @@ export class Atom {
         this.slaves[slave.id] = slave;
     }
 
-    protected addTask(task:Task) {
-        if (!Atom.scheduledTasks) {
-            Atom.scheduledTasks = [];
-            Promise.resolve().then(Atom.updateScheduled);
-        }
-        Atom.scheduledTasks.push(task);
-    }
-
-
     protected checkForDestroy() {
         if (this.status == AtomStatus.DESTROYED) {
             throw new Error('Try to use destroyed atom');
@@ -149,7 +195,7 @@ export class Atom {
     protected calc() {
         this.checkForDestroy();
         const oldActiveSlave = activeSlave;
-        this.addTask({type: TaskType.CLEAR_MASTERS, atom: this})
+        Atom.scheduledTasks.addTask(TaskType.CLEAR_MASTERS, this);
         activeSlave = this;
         const oldValue = this.value;
         this.value = this.calcFn.call(this.owner);
@@ -157,20 +203,32 @@ export class Atom {
         if (debugAtoms && (debugAtoms[this.field] || debugAtoms[this.id])) {
             debug();
         }
-        console.info(this.field, this.id);
+        // console.info(this.field, this.id);
         return oldValue !== this.value;
     }
 
     protected clearMasters() {
-        this.checkForDestroy();
         if (this.masters) {
             for (const id in this.masters) {
                 const master = this.masters[id];
                 if (master) {
                     master.slaves[this.id] = null;
                 }
-                this.masters[id] = null;
+                // this.masters[id] = null;
             }
+            this.masters = null;
+        }
+    }
+
+    protected clearSlaves() {
+        if (this.slaves) {
+            for (const id in this.slaves) {
+                const slave = this.slaves[id];
+                if (slave) {
+                    slave.masters[this.id] = null;
+                }
+            }
+            this.slaves = null;
         }
     }
 
@@ -188,7 +246,9 @@ export class Atom {
     }
 
     protected needToRecalc(affectAtoms:IDMap<AtomAffectStatus>) {
-        this.checkForDestroy();
+        if (this.status == AtomStatus.DESTROYED) {
+            return AtomAffectStatus.NEEDNOT_CALC;
+        }
         let status = AtomAffectStatus.NEEDNOT_CALC;
         if (this.masters) {
             for (const id in this.masters) {
@@ -207,7 +267,6 @@ export class Atom {
     }
 
     protected update(topLevel:boolean, affectAtoms:IDMap<AtomAffectStatus>) {
-        this.checkForDestroy();
         if (affectAtoms[this.id] !== AtomAffectStatus.NEEDCALC) {
             throw new Error('Something wrong');
         }
@@ -242,42 +301,39 @@ export class Atom {
         }
     }
 
-    protected static scheduledTasks:Task[];
+    protected static scheduledTasks = new TaskList(Atom.updateScheduled);
 
     protected static updateScheduled() {
         console.log("start schedule runner");
         let changeAtoms:IDMap<Atom> = {};
-        let lastType:TaskType = null;
-        let handledTaskCount = 0;
-        for (var i = 0; i < Atom.scheduledTasks.length; i++) {
-            var task = Atom.scheduledTasks[i];
-            if (task.type == TaskType.CHANGE) {
-                changeAtoms[task.atom.id] = task.atom;
-            } else if (lastType == TaskType.CHANGE) {
+        let prevType:TaskType = null;
+
+        Atom.scheduledTasks.iterateUndone((type:TaskType, atom:Atom, slave:Atom, isLast:boolean) => {
+            if (type == TaskType.CHANGE) {
+                changeAtoms[atom.id] = atom;
+                if (isLast) {
+                    Atom.batchUpdate(changeAtoms);
+                    changeAtoms = {};
+                }
+            } else if (prevType == TaskType.CHANGE) {
                 Atom.batchUpdate(changeAtoms);
                 changeAtoms = {};
             }
-            if (task.type == TaskType.CLEAR_MASTERS) {
-                task.atom.clearMasters();
+            else if (type == TaskType.CLEAR_MASTERS) {
+                atom.clearMasters();
             }
-            if (task.type == TaskType.MASTERS) {
-                task.atom.setSelfToActiveSlave(task.slave);
+            else if (type == TaskType.MASTERS) {
+                atom.setSelfToActiveSlave(slave);
             }
-            lastType = task.type;
-            handledTaskCount++;
-        }
-        if (lastType == TaskType.CHANGE) {
-            Atom.batchUpdate(changeAtoms);
-        }
-        Atom.scheduledTasks.splice(0, handledTaskCount);
-        if (Atom.scheduledTasks.length) {
-            Atom.updateScheduled();
-        }
-        Atom.scheduledTasks = null;
-        console.log("stop schedule runner");
+            else if (type == TaskType.DESTROY) {
+                atom.realDestroy();
+            }
+            prevType = type;
+        });
     }
 }
 
+(window as any).AtomGlob = Atom;
 
 class ComponentAtom extends Atom {
     protected cmp:any;
@@ -290,14 +346,13 @@ class ComponentAtom extends Atom {
     get() {
         this.checkForDestroy();
         if (activeSlave && autoMasters) {
-            this.addTask({type: TaskType.MASTERS, atom: this, slave: activeSlave});
+            Atom.scheduledTasks.addTask(TaskType.MASTERS, this, activeSlave);
         }
         this.calc();
         return this.value;
     }
 
     protected update(topLevel:boolean, affectAtoms:IDMap<AtomAffectStatus>) {
-        this.checkForDestroy();
         if (affectAtoms[this.id] !== AtomAffectStatus.NEEDCALC) {
             throw new Error('Something wrong');
         }
@@ -345,43 +400,46 @@ export var prop:any = function (proto:any, prop:string, descriptor?:PropertyDesc
     var _prop = ('_' + prop).substr(0);
     const fieldName = proto.constructor.name + '.' + prop;
     // const descriptor = Object.getOwnPropertyDescriptor(proto, prop);
+
+    const getFn = new Function(`
+            var atom = this.${_prop};
+            if (atom) {
+                return atom.get();
+            }
+            else {
+                atom = this.${_prop} = new AtomGlob('${fieldName}', null);
+                return atom.get();
+            }
+            `);
+    const setFn = new Function('value', `
+            var atom = this.${_prop};
+            if (atom) {
+                atom.set(value);
+            }
+            else {
+                this.${_prop} = new AtomGlob('${fieldName}', value);
+            }
+            `);
     if (descriptor && descriptor.get) {
+        proto[_prop + 'Getter'] = descriptor.get;
+        const getterFn = new Function(`
+            var atom = this.${_prop};
+            if (atom) {
+                return atom.get();
+            }
+            else {
+                atom = this.${_prop} = new AtomGlob('${fieldName}', null, this, this.${_prop}Getter);
+                return atom.get();
+            }
+            `);
         return {
             set: void 0,
-            get: function () {
-                let atom:Atom = this[_prop];
-                if (atom) {
-                    return atom.get();
-                }
-                else {
-                    this[_prop] = atom = new Atom(fieldName, null, this, descriptor.get);
-                    return atom.get();
-                }
-            }
+            get: getterFn
         }
     }
-
     return {
-        set: function (value:any) {
-            var atom:Atom = this[_prop];
-            if (atom) {
-                atom.set(value);
-            }
-            else {
-                atom = this[_prop] = new Atom(fieldName, null);
-                atom.set(value);
-            }
-        },
-        get: function () {
-            let atom:Atom = this[_prop];
-            if (atom) {
-                return atom.get();
-            }
-            else {
-                atom = this[_prop] = new Atom(fieldName, null);
-                return atom.get();
-            }
-        }
+        set: setFn,
+        get: getFn
     }
 };
 
@@ -514,9 +572,22 @@ export class BaseArray<T> {
 
 
 class User {
+
+    _firstName:string = null;
+    _lastName:string = null;
+    _fullName:string = null;
+    _a1:string = null;
+    _b2:string = null;
+    _c3:string = null;
+    _d4:string = null;
+    _e5:string = null;
+    _e6:string = null;
+    _e7:string = null;
+    _e8:string = null;
+
+
     @prop firstName:string;
     @prop lastName:string;
-
 
     constructor(firstName:string, lastName:string) {
         this.firstName = firstName;
@@ -526,6 +597,17 @@ class User {
     @prop get fullName() {
         return this.firstName + ' ' + this.lastName;
     }
+
+    @prop a1 = '123';
+    @prop b2 = '123';
+    @prop c3 = '123';
+    @prop d4 = '123';
+    @prop e5 = '123';
+    @prop e6 = '123';
+    @prop e7 = '123';
+    @prop e8 = '123';
+
+
 }
 
 const users = new BaseArray<User>();
@@ -547,3 +629,59 @@ class TempRender {
 new TempRender().forceUpdate();
 
 (window as any).users = users;
+
+
+function createModel() {
+    new User('1', '2');
+}
+
+const cacheSize = 10000;
+const cache = new Array(cacheSize);
+let cachePos = 0;
+const atom = {a: 1, b: 2};
+function queueObj() {
+    cache[cachePos++ % cacheSize] = {atom: atom, type: 1, slave: atom};
+    /*
+     const pos = (cachePos - 1) % cacheSize;
+     const task = cache[pos];
+     cache[pos] = null;
+     return task.atom.a + task.type + task.slave.b;
+     */
+}
+
+
+var cacheSize2 = 30000;
+var cache2 = new Array(cacheSize2);
+var cachePos2 = 0;
+function queue() {
+     const pos = cachePos2 % cacheSize2;
+     cache2[pos] = 1;
+     cache2[pos + 1] = atom;
+     cache2[pos + 2] = atom;
+     cachePos2 += 3;
+    /*
+     const pos2 = (cachePos2 - 3) % cacheSize2;
+     const res = cache2[pos2] + cache2[pos2 + 1].a + cache2[pos2 + 2].b;
+
+     cache2[pos2] = null;
+     cache2[pos2 + 1] = null;
+     cache2[pos2 + 2] = null;
+
+     return res;
+     */
+
+}
+const getName = ((fn:any)=>fn.name);
+function abc(fn:any) {
+    const name = getName(fn);
+    // console.profile(name);
+    console.time(name);
+    for (var i = 0; i < 1000000; i++) {
+        fn();
+    }
+    console.timeEnd(name);
+    // console.profileEnd(name);
+}
+// abc(createModel);
+// abc(queue);
+// abc(queueObj);
