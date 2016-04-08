@@ -9,7 +9,7 @@ export class Timeline extends React.Component<{player: AudioPlayer; resizeKoef: 
     }
 
     componentDidMount() {
-        this.props.player.applySpectrogramToCanvas(React.findDOMNode(this.refs['spectrogram']) as HTMLCanvasElement);
+        this.props.player.applySpectrogramToCanvas(this.refs['spectrogram'] as HTMLCanvasElement);
     }
 
     render() {

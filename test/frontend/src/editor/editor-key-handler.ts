@@ -85,4 +85,8 @@ export class EditorKeyHandler extends React.Component<{model: EditorModel;},{}>{
     componentDidMount() {
         document.addEventListener('keydown', this.keyHandler);
     }
+
+    render():any{
+        return null;
+    }
 }

@@ -55,7 +55,7 @@ export class Video extends React.Component<{postModel: PostModel; resizeKoef: nu
 
     render() {
         return <div>
-            <div ref={d => this.videoWrapper = React.findDOMNode(d)} className="video">
+            <div ref={d => this.videoWrapper = d} className="video">
                 <div className="overlay"></div>
                 {!this.isStarted || this.isEnded ?
                 <div className="cover"></div>: null}

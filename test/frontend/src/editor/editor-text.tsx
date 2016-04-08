@@ -43,7 +43,7 @@ export class EditorText extends React.Component<{model:EditorModel; renderLines:
             <EditorKeyHandler model={this.model}/>
 
             {this.model.lines.map((line, linePos) =>
-                <div className="line" style={{top: this.props.renderLines[linePos]}}>
+                <div className="line" key={linePos} style={{top: this.props.renderLines[linePos]}}>
                     <Speakers model={this.model} line={line}/>
                     <TextLine model={this.model} line={line} linePos={linePos} lang={Lang.EN}/>
                     <TextLine model={this.model} line={line} linePos={linePos} lang={Lang.RU}/>
@@ -63,7 +63,7 @@ class Speakers extends React.Component<{model:EditorModel; line:EditorLine;},{}>
         const line = this.props.line;
         return <div className="speakers">
             {this.props.model.speakers.map(speaker =>
-                <div className={classNames("speaker", {'selected': speaker == line.speaker})}
+                <div key={speaker} className={classNames("speaker", {'selected': speaker == line.speaker})}
                      onClick={()=>this.setSpeaker(line, speaker)}>{speaker}</div>
             )}
         </div>
@@ -81,8 +81,8 @@ class TextLine extends React.Component<{model:EditorModel; line:EditorLine; line
         return classNames({'selected': this.props.model.textModel.selection.word == word && this.props.model.textModel.selection.textLine == textLine});
     }
 
-    setWordNode(word:EditorWord, node:React.DOMComponent<{}>) {
-        word.span = React.findDOMNode(node);
+    setWordNode(word:EditorWord, node:HTMLElement) {
+        word.span = node;
     }
 
     onWordClick(e:React.MouseEvent, linePos:number, lang:Lang, wordPos:number) {
@@ -103,7 +103,7 @@ class TextLine extends React.Component<{model:EditorModel; line:EditorLine; line
         const textLine = lang == Lang.RU ? line.ru : line.en; // todo
         return  <div className="textline ru" onClick={()=>this.onTextLineClick(linePos, lang)}>
             {textLine.words.map((w, wordPos) =>
-                <span className={this.spanClassName(textLine, w)} ref={node => this.setWordNode(w, node)}
+                <span className={this.spanClassName(textLine, w)} key={wordPos} ref={node => this.setWordNode(w, node)}
                       onClick={e=>this.onWordClick(e, linePos, this.props.lang, wordPos)}>{w.word}</span>)}
         </div>
 

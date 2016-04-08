@@ -133,7 +133,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
                     const tr = pos - halfLineH;
                     const br = pos + halfLineH;
                     const color = 'hsla(' + (textLine.start) + ', 50%,60%, 1)';
-                    return <g className={i == this.activeLine ? 'resizing' : ''}>
+                    return <g key={i} className={i == this.activeLine ? 'resizing' : ''}>
                         <path onClick={()=>this.playTextLine(textLine)} fill={color}
                               d={svgPathGenerator(tl, bl, tr, br, connectorWidth)}/>
                         <rect onMouseDown={(e:any)=>this.onMouseDown(e, i, true)} className="top" y={tl}/>

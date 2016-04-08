@@ -37,8 +37,8 @@ export class Thumbs extends React.Component<{postModel: PostModel; resizeKoef: n
         }
 
         return <div className="thumbs">
-            {thumbsItems.map(thumb =>
-                <div className="thumb"
+            {thumbsItems.map((thumb, i) =>
+                <div className="thumb" key={i}
                      style={{top: thumb.top, background: `url(${thumbImg}) ${-thumb.imgLeft}px ${-thumb.imgTop}px`}}>
                 </div>)}
         </div>

@@ -17,7 +17,7 @@ export class EditorToolbarSpeaker extends React.Component<{model:EditorModel; ad
 
     onSave(pos:number) {
         this.editMode = false;
-        this.props.model.speakers.set(pos, (React.findDOMNode(this.refs['speaker']) as HTMLInputElement).value);
+        this.props.model.speakers.set(pos, (this.refs['speaker'] as HTMLInputElement).value);
     }
 
     onCancel() {

@@ -161,7 +161,7 @@ class Uploader extends React.Component<{
     interval:number;
 
     getFile() {
-        var fileInput = React.findDOMNode(this.refs['fileInput']) as HTMLInputElement;
+        var fileInput = this.refs['fileInput'] as HTMLInputElement;
         return fileInput.files[0];
     }
 
@@ -336,10 +336,10 @@ class Uploader extends React.Component<{
                         {this.fileSelected ?
                         <div>
                             <input value={this.secToTime(this.props.startTime)}
-                                   ref={d => this.startTime = (React.findDOMNode(d) as HTMLInputElement).value}
+                                   ref={d => this.startTime = (d as HTMLInputElement).value}
                                    type="text"/>
                             <input value={this.secToTime(this.props.endTime)}
-                                   ref={d => this.endTime = (React.findDOMNode(d) as HTMLInputElement).value}
+                                   ref={d => this.endTime = (d as HTMLInputElement).value}
                                    type="text"/>
                             <button onClick={()=>this.send()}>Submit</button>
                         </div>

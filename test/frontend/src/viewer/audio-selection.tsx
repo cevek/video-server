@@ -96,9 +96,9 @@ export class AudioSelection extends React.Component<{pxPerSec: number; player: A
     }
 
     componentDidMount() {
-        this.el = React.findDOMNode(this.refs['audioSelection']) as HTMLElement;
-        const root = React.findDOMNode(this.refs['root']) as HTMLElement;
-        this.currentTime = React.findDOMNode(this.refs['currentTime']) as HTMLElement;
+        this.el = this.refs['audioSelection'] as HTMLElement;
+        const root = this.refs['root'] as HTMLElement;
+        this.currentTime = this.refs['currentTime'] as HTMLElement;
         this.offsetTop = (this.el.parentNode as HTMLElement).offsetTop;
 
         root.addEventListener('mousedown', e => this.selectStart(e));
