@@ -8,7 +8,7 @@ export class EditorToolbarSpeaker extends React.Component<{model:EditorModel; ad
     @prop editMode = false;
 
     onRemove(pos:number) {
-        this.props.model.speakers.splice(pos, 1);
+        this.props.model.speakers.remove(pos)
     }
 
     onEdit() {
@@ -17,7 +17,7 @@ export class EditorToolbarSpeaker extends React.Component<{model:EditorModel; ad
 
     onSave(pos:number) {
         this.editMode = false;
-        this.props.model.speakers.set(pos, (this.refs['speaker'] as HTMLInputElement).value);
+        this.props.model.speakers.save(pos, (this.refs['speaker'] as HTMLInputElement).value);
     }
 
     onCancel() {

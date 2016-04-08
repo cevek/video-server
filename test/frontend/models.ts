@@ -106,7 +106,7 @@ export class Atom {
     protected owner:any;
     protected calcFn:()=>void;
 
-    prop(field: string, value: any){
+    prop(field:string, value:any) {
         this.value = value;
         this.field = field;
         this.slaves = null;
@@ -114,7 +114,7 @@ export class Atom {
         return this;
     }
 
-    getter(field:string, owner:any, calcFn:()=>void){
+    getter(field:string, owner:any, calcFn:()=>void) {
         this.value = null;
         this.field = field;
         this.slaves = null;
@@ -454,10 +454,14 @@ export var prop:any = function (proto:any, prop:string, descriptor?:PropertyDesc
 };
 
 export class BaseArray<T> {
-    @prop protected items:T[] = [];
+    @prop protected items:T[];
 
     @prop get length() {
         return this.items.length;
+    }
+
+    constructor(items:T[]) {
+        this.items = items || [];
     }
 
     protected getAtomCallback() {
@@ -605,7 +609,7 @@ class User {
     @prop e8 = '123';
 }
 
-const users = new BaseArray<User>();
+const users = new BaseArray<User>([]);
 users.push(new User('Ivan', 'Petrashev'));
 users.push(new User('Alex', 'Keffir'));
 users.push(new User('Sergio', 'Valse'));
@@ -649,11 +653,11 @@ var cacheSize2 = 30000;
 var cache2 = new Array(cacheSize2);
 var cachePos2 = 0;
 function queue() {
-     const pos = cachePos2 % cacheSize2;
-     cache2[pos] = 1;
-     cache2[pos + 1] = atom;
-     cache2[pos + 2] = atom;
-     cachePos2 += 3;
+    const pos = cachePos2 % cacheSize2;
+    cache2[pos] = 1;
+    cache2[pos + 1] = atom;
+    cache2[pos + 2] = atom;
+    cachePos2 += 3;
     /*
      const pos2 = (cachePos2 - 3) % cacheSize2;
      const res = cache2[pos2] + cache2[pos2 + 1].a + cache2[pos2 + 2].b;

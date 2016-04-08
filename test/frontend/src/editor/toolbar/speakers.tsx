@@ -10,10 +10,10 @@ export class EditorToolbarSpeakers extends React.Component<{model: EditorModel},
         var model = this.props.model;
         return <div className="speakers">
             <h3>Speakers</h3>
-            {model.speakers.map((speaker, pos) =>
+            {model.speakers.list.map((speaker, pos) =>
                 <EditorToolbarSpeaker key={speaker} model={model} speaker={speaker} pos={pos}/>
             )}
-            <EditorToolbarSpeaker model={model} speaker={""} addMode={true} pos={model.speakers.length}/>
+            <EditorToolbarSpeaker model={model} speaker={""} addMode={true} pos={model.speakers.list.length}/>
         </div>;
     }
 }

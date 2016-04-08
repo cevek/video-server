@@ -1,10 +1,70 @@
 import {Lang} from "../../../interfaces/lang";
 import {PostModel} from "../models/post";
-import {EditorHistory} from "../utils/history";
+import {EditorHistory, EditorHistoryData} from "../utils/history";
 import {Line} from "../models/line";
 import {ITextLine} from "../../../interfaces/text-line";
 import {EditorTextModel} from "./editor-text-model";
 import {prop, BaseArray} from "../../models";
+
+class SpeakersListHistory extends EditorHistoryData {
+    static type = 'speakers-list'
+    type = SpeakersListHistory.type;
+    oldList:string[];
+    pos:number;
+    speaker:string;
+    remove:boolean;
+
+    constructor(json:SpeakersListHistory) {
+        super(json);
+    }
+}
+
+export class EditorSpeakerList {
+    @prop list = new BaseArray<string>([]);
+
+    constructor(public model:EditorModel) {
+        this.model.history.listen(this.onHistory)
+    }
+
+    onHistory = (data:SpeakersListHistory, isRedo:boolean) => {
+        console.log(data, isRedo);
+
+        if (data.type == SpeakersListHistory.type) {
+            if (isRedo) {
+                if (data.remove) {
+                    this.list.splice(data.pos, 1);
+                } else {
+                    this.list.set(data.pos, data.speaker);
+                    console.log(this.list);
+                }
+            } else {
+                this.list = new BaseArray(data.oldList);
+            }
+        }
+    }
+
+    remove(pos:number) {
+        this.model.history.add(new SpeakersListHistory({
+            type: SpeakersListHistory.type,
+            oldList: this.list.slice(),
+            pos: pos,
+            speaker: '',
+            remove: true,
+        }));
+        this.list.splice(pos, 1);
+    }
+
+    save(pos:number, speaker:string) {
+        this.model.history.add(new SpeakersListHistory({
+            type: SpeakersListHistory.type,
+            oldList: this.list.slice(),
+            pos: pos,
+            remove: false,
+            speaker: speaker
+        }));
+        this.list.set(pos, speaker);
+    }
+}
 
 export class EditorModel {
     @prop postModel:PostModel;
@@ -14,7 +74,7 @@ export class EditorModel {
     @prop lineH = 50;
     @prop title = '';
     @prop tags = '';
-    @prop speakers = new BaseArray<string>();
+    @prop speakers:EditorSpeakerList;
     @prop textModel:EditorTextModel;
 
     fromPostModel(postModel:PostModel) {
@@ -25,6 +85,7 @@ export class EditorModel {
                 new EditorTextLine(Lang.RU, line.ru.start, line.ru.dur, line.ru ? line.ru.text.split(/\s+/).map(w => new EditorWord(w)) : [])
             ))
         this.textModel = new EditorTextModel(this);
+        this.speakers = new EditorSpeakerList(this);
         return this;
     }
 

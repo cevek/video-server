@@ -62,7 +62,7 @@ class Speakers extends React.Component<{model:EditorModel; line:EditorLine;},{}>
     render() {
         const line = this.props.line;
         return <div className="speakers">
-            {this.props.model.speakers.map(speaker =>
+            {this.props.model.speakers.list.map(speaker =>
                 <div key={speaker} className={classNames("speaker", {'selected': speaker == line.speaker})}
                      onClick={()=>this.setSpeaker(line, speaker)}>{speaker}</div>
             )}
