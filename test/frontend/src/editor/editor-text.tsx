@@ -4,7 +4,7 @@ import {EditorModel, EditorTextLine, EditorWord, EditorLine} from "./editor-mode
 import {Lang} from "../../../interfaces/lang";
 import {EditorKeyHandler} from "./editor-key-handler";
 import {Line} from "../models/line";
-import "./editor-text.css";
+import "./styles/editor-text.css";
 import {BaseArray, prop, Atom, autowatch} from "../../models";
 
 class User {

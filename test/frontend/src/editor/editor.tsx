@@ -8,7 +8,7 @@ import {AudioPlayer} from "../utils/audio-player";
 import {LineAllocator} from "../utils/time-allocate";
 import {EditorText} from "./editor-text";
 import {config} from "../../../backend/config";
-import "./editor.css";
+import "./styles/editor.css";
 import {EditorToolbar} from "./toolbar/toolbar";
 import {EditorTitle} from "./editor-title";
 import {EditorTags} from "./editor-tags";

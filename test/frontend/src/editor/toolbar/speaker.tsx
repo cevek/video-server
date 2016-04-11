@@ -1,6 +1,6 @@
 import * as React from "react";
 import {EditorModel} from "../editor-model";
-import "./speaker.css";
+import "./styles/speaker.css";
 import {prop, autowatch} from "../../../models";
 
 @autowatch

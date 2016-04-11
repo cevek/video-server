@@ -1,7 +1,7 @@
 import * as React from "react";
 import {EditorModel} from "../editor-model";
 import {EditorToolbarSpeaker} from "./speaker";
-import "./speakers.css";
+import "./styles/speakers.css";
 import {autowatch} from "../../../models";
 
 @autowatch

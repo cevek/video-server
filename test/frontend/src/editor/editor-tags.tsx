@@ -1,6 +1,6 @@
 import * as React from "react";
 import {EditorModel} from "./editor-model";
-import "./editor-tags.css";
+import "./styles/editor-tags.css";
 import {autowatch} from "../../models";
 
 @autowatch
