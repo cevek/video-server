@@ -65,7 +65,7 @@ export class EditorModel {
 
 export class EditorLine extends Line {
     @prop en:EditorTextLine = null;
-    @prop ru:EditorTextLine = null
+    @prop ru:EditorTextLine = null;
 
     constructor(en:EditorTextLine = null, ru:EditorTextLine = null) {
         super();

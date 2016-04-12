@@ -1,5 +1,5 @@
 import {Lang} from "../../../interfaces/lang";
-import {EditorHistoryData, EditorHistory} from "../utils/history";
+import {EditorHistoryData, EditorHistory, EditorHistoryStringData} from "../utils/history";
 import {EditorSelection, EditorLine, EditorTextLine, EditorWord, EditorModel} from "./editor-model";
 import {prop} from "../../models";
 
@@ -23,6 +23,16 @@ class EditorHistoryText extends EditorHistoryData {
     }
 }
 
+class EditorHistoryTextSpeaker extends EditorHistoryStringData {
+    static type = 'editor-speaker';
+    type = EditorHistoryTextSpeaker.type;
+    linePos:number;
+
+    constructor(json:EditorHistoryTextSpeaker) {
+        super(json);
+    }
+}
+
 export class EditorTextModel {
     @prop editorModel:EditorModel
     @prop lines:EditorLine[];
@@ -34,7 +44,11 @@ export class EditorTextModel {
         this.lines = editorModel.lines;
         this.selection = new EditorSelection(this.editorModel.lines);
         this.history = this.editorModel.history
-            .listen(EditorHistoryText.type, (item:EditorHistoryText, isRedo:boolean) => this.undo(item));
+            .listen(EditorHistoryText.type, (item:EditorHistoryText, isRedo:boolean) => this.undo(item))
+            .listen(EditorHistoryTextSpeaker.type, (item:EditorHistoryTextSpeaker, isRedo:boolean) => {
+                this.lines[item.linePos].speaker = isRedo ? item.newValue : item.oldValue
+            });
+
     }
 
     findClosestNextWord(currWord:EditorWord, nextTextLine:EditorTextLine) {
@@ -272,4 +286,13 @@ export class EditorTextModel {
         return true;
     };
 
+    setSpeaker(pos: number, speaker:string) {
+        this.history.add(new EditorHistoryTextSpeaker({
+            type: EditorHistoryTextSpeaker.type,
+            linePos: pos,
+            oldValue: this.lines[pos].speaker,
+            newValue: speaker,
+        }));
+        this.lines[pos].speaker = speaker;
+    }
 }

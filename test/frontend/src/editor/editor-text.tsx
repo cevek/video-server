@@ -44,7 +44,7 @@ export class EditorText extends React.Component<{model:EditorModel; renderLines:
 
             {this.model.lines.map((line, linePos) =>
                 <div className="line" key={linePos} style={{top: this.props.renderLines[linePos]}}>
-                    <Speakers model={this.model} line={line}/>
+                    <Speakers model={this.model} linePos={linePos}/>
                     <TextLine model={this.model} line={line} linePos={linePos} lang={Lang.EN}/>
                     <TextLine model={this.model} line={line} linePos={linePos} lang={Lang.RU}/>
                 </div>
@@ -54,17 +54,18 @@ export class EditorText extends React.Component<{model:EditorModel; renderLines:
 }
 
 @autowatch
-class Speakers extends React.Component<{model:EditorModel; line:EditorLine;},{}> {
-    setSpeaker(line:Line, speaker:string) {
-        line.speaker = speaker;
+class Speakers extends React.Component<{model:EditorModel; linePos:number;},{}> {
+    setSpeaker(pos:number, speaker:string) {
+        console.log(pos, speaker);
+        this.props.model.textModel.setSpeaker(pos, speaker);
     }
 
     render() {
-        const line = this.props.line;
+        const line = this.props.model.lines[this.props.linePos];
         return <div className="speakers">
             {this.props.model.speakers.list.map(speaker =>
                 <div key={speaker} className={classNames("speaker", {'selected': speaker == line.speaker})}
-                     onClick={()=>this.setSpeaker(line, speaker)}>{speaker}</div>
+                     onClick={()=>this.setSpeaker(this.props.linePos, speaker)}>{speaker}</div>
             )}
         </div>
 
@@ -73,10 +74,6 @@ class Speakers extends React.Component<{model:EditorModel; line:EditorLine;},{}>
 
 @autowatch
 class TextLine extends React.Component<{model:EditorModel; line:EditorLine; linePos:number; lang:Lang;},{}> {
-    setSpeaker(line:Line, speaker:string) {
-        line.speaker = speaker;
-    }
-
     spanClassName(textLine:EditorTextLine, word:EditorWord) {
         return classNames({'selected': this.props.model.textModel.selection.word == word && this.props.model.textModel.selection.textLine == textLine});
     }
