@@ -8,28 +8,29 @@ import {Lang} from "../../../interfaces/lang";
 import "./timeline-connector.css";
 
 
-export class EditorHistoryTimeline extends EditorHistoryData{
+export class EditorHistoryTimeline extends EditorHistoryData {
     static type = 'timeline';
     type = EditorHistoryTimeline.type;
-    lineN: number;
-    lang: Lang;
-    oldStart: number;
-    oldDur: number;
-    newStart: number;
-    newDur: number;
-    constructor(json: EditorHistoryTimeline){
-        super(json);        
+    lineN:number;
+    lang:Lang;
+    oldStart:number;
+    oldDur:number;
+    newStart:number;
+    newDur:number;
+
+    constructor(json:EditorHistoryTimeline) {
+        super(json);
     }
 }
 
 
 interface TimelineConnectorProps {
-    lines: Line[];
-    player: AudioPlayer;
-    resizeKoef: number;
-    lineH: number;
+    lines:Line[];
+    player:AudioPlayer;
+    resizeKoef:number;
+    lineH:number;
     renderLines:number[];
-    history: EditorHistory;
+    history:EditorHistory;
 }
 export class TimelineConnector extends React.Component<TimelineConnectorProps, {}> {
     timeToY(time:number) {
@@ -63,16 +64,14 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
     }
 
     historyListen = (data:EditorHistoryTimeline, isRedo:boolean) => {
-        if (data.type == EditorHistoryTimeline.type) {
-            const textLine = this.props.lines[data.lineN].en;
-            textLine.start = isRedo ? data.newStart : data.oldStart;
-            textLine.dur = isRedo ? data.newDur : data.oldDur;
-            this.forceUpdate();
-        }
+        const textLine = this.props.lines[data.lineN].en;
+        textLine.start = isRedo ? data.newStart : data.oldStart;
+        textLine.dur = isRedo ? data.newDur : data.oldDur;
+        this.forceUpdate();
     }
 
     componentDidMount() {
-        this.props.history.listen(this.historyListen);
+        this.props.history.listen(EditorHistoryTimeline.type, this.historyListen);
         document.addEventListener("mousemove", e => {
             if (this.activeLine > -1) {
                 const textLine = this.props.lines[this.activeLine].en;

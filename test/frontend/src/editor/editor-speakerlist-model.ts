@@ -25,37 +25,35 @@ export class EditorSpeakerList {
     @prop list = new BaseArray<string>([]);
 
     constructor(public model:EditorModel) {
-        this.model.history.listen(this.onHistory)
+        this.model.history.listen(SpeakersListHistory.type, this.onHistory)
     }
 
     onHistory = (data:SpeakersListHistory, isRedo:boolean) => {
-        if (data.type == SpeakersListHistory.type) {
-            if (data.subtype == SpeakersListHistoryType.ADD) {
-                if (isRedo) {
-                    this.list.push(data.speaker);
-                }
-                else {
-                    this.list.pop();
-                }
+        if (data.subtype == SpeakersListHistoryType.ADD) {
+            if (isRedo) {
+                this.list.push(data.speaker);
             }
-            else if (data.subtype == SpeakersListHistoryType.CHANGE) {
-                this.list.set(data.pos, isRedo ? data.speaker : data.oldVal);
-                if (isRedo) {
-                    this.renameLineSpeakers(data.oldVal, data.speaker);
-                }
-                else {
-                    this.renameLineSpeakers(data.speaker, data.oldVal);
-                }
+            else {
+                this.list.pop();
             }
-            else if (data.subtype == SpeakersListHistoryType.REMOVE) {
-                if (isRedo) {
-                    this.list.splice(data.pos, 1);
-                    this.removeLineSpeakers(data.oldVal);
-                }
-                else {
-                    this.list.splice(data.pos, 0, data.oldVal);
-                    this.restoreLineSpeakers(data.affectLines, data.oldVal);
-                }
+        }
+        else if (data.subtype == SpeakersListHistoryType.CHANGE) {
+            this.list.set(data.pos, isRedo ? data.speaker : data.oldVal);
+            if (isRedo) {
+                this.renameLineSpeakers(data.oldVal, data.speaker);
+            }
+            else {
+                this.renameLineSpeakers(data.speaker, data.oldVal);
+            }
+        }
+        else if (data.subtype == SpeakersListHistoryType.REMOVE) {
+            if (isRedo) {
+                this.list.splice(data.pos, 1);
+                this.removeLineSpeakers(data.oldVal);
+            }
+            else {
+                this.list.splice(data.pos, 0, data.oldVal);
+                this.restoreLineSpeakers(data.affectLines, data.oldVal);
             }
         }
     }
@@ -84,7 +82,7 @@ export class EditorSpeakerList {
             speaker: speaker,
             affectLines: null,
         }));
-        if (isAdd){
+        if (isAdd) {
             this.list.push(speaker);
         }
         else {
@@ -101,7 +99,8 @@ export class EditorSpeakerList {
             }
         }
     }
-    removeLineSpeakers(speaker: string) {
+
+    removeLineSpeakers(speaker:string) {
         const affectLines:number[] = [];
         for (var i = 0; i < this.model.lines.length; i++) {
             var line = this.model.lines[i];
@@ -113,7 +112,7 @@ export class EditorSpeakerList {
         return affectLines;
     }
 
-    restoreLineSpeakers(lines: number[], speaker: string) {
+    restoreLineSpeakers(lines:number[], speaker:string) {
         for (var i = 0; i < lines.length; i++) {
             var line = this.model.lines[lines[i]];
             line.speaker = speaker;

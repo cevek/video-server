@@ -45,8 +45,11 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
 
 
         return <div className="editor">
-            <EditorTitle model={this.model}/>
-            <EditorTags model={this.model}/>
+            <div className="editor-main">
+                <EditorTitle model={this.model}/>
+                <EditorTags model={this.model}/>
+                <EditorText model={this.model} renderLines={renderLines}/>
+            </div>
             {this.audioPlayer.soundLoaded ?
                 <div>
                     <Timeline resizeKoef={this.model.resizeKoef} player={this.audioPlayer}/>
@@ -57,7 +60,6 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
                 </div> : null
             }
             <Thumbs postModel={postModel} resizeKoef={this.model.resizeKoef}/>
-            <EditorText model={this.model} renderLines={renderLines}/>
             <EditorToolbar model={this.model}/>
         </div>
     }

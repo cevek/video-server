@@ -206,11 +206,11 @@ export class Atom {
         Atom.scheduledTasks.addTask(TaskType.CLEAR_MASTERS, this);
         activeSlave = this;
         const oldValue = this.value;
-        this.value = this.calcFn.call(this.owner);
-        activeSlave = oldActiveSlave;
         if (debugAtoms && (debugAtoms[this.field] || debugAtoms[this.id])) {
             debug();
         }
+        this.value = this.calcFn.call(this.owner);
+        activeSlave = oldActiveSlave;
         this.status = AtomStatus.GETTER;
         // console.info(this.field, this.id);
         return oldValue !== this.value;
@@ -369,6 +369,9 @@ class ComponentAtom extends Atom {
         const status = topLevel ? AtomAffectStatus.CALC : this.needToRecalc(affectAtoms);
         if (status === AtomAffectStatus.WAIT_PARENT_CALC) {
             return;
+        }
+        if (debugAtoms && (debugAtoms[this.field] || debugAtoms[this.id])) {
+            debug();
         }
         if (status === AtomAffectStatus.CALC && this.status === AtomStatus.GETTER) {
             this.cmp.forceUpdate();

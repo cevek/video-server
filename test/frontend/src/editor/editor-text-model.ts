@@ -33,13 +33,8 @@ export class EditorTextModel {
         this.editorModel = editorModel;
         this.lines = editorModel.lines;
         this.selection = new EditorSelection(this.editorModel.lines);
-        this.history = this.editorModel.history.listen(this.onHistory);
-    }
-
-    onHistory = (item:EditorHistoryText, isRedo:boolean) => {
-        if (item.type == EditorHistoryText.type) {
-            this.undo(item);
-        }
+        this.history = this.editorModel.history
+            .listen(EditorHistoryText.type, (item:EditorHistoryText, isRedo:boolean) => this.undo(item));
     }
 
     findClosestNextWord(currWord:EditorWord, nextTextLine:EditorTextLine) {

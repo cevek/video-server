@@ -1,22 +1,50 @@
 import {Lang} from "../../../interfaces/lang";
 import {PostModel} from "../models/post";
-import {EditorHistory} from "../utils/history";
+import {EditorHistory, EditorHistoryData, EditorHistoryStringData} from "../utils/history";
 import {Line} from "../models/line";
 import {ITextLine} from "../../../interfaces/text-line";
 import {EditorTextModel} from "./editor-text-model";
 import {prop} from "../../models";
 import {EditorSpeakerList} from "./editor-speakerlist-model";
 
+const EDITOR_HISTORY_TITLE = 'title';
+const EDITOR_HISTORY_TAGS = 'tags';
 export class EditorModel {
     @prop postModel:PostModel;
     @prop lines:EditorLine[] = [];
-    @prop history = new EditorHistory();
+    @prop history = new EditorHistory()
+        .listen(EDITOR_HISTORY_TITLE, (data:EditorHistoryStringData, isRedo:boolean) => {
+            console.log(EDITOR_HISTORY_TITLE, data, isRedo);
+
+            this.title = isRedo ? data.newValue : data.oldValue
+})
+        .listen(EDITOR_HISTORY_TAGS, (data:EditorHistoryStringData, isRedo:boolean) =>
+            this.tags = isRedo ? data.newValue : data.oldValue)
+
     @prop resizeKoef = 4;
     @prop lineH = 50;
     @prop title = '';
     @prop tags = '';
     @prop speakers:EditorSpeakerList;
     @prop textModel:EditorTextModel;
+
+    setTitle(title: string) {
+        this.history.add(new EditorHistoryStringData({
+            type: EDITOR_HISTORY_TITLE,
+            newValue: title,
+            oldValue: this.title,
+        }));
+        this.title = title;
+    }
+
+    setTags(tags: string) {
+        this.history.add(new EditorHistoryStringData({
+            type: EDITOR_HISTORY_TAGS,
+            newValue: tags,
+            oldValue: this.tags,
+        }));
+        this.tags = tags;
+    }
 
     fromPostModel(postModel:PostModel) {
         this.postModel = postModel;
