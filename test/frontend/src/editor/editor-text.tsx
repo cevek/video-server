@@ -88,9 +88,24 @@ class TextLine extends React.Component<{model:EditorModel; line:EditorLine; line
         e.stopPropagation();
     }
 
-    onTextLineClick(linePos:number, lang:Lang) {
-        this.props.model.textModel.selection.set(linePos, lang, 0);
+    onTextLineClick = () => {
+        this.props.model.textModel.selection.set(this.props.linePos, this.props.lang, 0);
         //this.selectedWordPos = 0;
+    }
+
+    @prop editMode = false;
+
+    onEdit = () => {
+        this.editMode = true;
+    }
+
+    onSave = () => {
+        this.editMode = false;
+        this.props.model.textModel.setWords(this.props.linePos, this.props.lang, (this.refs['input'] as HTMLInputElement).value);
+    }
+
+    onCancel = () => {
+        this.editMode = false;
     }
 
     render() {
@@ -98,10 +113,20 @@ class TextLine extends React.Component<{model:EditorModel; line:EditorLine; line
         const linePos = this.props.linePos;
         const lang = this.props.lang;
         const textLine = lang == Lang.RU ? line.ru : line.en; // todo
-        return  <div className="textline ru" onClick={()=>this.onTextLineClick(linePos, lang)}>
-            {textLine.words.map((w, wordPos) =>
-                <span className={this.spanClassName(textLine, w)} key={wordPos} ref={node => this.setWordNode(w, node)}
-                      onClick={e=>this.onWordClick(e, linePos, this.props.lang, wordPos)}>{w.word}</span>)}
+        return  <div className="textline ru" onClick={this.onTextLineClick}>
+            <span onClick={this.onEdit} className="textline-editbutton">Edit</span>
+            {this.editMode ?
+                <div className="textline-edit">
+                    <input type="text" ref="input" value={textLine.getText()}/>
+                    <button onClick={this.onSave}>Save</button>
+                    <button onClick={this.onCancel}>Cancel</button>
+                </div>
+                :
+                textLine.words.map((w, wordPos) =>
+                    <span className={this.spanClassName(textLine, w)} key={wordPos}
+                          ref={node => this.setWordNode(w, node)}
+                          onClick={e=>this.onWordClick(e, linePos, this.props.lang, wordPos)}>{w.word}</span>)
+            }
         </div>
 
     }

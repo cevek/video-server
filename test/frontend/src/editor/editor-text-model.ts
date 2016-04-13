@@ -33,6 +33,16 @@ class EditorHistoryTextSpeaker extends EditorHistoryStringData {
     }
 }
 
+class EditorHistoryTextWords extends EditorHistoryStringData {
+    static type = 'editor-words';
+    type = EditorHistoryTextWords.type;
+    linePos:number;
+    lang:Lang;
+    constructor(json:EditorHistoryTextWords) {
+        super(json);
+    }
+}
+
 export class EditorTextModel {
     @prop editorModel:EditorModel
     @prop lines:EditorLine[];
@@ -47,6 +57,9 @@ export class EditorTextModel {
             .listen(EditorHistoryText.type, (item:EditorHistoryText, isRedo:boolean) => this.undo(item))
             .listen(EditorHistoryTextSpeaker.type, (item:EditorHistoryTextSpeaker, isRedo:boolean) => {
                 this.lines[item.linePos].speaker = isRedo ? item.newValue : item.oldValue
+            })
+            .listen(EditorHistoryTextWords.type, (item:EditorHistoryTextWords, isRedo:boolean) => {
+                this.lines[item.linePos].getTextLine(item.lang).setText(isRedo ? item.newValue : item.oldValue);
             });
 
     }
@@ -286,7 +299,7 @@ export class EditorTextModel {
         return true;
     };
 
-    setSpeaker(pos: number, speaker:string) {
+    setSpeaker(pos:number, speaker:string) {
         this.history.add(new EditorHistoryTextSpeaker({
             type: EditorHistoryTextSpeaker.type,
             linePos: pos,
@@ -294,5 +307,17 @@ export class EditorTextModel {
             newValue: speaker,
         }));
         this.lines[pos].speaker = speaker;
+    }
+
+    setWords(pos:number, lang:Lang, text:string) {
+        const textLine = this.lines[pos].getTextLine(lang);
+        this.history.add(new EditorHistoryTextWords({
+            type: EditorHistoryTextWords.type,
+            linePos: pos,
+            lang: lang,
+            oldValue: textLine.getText(),
+            newValue: text,
+        }));
+        textLine.setText(text);
     }
 }

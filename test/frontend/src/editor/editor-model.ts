@@ -66,7 +66,7 @@ export class EditorModel {
 export class EditorLine extends Line {
     @prop en:EditorTextLine = null;
     @prop ru:EditorTextLine = null;
-
+    
     constructor(en:EditorTextLine = null, ru:EditorTextLine = null) {
         super();
         this.en = en ? en : new EditorTextLine(Lang.EN, null, null, null);
@@ -121,6 +121,14 @@ export class EditorTextLine implements ITextLine {
         }
         this.words = words;
         return this;
+    }
+    
+    getText() {
+        return this.words.map(w => w.word).join(' ');
+    }
+
+    setText(text: string) {
+        return this.setWords(text.split(/\s+/).map(w => new EditorWord(w)));
     }
 }
 
