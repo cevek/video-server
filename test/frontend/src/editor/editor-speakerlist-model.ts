@@ -7,28 +7,26 @@ enum SpeakersListHistoryType{
     CHANGE = 2,
     REMOVE = 3
 }
-class SpeakersListHistory extends EditorHistoryData {
-    static type = 'speakers-list'
-    type = SpeakersListHistory.type;
+
+const historySpeakerList = 'speaker-list'
+
+class HistorySpeakersList extends EditorHistoryData<HistorySpeakersList> {
+    type = historySpeakerList;
     subtype:SpeakersListHistoryType;
     oldVal:string;
     pos:number;
     speaker:string;
     affectLines:number[];
-
-    constructor(json:SpeakersListHistory) {
-        super(json);
-    }
 }
 
 export class EditorSpeakerList {
     @prop list = new BaseArray<string>([]);
 
     constructor(public model:EditorModel) {
-        this.model.history.listen(SpeakersListHistory.type, this.onHistory)
+        this.model.history.listen(historySpeakerList, this.onHistory)
     }
 
-    onHistory = (data:SpeakersListHistory, isRedo:boolean) => {
+    onHistory = (data:HistorySpeakersList, isRedo:boolean) => {
         if (data.subtype == SpeakersListHistoryType.ADD) {
             if (isRedo) {
                 this.list.push(data.speaker);
@@ -60,8 +58,8 @@ export class EditorSpeakerList {
 
     remove(pos:number) {
         const oldVal = this.list.get(pos);
-        this.model.history.add(new SpeakersListHistory({
-            type: SpeakersListHistory.type,
+        this.model.history.add(new HistorySpeakersList({
+            type: null,
             subtype: SpeakersListHistoryType.REMOVE,
             oldVal: this.list.get(pos),
             pos: pos,
@@ -74,8 +72,8 @@ export class EditorSpeakerList {
     save(pos:number, speaker:string) {
         const oldVal = this.list.get(pos);
         const isAdd = pos == this.list.length;
-        this.model.history.add(new SpeakersListHistory({
-            type: SpeakersListHistory.type,
+        this.model.history.add(new HistorySpeakersList({
+            type: null,
             subtype: isAdd ? SpeakersListHistoryType.ADD : SpeakersListHistoryType.CHANGE,
             oldVal: oldVal,
             pos: pos,

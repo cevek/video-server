@@ -8,19 +8,14 @@ import {Lang} from "../../../interfaces/lang";
 import "./timeline-connector.css";
 
 
-export class EditorHistoryTimeline extends EditorHistoryData {
+export class HistoryTimeline extends EditorHistoryData<HistoryTimeline> {
     static type = 'timeline';
-    type = EditorHistoryTimeline.type;
     lineN:number;
     lang:Lang;
     oldStart:number;
     oldDur:number;
     newStart:number;
     newDur:number;
-
-    constructor(json:EditorHistoryTimeline) {
-        super(json);
-    }
 }
 
 
@@ -63,7 +58,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
         document.body.classList.add('resizing');
     }
 
-    historyListen = (data:EditorHistoryTimeline, isRedo:boolean) => {
+    historyListen = (data:HistoryTimeline, isRedo:boolean) => {
         const textLine = this.props.lines[data.lineN].en;
         textLine.start = isRedo ? data.newStart : data.oldStart;
         textLine.dur = isRedo ? data.newDur : data.oldDur;
@@ -71,7 +66,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
     }
 
     componentDidMount() {
-        this.props.history.listen(EditorHistoryTimeline.type, this.historyListen);
+        this.props.history.listen(HistoryTimeline.type, this.historyListen);
         document.addEventListener("mousemove", e => {
             if (this.activeLine > -1) {
                 const textLine = this.props.lines[this.activeLine].en;
@@ -99,10 +94,10 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
                 this.playTextLine(textLine);
                 document.body.classList.remove('resizing');
                 if (this.activeLineStart != textLine.start || this.activeLineDur != textLine.dur) {
-                    this.props.history.add(new EditorHistoryTimeline({
+                    this.props.history.add(new HistoryTimeline({
                         lineN: this.activeLine,
                         lang: Lang.EN,
-                        type: EditorHistoryTimeline.type,
+                        type: HistoryTimeline.type,
                         oldStart: this.activeLineStart,
                         oldDur: this.activeLineDur,
                         newStart: textLine.start,

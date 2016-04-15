@@ -25,20 +25,20 @@ export class EditorKeyHandler extends React.Component<{model: EditorModel;},{}>{
         var isCtrl = e.metaKey || e.ctrlKey;
         if (keyCode == KeyCodes.ENTER) {
             if (e.shiftKey) {
-                model.textModel.addUndo(model.textModel.splitIntoNewLine());
+                model.history.add(model.textModel.splitIntoNewLine());
             }
             else {
-                model.textModel.addUndo(model.textModel.splitWithMove());
+                model.history.add(model.textModel.splitWithMove());
             }
             handled = true;
         }
 
         if (keyCode == KeyCodes.BACKSPACE) {
             if (e.shiftKey) {
-                model.textModel.addUndo(model.textModel.joinLine());
+                model.history.add(model.textModel.joinLine());
             }
             else {
-                model.textModel.addUndo(model.textModel.joinLineWithMove());
+                model.history.add(model.textModel.joinLineWithMove());
             }
             handled = true;
         }

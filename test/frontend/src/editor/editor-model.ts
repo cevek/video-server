@@ -7,19 +7,15 @@ import {EditorTextModel} from "./editor-text-model";
 import {prop} from "../../models";
 import {EditorSpeakerList} from "./editor-speakerlist-model";
 
-const EDITOR_HISTORY_TITLE = 'title';
-const EDITOR_HISTORY_TAGS = 'tags';
+const historyTitle = 'title';
+const historyTags = 'tags';
+
 export class EditorModel {
     @prop postModel:PostModel;
     @prop lines:EditorLine[] = [];
     @prop history = new EditorHistory()
-        .listen(EDITOR_HISTORY_TITLE, (data:EditorHistoryStringData, isRedo:boolean) => {
-            console.log(EDITOR_HISTORY_TITLE, data, isRedo);
-
-            this.title = isRedo ? data.newValue : data.oldValue
-})
-        .listen(EDITOR_HISTORY_TAGS, (data:EditorHistoryStringData, isRedo:boolean) =>
-            this.tags = isRedo ? data.newValue : data.oldValue)
+        .listen(historyTitle, this.historySetTitle)
+        .listen(historyTags, this.historySetTags)
 
     @prop resizeKoef = 4;
     @prop lineH = 50;
@@ -28,18 +24,26 @@ export class EditorModel {
     @prop speakers:EditorSpeakerList;
     @prop textModel:EditorTextModel;
 
-    setTitle(title: string) {
+    historySetTitle = (data:EditorHistoryStringData, isRedo:boolean) => {
+        this.title = isRedo ? data.newValue : data.oldValue
+    }
+
+    historySetTags = (data:EditorHistoryStringData, isRedo:boolean) => {
+        this.tags = isRedo ? data.newValue : data.oldValue
+    }
+
+    setTitle(title:string) {
         this.history.add(new EditorHistoryStringData({
-            type: EDITOR_HISTORY_TITLE,
+            type: historyTitle,
             newValue: title,
             oldValue: this.title,
         }));
         this.title = title;
     }
 
-    setTags(tags: string) {
+    setTags(tags:string) {
         this.history.add(new EditorHistoryStringData({
-            type: EDITOR_HISTORY_TAGS,
+            type: historyTags,
             newValue: tags,
             oldValue: this.tags,
         }));
@@ -66,7 +70,7 @@ export class EditorModel {
 export class EditorLine extends Line {
     @prop en:EditorTextLine = null;
     @prop ru:EditorTextLine = null;
-    
+
     constructor(en:EditorTextLine = null, ru:EditorTextLine = null) {
         super();
         this.en = en ? en : new EditorTextLine(Lang.EN, null, null, null);
@@ -122,12 +126,12 @@ export class EditorTextLine implements ITextLine {
         this.words = words;
         return this;
     }
-    
+
     getText() {
         return this.words.map(w => w.word).join(' ');
     }
 
-    setText(text: string) {
+    setText(text:string) {
         return this.setWords(text.split(/\s+/).map(w => new EditorWord(w)));
     }
 }

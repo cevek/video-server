@@ -3,44 +3,33 @@ import {EditorHistoryData, EditorHistory, EditorHistoryStringData} from "../util
 import {EditorSelection, EditorLine, EditorTextLine, EditorWord, EditorModel} from "./editor-model";
 import {prop} from "../../models";
 
-const enum EditorTextAction{
-    SPLIT = 1,
-    SPLIT_MOVE = 2,
-    JOIN = 3,
-    JOIN_MOVE = 4
-}
+const historySplit = 'split';
+const historySplitMove = 'split-move';
+const historyJoin = 'join';
+const historyJoinMove = 'join-move';
 
-class EditorHistoryText extends EditorHistoryData {
-    static type = 'move-text';
-    type = EditorHistoryText.type;
-    action:EditorTextAction;
+const historySpeaker = 'speaker';
+const historyTextLine = 'text-line';
+
+class HistoryText extends EditorHistoryData<HistoryText> {
     linePos:number;
     lang:Lang;
     wordPos:number;
-
-    constructor(json:EditorHistoryText) {
-        super(json);
-    }
 }
 
-class EditorHistoryTextSpeaker extends EditorHistoryStringData {
-    static type = 'editor-speaker';
-    type = EditorHistoryTextSpeaker.type;
+class HistoryTextSpeaker extends EditorHistoryData<HistoryTextSpeaker> {
+    type = historySpeaker;
+    oldValue:string;
+    newValue:string;
     linePos:number;
-
-    constructor(json:EditorHistoryTextSpeaker) {
-        super(json);
-    }
 }
 
-class EditorHistoryTextWords extends EditorHistoryStringData {
-    static type = 'editor-words';
-    type = EditorHistoryTextWords.type;
+class HistoryTextWords extends EditorHistoryData<HistoryTextWords> {
+    type = historyTextLine;
     linePos:number;
     lang:Lang;
-    constructor(json:EditorHistoryTextWords) {
-        super(json);
-    }
+    oldValue:string;
+    newValue:string;
 }
 
 export class EditorTextModel {
@@ -54,14 +43,45 @@ export class EditorTextModel {
         this.lines = editorModel.lines;
         this.selection = new EditorSelection(this.editorModel.lines);
         this.history = this.editorModel.history
-            .listen(EditorHistoryText.type, (item:EditorHistoryText, isRedo:boolean) => this.undo(item))
-            .listen(EditorHistoryTextSpeaker.type, (item:EditorHistoryTextSpeaker, isRedo:boolean) => {
-                this.lines[item.linePos].speaker = isRedo ? item.newValue : item.oldValue
-            })
-            .listen(EditorHistoryTextWords.type, (item:EditorHistoryTextWords, isRedo:boolean) => {
-                this.lines[item.linePos].getTextLine(item.lang).setText(isRedo ? item.newValue : item.oldValue);
-            });
+            .listen(historySpeaker, this.historySetSpeaker)
+            .listen(historyTextLine, this.historySetTextLine)
 
+            .listen(historySplit, this.historySplit)
+            .listen(historySplitMove, this.historySplitMove)
+            .listen(historyJoin, this.historyJoin)
+            .listen(historyJoinMove, this.historyJoinMove)
+    }
+
+    historySetTextLine = (data:HistoryTextWords, isRedo:boolean) => {
+        this.lines[data.linePos].getTextLine(data.lang).setText(isRedo ? data.newValue : data.oldValue);
+    }
+
+    historySetSpeaker = (data:HistoryTextSpeaker, isRedo:boolean) => {
+        this.lines[data.linePos].speaker = isRedo ? data.newValue : data.oldValue;
+    }
+
+    historyJoin = (data:HistoryText, isRedo:boolean) => {
+        this.selection.set(data.linePos, data.lang, data.wordPos);
+        this.splitIntoNewLine();
+        //todo: redo
+    }
+
+    historyJoinMove = (data:HistoryText, isRedo:boolean) => {
+        this.selection.set(data.linePos, data.lang, data.wordPos);
+        this.splitWithMove();
+        //todo: redo
+    }
+
+    historySplit = (data:HistoryText, isRedo:boolean) => {
+        this.selection.set(data.linePos, data.lang, data.wordPos);
+        this.joinLine();
+        //todo: redo
+    }
+
+    historySplitMove = (data:HistoryText, isRedo:boolean) => {
+        this.selection.set(data.linePos, data.lang, data.wordPos);
+        this.joinLineWithMove();
+        //todo: redo
     }
 
     findClosestNextWord(currWord:EditorWord, nextTextLine:EditorTextLine) {
@@ -123,18 +143,12 @@ export class EditorTextModel {
          newDur: selTextLine.dur
          });*/
 
-        return new EditorHistoryText({
-            type: EditorHistoryText.type,
-            action: EditorTextAction.SPLIT_MOVE,
+        return new HistoryText({
+            type: historySplitMove,
             lang: sel.lang,
             linePos: nextLinePos,
             wordPos: 0
         });
-    }
-
-    undoSplitWithMove(undoItem:EditorHistoryText) {
-        this.undoToModify(undoItem);
-        this.joinLineWithMove();
     }
 
     splitIntoNewLine() {
@@ -155,18 +169,12 @@ export class EditorTextModel {
         currentTextLine.dur /= 2;
         nextTextLine.dur = currentTextLine.dur;
         this.selection.set(nextLinePos, sel.lang, 0);
-        return new EditorHistoryText({
-            type: EditorHistoryText.type,
-            action: EditorTextAction.SPLIT,
+        return new HistoryText({
+            type: historySplit,
             lang: sel.lang,
             linePos: nextLinePos,
             wordPos: 0
         });
-    }
-
-    undoSplitIntoNewLine(undoItem:EditorHistoryText) {
-        this.undoToModify(undoItem);
-        this.joinLine();
     }
 
     joinLine() {
@@ -190,22 +198,12 @@ export class EditorTextModel {
         }
         var newWordPos = prevWords.length - (prevWords[0].isEmpty ? 1 : 0);
         this.selection.set(prevLinePos, sel.lang, newWordPos);
-        return new EditorHistoryText({
-            type: EditorHistoryText.type,
-            action: EditorTextAction.JOIN,
+        return new HistoryText({
+            type: historyJoin,
             lang: sel.lang,
             linePos: prevLinePos,
             wordPos: newWordPos
         });
-    }
-
-    undoJoinLine(undoItem:EditorHistoryText) {
-        this.undoToModify(undoItem);
-        this.splitIntoNewLine();
-    }
-
-    undoToModify(undoItem:EditorHistoryText) {
-        this.selection.set(undoItem.linePos, undoItem.lang, undoItem.wordPos);
     }
 
     joinLineWithMove() {
@@ -222,39 +220,8 @@ export class EditorTextModel {
             if (lastLine.isEmpty()) {
                 this.lines.pop();
             }
-            undo.action = EditorTextAction.JOIN_MOVE;
+            undo.type = historyJoinMove;
             return undo;
-        }
-    }
-
-    undoJoinLineWithMove(undoItem:EditorHistoryText) {
-        this.undoToModify(undoItem);
-        this.splitWithMove();
-    }
-
-    addUndo(undo:EditorHistoryText) {
-        if (undo) {
-            console.log("Action", undo);
-            this.history.add(undo);
-            // this.undoStack.push(undo);
-        }
-    }
-
-    private undo(undoItem:EditorHistoryText) {
-        console.log("Undo", undoItem);
-        switch (undoItem.action) {
-            case EditorTextAction.JOIN:
-                this.undoJoinLine(undoItem);
-                break;
-            case EditorTextAction.JOIN_MOVE:
-                this.undoJoinLineWithMove(undoItem);
-                break;
-            case EditorTextAction.SPLIT:
-                this.undoSplitIntoNewLine(undoItem);
-                break;
-            case EditorTextAction.SPLIT_MOVE:
-                this.undoSplitWithMove(undoItem);
-                break;
         }
     }
 
@@ -300,8 +267,8 @@ export class EditorTextModel {
     };
 
     setSpeaker(pos:number, speaker:string) {
-        this.history.add(new EditorHistoryTextSpeaker({
-            type: EditorHistoryTextSpeaker.type,
+        this.history.add(new HistoryTextSpeaker({
+            type: null,
             linePos: pos,
             oldValue: this.lines[pos].speaker,
             newValue: speaker,
@@ -311,8 +278,8 @@ export class EditorTextModel {
 
     setWords(pos:number, lang:Lang, text:string) {
         const textLine = this.lines[pos].getTextLine(lang);
-        this.history.add(new EditorHistoryTextWords({
-            type: EditorHistoryTextWords.type,
+        this.history.add(new HistoryTextWords({
+            type: null,
             linePos: pos,
             lang: lang,
             oldValue: textLine.getText(),
