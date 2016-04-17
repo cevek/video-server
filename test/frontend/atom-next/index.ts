@@ -1,5 +1,5 @@
 const promise = (window as any).Promise.resolve();
-function runMicroTask(callback:()=>void){
+function runMicroTask(callback:()=>void) {
     promise.then(callback);
 }
 
@@ -23,10 +23,15 @@ export const enum TaskType {
     CLEAR_MASTERS = 20,
     MASTERS = 30,
     DESTROY = 50,
+    MODIFY = 100,
 }
 
 export interface IDMap<T> {
     [id:number]:T;
+}
+
+interface Shared extends Array<Atom | number> {
+    len:number;
 }
 
 export class TaskList {
@@ -50,7 +55,7 @@ export class TaskList {
         this.queue = new Array(this.size);
     }
 
-    addTask(taskType:TaskType, atom:Atom, slave?:Atom) {
+    addTask(taskType:TaskType, atom:Atom, param?:any) {
         if (!this.asyncRunned) {
             this.asyncRunned = true;
             runMicroTask(this.taskRunner);
@@ -58,8 +63,8 @@ export class TaskList {
         const pos = this.pos % this.size;
         this.queue[pos] = taskType;
         this.queue[pos + 1] = atom;
-        if (slave) {
-            this.queue[pos + 2] = slave;
+        if (param) {
+            this.queue[pos + 2] = param;
         }
         this.pos += 3;
     }
@@ -80,18 +85,19 @@ export class TaskList {
 
 export class Atom {
     protected id = ++Atom.atomId;
-    protected slaves:IDMap<Atom>;
-    protected masters:IDMap<Atom>;
+    protected slaves:Atom[];
+    protected masters:Atom[];
     protected status:AtomStatus;
     protected field:string;
     protected value:any;
     protected owner:any;
     protected calcFn:()=>void;
-    protected static activeSlave: Atom;
-    protected static lastGetted: Atom;
+    protected static activeSlave:Atom;
+    protected static lastGetted:Atom;
     protected static autoMasters = true;
     protected static atomId = 0;
     protected static debugAtoms:{[id:string]:boolean} = null;
+
     static debugAtom(name:string) {
         if (!Atom.debugAtoms) {
             Atom.debugAtoms = {};
@@ -99,7 +105,7 @@ export class Atom {
         Atom.debugAtoms[name] = true;
     }
 
-    protected static debug(){
+    protected static debug() {
         debugger;
     }
 
@@ -117,12 +123,45 @@ export class Atom {
         this.slaves = null;
         this.calcFn = calcFn;
         this.owner = owner;
-        this.masters = null;
+        this.masters = [];
         this.status = AtomStatus.GETTER_NO_VAL;
         return this;
     }
 
+
     get() {
+        this.checkForDestroy();
+        Atom.lastGetted = this;
+        if (this.status == AtomStatus.GETTER_NO_VAL) {
+            this.calc();
+        }
+        if (Atom.activeSlave && Atom.autoMasters) {
+            const activeSlaveMasters = Atom.activeSlave.masters;
+            var len = activeSlaveMasters.length;
+            var shared = Atom.shared;
+            var sharedLen = shared.len;
+            var k = Atom.k;
+            // if find self in activeSlave masters exit
+            for (var i = 0; i < len; i++) {
+                if (activeSlaveMasters[i] == this) {
+                    shared[i] = k;
+                    return this.value;
+                }
+            }
+            // if find self in added list exit
+            for (i = len; i < sharedLen; i++) {
+                if (shared[i] == this) {
+                    return this.value;
+                }
+            }
+            // add self to added list
+            shared[shared.len++] = this;
+        }
+
+        return this.value;
+    }
+
+    getOld() {
         this.checkForDestroy();
         Atom.lastGetted = this;
         if (Atom.activeSlave && Atom.autoMasters) {
@@ -182,11 +221,11 @@ export class Atom {
     protected setSelfToActiveSlave(slave:Atom) {
         this.checkForDestroy();
         if (!slave.masters) {
-            slave.masters = {};
+            slave.masters = [];
         }
         slave.masters[this.id] = this;
         if (!this.slaves) {
-            this.slaves = {};
+            this.slaves = [];
         }
         this.slaves[slave.id] = slave;
     }
@@ -197,7 +236,55 @@ export class Atom {
         }
     }
 
+    protected static shared:Shared;
+    protected static sharedCache:Shared[] = [];
+    protected static sharedCachePos = -1;
+    protected static k = 0;
+
     protected calc() {
+        Atom.k++;
+        const oldActiveSlave = Atom.activeSlave;
+        Atom.activeSlave = this;
+        var prevShared = Atom.shared;
+        Atom.shared = Atom.sharedCachePos == -1 ? ([] as Shared) : Atom.sharedCache[Atom.sharedCachePos--];
+        Atom.shared.len = this.masters.length;
+        const oldValue = this.value;
+        this.value = this.calcFn.call(this.owner);
+        Atom.scheduledTasks.addTask(TaskType.MODIFY, this, Atom.shared);
+        Atom.shared = prevShared;
+        Atom.activeSlave = oldActiveSlave;
+        this.status = AtomStatus.GETTER;
+        // console.info(this.field, this.id);
+        return oldValue !== this.value;
+    }
+
+    protected applyModify(shared:Shared) {
+        var k = Atom.k;
+        const masters = this.masters;
+        const len = masters.length;
+
+        // find and remove old masters
+        var removeCount = 0;
+        for (var i = 0; i < len; i++) {
+            if (removeCount) {
+                masters[i - removeCount] = masters[i];
+            }
+            if (shared[i] !== k) {
+                this.removeSelfFromList(masters[i].slaves);
+                removeCount++;
+            }
+        }
+        for (i = 0; i < removeCount; i++) {
+            masters.pop();
+        }
+
+        for (i = len; i < shared.len; i++) {
+            masters.push(shared[i + len] as Atom);
+        }
+        Atom.sharedCache[++Atom.sharedCachePos] = shared;
+    }
+
+    protected calcOld() {
         this.checkForDestroy();
         const oldActiveSlave = Atom.activeSlave;
         Atom.scheduledTasks.addTask(TaskType.CLEAR_MASTERS, this);
@@ -214,40 +301,50 @@ export class Atom {
     }
 
     protected clearMasters() {
-        if (this.masters) {
-            for (const id in this.masters) {
-                const master = this.masters[id];
-                if (master) {
-                    master.slaves[this.id] = null;
-                }
-                // this.masters[id] = null;
+        var masters = this.masters;
+        if (masters) {
+            for (var i = 0, len = masters.length; i < len; i++) {
+                this.removeSelfFromList(masters[i].slaves);
             }
             this.masters = null;
         }
     }
 
     protected clearSlaves() {
-        if (this.slaves) {
-            for (const id in this.slaves) {
-                const slave = this.slaves[id];
-                if (slave) {
-                    slave.masters[this.id] = null;
-                }
+        var slaves = this.slaves;
+        if (slaves) {
+            for (var i = 0, len = slaves.length; i < len; i++) {
+                this.removeSelfFromList(slaves[i].masters);
             }
             this.slaves = null;
+        }
+    }
+
+    protected removeSelfFromList(items:Atom[]) {
+        var found = false;
+        for (var i = 0, len = items.length; i < len; i++) {
+            if (found) {
+                items[i - 1] = items[i];
+            }
+            else if (items[i] === this) {
+                found = true;
+            }
+        }
+        if (found) {
+            items.pop();
         }
     }
 
 
     protected affect(affectAtoms:IDMap<AtomAffectStatus>) {
         affectAtoms[this.id] = 1;
-        if (this.slaves) {
-            for (const id in this.slaves) {
-                const slave = this.slaves[id];
-                if (slave) {
-                    slave.affect(affectAtoms);
-                }
+
+        var slaves = this.slaves;
+        if (slaves) {
+            for (var i = 0, len = slaves.length; i < len; i++) {
+                slaves[i].affect(affectAtoms);
             }
+            this.slaves = null;
         }
     }
 
@@ -256,16 +353,16 @@ export class Atom {
             return AtomAffectStatus.NEEDNOT_CALC;
         }
         let status = AtomAffectStatus.NEEDNOT_CALC;
-        if (this.masters) {
-            for (const id in this.masters) {
-                if (this.masters[id]) {
-                    const masterAffectStatus = affectAtoms[id];
-                    if (masterAffectStatus === AtomAffectStatus.NEEDCALC) {
-                        return AtomAffectStatus.WAIT_PARENT_CALC;
-                    }
-                    if (masterAffectStatus === AtomAffectStatus.CALC) {
-                        status = AtomAffectStatus.CALC;
-                    }
+        var masters = this.masters;
+        if (masters) {
+            for (var i = 0, len = masters.length; i < len; i++) {
+                const master = masters[i]
+                const masterAffectStatus = affectAtoms[master.id];
+                if (masterAffectStatus === AtomAffectStatus.NEEDCALC) {
+                    return AtomAffectStatus.WAIT_PARENT_CALC;
+                }
+                if (masterAffectStatus === AtomAffectStatus.CALC) {
+                    status = AtomAffectStatus.CALC;
                 }
             }
         }
@@ -285,25 +382,21 @@ export class Atom {
         }
         affectAtoms[this.id] = status;
         if (this.slaves) {
-            for (const id in this.slaves) {
-                const slave = this.slaves[id];
-                if (slave) {
-                    slave.update(false, affectAtoms);
-                }
+            for (var i = 0; i < this.slaves.length; i++) {
+                this.slaves[i].update(false, affectAtoms);
             }
         }
     }
 
-    protected static batchUpdate(changeAtoms:IDMap<Atom>) {
+    protected static batchUpdate(changeAtoms:Atom[]) {
         // Atom.affectAtoms = {};
         const affectAtoms:IDMap<AtomAffectStatus> = {}
-        for (const id in changeAtoms) {
-            var atom = changeAtoms[id];
-            atom.affect(affectAtoms);
+
+        for (var i = 0; i < changeAtoms.length; i++) {
+            changeAtoms[i].affect(affectAtoms);
         }
-        for (const id in changeAtoms) {
-            var atom = changeAtoms[id];
-            atom.update(true, affectAtoms);
+        for (var i = 0; i < changeAtoms.length; i++) {
+            changeAtoms[i].update(true, affectAtoms);
         }
     }
 
@@ -311,25 +404,23 @@ export class Atom {
 
     protected static updateScheduled() {
         console.log("start schedule runner");
-        let changeAtoms:IDMap<Atom> = {};
+        let changeAtoms:Atom[] = [];
         let prevType:TaskType = null;
 
-        Atom.scheduledTasks.iterateUndone((type:TaskType, atom:Atom, slave:Atom, isLast:boolean) => {
+        Atom.scheduledTasks.iterateUndone((type:TaskType, atom:Atom, param:any, isLast:boolean) => {
             if (type == TaskType.CHANGE) {
-                changeAtoms[atom.id] = atom;
+                changeAtoms.push(atom);
                 if (isLast) {
                     Atom.batchUpdate(changeAtoms);
-                    changeAtoms = {};
+                    changeAtoms = [];
                 }
             } else if (prevType == TaskType.CHANGE) {
                 Atom.batchUpdate(changeAtoms);
-                changeAtoms = {};
-            }
-            else if (type == TaskType.CLEAR_MASTERS) {
-                atom.clearMasters();
+                changeAtoms = [];
             }
             else if (type == TaskType.MASTERS) {
-                atom.setSelfToActiveSlave(slave);
+                atom.applyModify(param);
+                // atom.setSelfToActiveSlave(slave);
             }
             else if (type == TaskType.DESTROY) {
                 atom.realDestroy();
