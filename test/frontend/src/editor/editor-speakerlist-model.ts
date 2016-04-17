@@ -85,7 +85,7 @@ export class EditorSpeakerList {
             this.list.push(speaker);
         }
         else {
-            this.list.pop();
+            this.list.set(pos, speaker);
             this.renameLineSpeakers(oldVal, speaker);
         }
     }
