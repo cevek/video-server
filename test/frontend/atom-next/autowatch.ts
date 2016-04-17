@@ -8,18 +8,9 @@ class ComponentAtom extends Atom {
         this.cmp = cmp;
     }
 
-    get() {
-        this.checkForDestroy();
-        if (Atom.activeSlave && Atom.autoMasters) {
-            Atom.scheduledTasks.addTask(TaskType.MASTERS, this, Atom.activeSlave);
-        }
-        this.calc();
-        return this.value;
-    }
-
     protected update(topLevel:boolean, affectAtoms:IDMap<AtomAffectStatus>) {
-        if (affectAtoms[this.id] !== AtomAffectStatus.NEEDCALC) {
-            throw new Error('Something wrong');
+        if (affectAtoms[this.id] === AtomAffectStatus.CALC) {
+            return;
         }
         const status = topLevel ? AtomAffectStatus.CALC : this.needToRecalc(affectAtoms);
         if (status === AtomAffectStatus.WAIT_PARENT_CALC) {
@@ -56,10 +47,10 @@ export const autowatch = function (cls:any) {
     }
     cls.prototype.render = function () {
         if (this.componentAtom) {
-            return this.componentAtom.get();
+            return this.componentAtom.get(true);
         }
         else {
-            return (this.componentAtom = new ComponentAtom(this)).get();
+            return (this.componentAtom = new ComponentAtom(this)).get(true);
         }
     }
 }

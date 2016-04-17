@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script src="array_diff.js"></script>
+<script>
+
+
+    var s = 'abc';
+    function abc(fn) {
+        function getName(fn) {
+            return fn.name;
+        }
+
+        var fnName = getName(fn);
+        console.time(fnName);
+        for (var i = 0; i < 1000000; i++) {
+            fn();
+        }
+        console.timeEnd(fnName);
+    }
+
+    function customRound(num) {
+        return (num * 100000 | 0) / 100000;
+    }
+    function round(i) {
+        return Math.round(i * 100000) / 100000;
+    }
+
+    //    abc(fdiff, [4,5,6,7,8,1,2,3,9], [1,2,3]);
+    //    for (var i = 0; i < tests.length; i++) {
+    //        var test = tests[i];
+    //        abc(fdiff, test[0], test[1]);
+    //    }
+
+    var a = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    var a2 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    var dd = new Uint32Array(10);
+
+    function arrAdd(len, i, k) {
+        var found = false;
+        for (var j = 0; j < len; j++) {
+            if (a[j] === i) {
+                dd[i] = k;
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            if (!created) {
+                var created = [];
+            }
+            created.push(i);
+        }
+    }
+    function arr() {
+        var k = pp.k++, len = a.length;
+//        var n = new Array(len);
+        for (var i = 0; i < len; i++) {
+            arrAdd(len, i, k);
+        }
+        for (var i = 0; i < len; i++) {
+            if (dd[i] !== k) {
+                if (!removed) {
+                    var removed = [];
+                }
+                removed.push(a[i]);
+            }
+        }
+//        if (log) {
+//            console.log(created, removed, k);
+//        }
+    }
+
+
+    function find(a, val) {
+        for (var i = 0, len = a.length; i < len; i++) {
+            if (a[i] === val) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    var pp = {k: 1};
+    function arr2Add(hlen, i, k) {
+        var found = false;
+        for (var j = 0; j < hlen; j++) {
+            if (a2[j] === i) {
+                a2[i + hlen] = k;
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            if (!created) {
+                var created = [];
+            }
+            created.push(i);
+        }
+    }
+    function arr2() {
+        var removed;
+        var len = a2.length;
+        var hlen = len / 2;
+        pp.k++;
+        for (var i = 0; i < 10; i++) {
+            arr2Add(hlen, i, pp.k);
+        }
+        for (var i = 10; i < len; i++) {
+            if (a2[i] !== pp.k) {
+                if (!removed) {
+                    removed = [];
+                }
+                removed.push(a2[i - hlen]);
+            }
+        }
+//        console.log(created);
+//        console.log(removed);
+//        return a2;
+//        if (log){
+//            console.log(a2, created, removed);
+//        }
+    }
+
+    function arr3() {
+        var n = [];
+        for (var i = 0; i < a.length; i++) {
+            for (var j = 0; j < a.length; j++) {
+                if (a[j] === i) {
+                    return;
+                }
+            }
+            n.push(i);
+        }
+        return n;
+    }
+
+    var slave = {id: 4, masters: {}};
+    var masters = [
+        {id: 10, slavesarr: [slave], slaves: {3: 0}},
+        {id: 11, slavesarr: [slave], slaves: {3: 0}},
+        {id: 12, slavesarr: [slave], slaves: {3: 0}},
+        {id: 13, slavesarr: [slave], slaves: {3: 0}},
+        {id: 14, slavesarr: [slave], slaves: {3: 0}},
+        {id: 15, slavesarr: [slave], slaves: {3: 0}},
+        {id: 16, slavesarr: [slave], slaves: {3: 0}},
+        {id: 17, slavesarr: [slave], slaves: {3: 0}},
+        {id: 18, slavesarr: [slave], slaves: {3: 0}},
+        {id: 19, slavesarr: [slave], slaves: {3: 0}}
+    ];
+
+    slave.masters[10] = 0;
+    slave.masters[11] = 1;
+    slave.masters[12] = 2;
+    slave.masters[13] = 3;
+    slave.masters[14] = 4;
+    slave.masters[15] = 5;
+    slave.masters[16] = 6;
+    slave.masters[17] = 7;
+    slave.masters[18] = 8;
+    slave.masters[19] = 9;
+
+    slave.mastersarr = masters.slice();
+
+    var ppp = {k: 1};
+    var ddd = new Array(10);
+    function hashAdd(master) {
+        if (typeof master.slaves[slave.id] === 'undefined') {
+            master.slaves[slave.id] = master.slavesarr.length;
+            master.slavesarr.push(slave);
+        }
+        if (typeof slave.masters[master.id] === 'undefined') {
+            slave.masters[master.id] = slave.mastersarr.length;
+            slave.mastersarr.push(master);
+        }
+        else {
+            ddd[slave.masters[master.id]] = ppp.k;
+        }
+        return master;
+    }
+    function hash() {
+        /*for (var id in slave.masters) {
+         var m = slave.masters[id];
+         m.slaves[slave.id] = null;
+         slave.masters[id] = null;
+         }*/
+        /*for (var i = 0; i < slave.mastersarr.length; i++) {
+         var master = slave.mastersarr[i];
+         master.slaves[slave.id] = null;
+         slave.masters[master.id] = null;
+         }*/
+//        slave.mastersarr = [];
+//        ppp.k++;
+        for (var i = 0; i < 10; i++) {
+            hashAdd(masters[i]);
+        }
+        for (var i = 0, len = ddd.length; i < len; i++) {
+            if (ddd[i] !== ppp.k) {
+//                 removed slave.mastersarr[i];
+                console.log(123);
+            }
+        }
+
+    }
+
+
+    function find1(a, d, k, val) {
+        for (var i = 0; i < a.length; i++) {
+            if (a[i] === val) {
+                d[i] = k;
+            }
+        }
+    }
+    function find2(a, d, k, i) {
+        if (a[0] === i) {
+            d[0] = k
+        }
+        else if (a[1] === i) {
+            d[1] = k;
+        }
+        else if (a[2] === i) {
+            d[2] = k;
+        }
+        else if (a[3] === i) {
+            d[3] = k;
+        }
+        else if (a[4] === i) {
+            d[4] = k;
+        }
+        else if (a[5] === i) {
+            d[5] = k;
+        }
+        else if (a[6] === i) {
+            d[6] = k;
+        }
+        else if (a[7] === i) {
+            d[7] = k;
+        }
+        else if (a[8] === i) {
+            d[8] = k;
+        }
+        else if (a[9] === i) {
+            d[9] = k;
+        }
+    }
+
+    var da = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    var dd = new Array(10);
+
+    function direct() {
+        var k = 10;
+        var len = da.length;
+        for (var i = 0; i < len; i++) {
+            /*for (var j = 0; j < 10; j++) {
+             if (a[j] == i) {
+             break
+             }
+             }*/
+            find2(da, dd, k, i)
+            /*if (da[0] === i) {
+             dd[0] = k;
+             continue;
+             }
+             if (da[1] === i) {
+             dd[1] = k;
+             continue;
+             }
+             if (da[2] === i) {
+             dd[2] = k;
+             continue;
+             }
+             if (da[3] === i) {
+             dd[3] = k;
+             continue;
+             }
+             if (da[4] === i) {
+             dd[4] = k;
+             continue;
+             }
+             if (da[5] === i) {
+             dd[5] = k;
+             continue;
+             }
+             if (da[6] === i) {
+             dd[6] = k;
+             continue;
+             }
+             if (da[7] === i) {
+             dd[7] = k;
+             continue;
+             }
+             if (da[8] === i) {
+             dd[8] = k;
+             continue;
+             }
+             if (da[9] === i) {
+             dd[9] = k;
+             continue;
+             }
+             add();*/
+        }
+
+    }
+
+    function add() {
+
+    }
+
+    var set = new Set();
+    for (var i = 0; i < 10; i++) {
+        set.add(i);
+    }
+    function sett(){
+        for (var i = 0; i < 10; i++) {
+            set.has(i);
+        }
+    }
+
+    abc(sett);
+    abc(direct);
+    abc(hash);
+    abc(arr);
+    abc(arr2);
+
+
+    //    abc(arr3);
+    //    abc(round);
+    //    abc(customRound);
+
+</script>
+</body>
+</html>
