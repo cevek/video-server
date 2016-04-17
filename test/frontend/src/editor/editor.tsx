@@ -12,7 +12,8 @@ import "./styles/editor.css";
 import {EditorToolbar} from "./toolbar/toolbar";
 import {EditorTitle} from "./editor-title";
 import {EditorTags} from "./editor-tags";
-import {autowatch, prop} from "../../models";
+import {prop} from "../../atom-next/prop";
+import {autowatch} from "../../atom-next/autowatch";
 
 @autowatch
 export class Editor extends React.Component<{params: any, resolved: EditorModel}, {}> {

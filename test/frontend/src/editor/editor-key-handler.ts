@@ -1,6 +1,6 @@
 import * as React from "react";
 import {EditorModel} from "./editor-model";
-import {autowatch} from "../../models";
+import {autowatch} from "../../atom-next/autowatch";
 enum KeyCodes{
     ENTER     = 13,
     BACKSPACE = 8,

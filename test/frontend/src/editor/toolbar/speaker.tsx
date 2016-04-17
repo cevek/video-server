@@ -1,7 +1,8 @@
 import * as React from "react";
 import {EditorModel} from "../editor-model";
 import "./styles/speaker.css";
-import {prop, autowatch} from "../../../models";
+import {prop} from "../../../atom-next/prop";
+import {autowatch} from "../../../atom-next/autowatch";
 
 @autowatch
 export class EditorToolbarSpeaker extends React.Component<{model:EditorModel; addMode?:boolean; speaker:string; pos:number;}, {}> {

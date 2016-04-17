@@ -2,7 +2,7 @@ import * as React from "react";
 import {EditorModel} from "../editor-model";
 import {EditorToolbarSpeaker} from "./speaker";
 import "./styles/speakers.css";
-import {autowatch} from "../../../models";
+import {autowatch} from "../../../atom-next/autowatch";
 
 @autowatch
 export class EditorToolbarSpeakers extends React.Component<{model: EditorModel}, {}> {

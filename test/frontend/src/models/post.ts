@@ -1,6 +1,6 @@
 import {IGetPost} from "../../../interfaces/transport";
 import {Line} from "./line";
-import {prop} from "../../models";
+import {prop} from "../../atom-next/prop";
 export class PostModel {
     @prop lines:Line[];
     @prop data: IGetPost;

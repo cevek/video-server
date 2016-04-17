@@ -5,7 +5,8 @@ import {Lang} from "../../../interfaces/lang";
 import {EditorKeyHandler} from "./editor-key-handler";
 import {Line} from "../models/line";
 import "./styles/editor-text.css";
-import {BaseArray, prop, Atom, autowatch} from "../../models";
+import {prop} from "../../atom-next/prop";
+import {autowatch} from "../../atom-next/autowatch";
 
 class User {
     @prop firstName:string;

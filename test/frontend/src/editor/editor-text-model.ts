@@ -1,7 +1,7 @@
 import {Lang} from "../../../interfaces/lang";
 import {EditorHistoryData, EditorHistory, EditorHistoryStringData} from "../utils/history";
 import {EditorSelection, EditorLine, EditorTextLine, EditorWord, EditorModel} from "./editor-model";
-import {prop} from "../../models";
+import {prop} from "../../atom-next/prop";
 
 const historySplit = 'split';
 const historySplitMove = 'split-move';

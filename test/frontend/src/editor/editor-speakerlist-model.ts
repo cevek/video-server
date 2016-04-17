@@ -1,6 +1,7 @@
 import {EditorHistoryData} from "../utils/history";
-import {prop, BaseArray} from "../../models";
 import {EditorModel} from "./editor-model";
+import {prop} from "../../atom-next/prop";
+import {BaseArray} from "../../atom-next/base-array";
 
 enum SpeakersListHistoryType{
     ADD = 1,

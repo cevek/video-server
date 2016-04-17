@@ -4,8 +4,8 @@ import {EditorHistory, EditorHistoryData, EditorHistoryStringData} from "../util
 import {Line} from "../models/line";
 import {ITextLine} from "../../../interfaces/text-line";
 import {EditorTextModel} from "./editor-text-model";
-import {prop} from "../../models";
 import {EditorSpeakerList} from "./editor-speakerlist-model";
+import {prop} from "../../atom-next/prop";
 
 const historyTitle = 'title';
 const historyTags = 'tags';

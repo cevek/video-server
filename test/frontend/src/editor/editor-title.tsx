@@ -1,7 +1,7 @@
 import * as React from "react";
 import {EditorModel} from "./editor-model";
 import "./styles/editor-title.css";
-import {autowatch} from "../../models";
+import {autowatch} from "../../atom-next/autowatch";
 
 @autowatch
 export class EditorTitle extends React.Component<{model:EditorModel},{}> {
