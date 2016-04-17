@@ -4,24 +4,23 @@ function runMicroTask(callback:()=>void) {
 }
 
 
-export const enum AtomStatus {
+export enum AtomStatus {
     PROP = 1,
     GETTER_NO_VAL = 2,
     GETTER = 3,
     DESTROYED = -1,
 }
 
-export const enum AtomAffectStatus{
+export enum AtomAffectStatus{
     NEEDCALC = 1,
     CALC = 5,
     NEEDNOT_CALC = 10,
     WAIT_PARENT_CALC = 30,
 }
 
-export const enum TaskType {
+export enum TaskType {
     CHANGE = 10,
     CLEAR_MASTERS = 20,
-    MASTERS = 30,
     DESTROY = 50,
     MODIFY = 100,
 }
@@ -32,6 +31,7 @@ export interface IDMap<T> {
 
 interface Shared extends Array<Atom | number> {
     len:number;
+    k: number;
 }
 
 export class TaskList {
@@ -69,14 +69,14 @@ export class TaskList {
         this.pos += 3;
     }
 
-    iterateUndone(callback:(type:TaskType, atom:Atom, slave:Atom, isLast:boolean)=>void) {
+    iterateUndone(callback:(type:TaskType, atom:Atom, param:any, isLast:boolean)=>void) {
         if (this.pos - this.donePos > this.size) {
             throw new Error('Out of range');
         }
         for (var i = this.donePos; i < this.pos; i += 3) {
             const pos = i % this.size;
             const type:TaskType = this.queue[pos];
-            callback(type, this.queue[pos + 1], type == TaskType.MASTERS ? this.queue[pos + 2] : null, i == this.pos - 3);
+            callback(type, this.queue[pos + 1], type == TaskType.MODIFY ? this.queue[pos + 2] : null, i == this.pos - 3);
             this.donePos += 3;
         }
         this.asyncRunned = false;
@@ -129,10 +129,10 @@ export class Atom {
     }
 
 
-    get() {
+    get(force?:boolean) {
         this.checkForDestroy();
         Atom.lastGetted = this;
-        if (this.status == AtomStatus.GETTER_NO_VAL) {
+        if (this.status == AtomStatus.GETTER_NO_VAL || force) {
             this.calc();
         }
         if (Atom.activeSlave && Atom.autoMasters) {
@@ -140,17 +140,17 @@ export class Atom {
             var len = activeSlaveMasters.length;
             var shared = Atom.shared;
             var sharedLen = shared.len;
-            var k = Atom.k;
+            var k = shared.k;
             // if find self in activeSlave masters exit
             for (var i = 0; i < len; i++) {
-                if (activeSlaveMasters[i] == this) {
+                if (activeSlaveMasters[i] === this) {
                     shared[i] = k;
                     return this.value;
                 }
             }
             // if find self in added list exit
             for (i = len; i < sharedLen; i++) {
-                if (shared[i] == this) {
+                if (shared[i] === this) {
                     return this.value;
                 }
             }
@@ -158,18 +158,6 @@ export class Atom {
             shared[shared.len++] = this;
         }
 
-        return this.value;
-    }
-
-    getOld() {
-        this.checkForDestroy();
-        Atom.lastGetted = this;
-        if (Atom.activeSlave && Atom.autoMasters) {
-            Atom.scheduledTasks.addTask(TaskType.MASTERS, this, Atom.activeSlave);
-        }
-        if (this.status == AtomStatus.GETTER_NO_VAL) {
-            this.calc();
-        }
         return this.value;
     }
 
@@ -239,15 +227,14 @@ export class Atom {
     protected static shared:Shared;
     protected static sharedCache:Shared[] = [];
     protected static sharedCachePos = -1;
-    protected static k = 0;
 
     protected calc() {
-        Atom.k++;
         const oldActiveSlave = Atom.activeSlave;
         Atom.activeSlave = this;
         var prevShared = Atom.shared;
         Atom.shared = Atom.sharedCachePos == -1 ? ([] as Shared) : Atom.sharedCache[Atom.sharedCachePos--];
         Atom.shared.len = this.masters.length;
+        Atom.shared.k = Atom.shared.k ? Atom.shared.k++ : 1;
         const oldValue = this.value;
         this.value = this.calcFn.call(this.owner);
         Atom.scheduledTasks.addTask(TaskType.MODIFY, this, Atom.shared);
@@ -259,7 +246,7 @@ export class Atom {
     }
 
     protected applyModify(shared:Shared) {
-        var k = Atom.k;
+        var k = shared.k;
         const masters = this.masters;
         const len = masters.length;
 
@@ -279,25 +266,15 @@ export class Atom {
         }
 
         for (i = len; i < shared.len; i++) {
-            masters.push(shared[i + len] as Atom);
+            const atom = shared[i] as Atom;
+            masters.push(atom);
+            if (!atom.slaves) {
+                atom.slaves = [];
+            }
+            atom.slaves.push(this);
         }
-        Atom.sharedCache[++Atom.sharedCachePos] = shared;
-    }
 
-    protected calcOld() {
-        this.checkForDestroy();
-        const oldActiveSlave = Atom.activeSlave;
-        Atom.scheduledTasks.addTask(TaskType.CLEAR_MASTERS, this);
-        Atom.activeSlave = this;
-        const oldValue = this.value;
-        if (Atom.debugAtoms && (Atom.debugAtoms[this.field] || Atom.debugAtoms[this.id])) {
-            Atom.debug();
-        }
-        this.value = this.calcFn.call(this.owner);
-        Atom.activeSlave = oldActiveSlave;
-        this.status = AtomStatus.GETTER;
-        // console.info(this.field, this.id);
-        return oldValue !== this.value;
+        Atom.sharedCache[++Atom.sharedCachePos] = shared;
     }
 
     protected clearMasters() {
@@ -344,7 +321,6 @@ export class Atom {
             for (var i = 0, len = slaves.length; i < len; i++) {
                 slaves[i].affect(affectAtoms);
             }
-            this.slaves = null;
         }
     }
 
@@ -370,8 +346,8 @@ export class Atom {
     }
 
     protected update(topLevel:boolean, affectAtoms:IDMap<AtomAffectStatus>) {
-        if (affectAtoms[this.id] !== AtomAffectStatus.NEEDCALC) {
-            throw new Error('Something wrong');
+        if (affectAtoms[this.id] === AtomAffectStatus.CALC) {
+            return;
         }
         const status = topLevel ? AtomAffectStatus.CALC : this.needToRecalc(affectAtoms);
         if (status === AtomAffectStatus.WAIT_PARENT_CALC) {
@@ -402,7 +378,7 @@ export class Atom {
 
     protected static scheduledTasks = new TaskList(Atom.updateScheduled);
 
-    protected static updateScheduled() {
+    static updateScheduled() {
         console.log("start schedule runner");
         let changeAtoms:Atom[] = [];
         let prevType:TaskType = null;
@@ -414,13 +390,13 @@ export class Atom {
                     Atom.batchUpdate(changeAtoms);
                     changeAtoms = [];
                 }
-            } else if (prevType == TaskType.CHANGE) {
+            }
+            else {
                 Atom.batchUpdate(changeAtoms);
                 changeAtoms = [];
             }
-            else if (type == TaskType.MASTERS) {
+            if (type == TaskType.MODIFY) {
                 atom.applyModify(param);
-                // atom.setSelfToActiveSlave(slave);
             }
             else if (type == TaskType.DESTROY) {
                 atom.realDestroy();
@@ -432,3 +408,45 @@ export class Atom {
 
 (window as any).AtomGlob = Atom;
 (window as any).debugAtom = Atom.debugAtom;
+/*
+
+const a = new Atom().prop('a', '[A]');
+const b = new Atom().prop('b', '[B]');
+const c = new Atom().prop('c', '[C]');
+
+let x = 0;
+const sum = new Atom().getter('sum', null, () => {
+    c.get();
+    return x++ % 2 == 0 ? a.get() : b.get();
+});
+sum.get();
+Atom.updateScheduled();
+
+a.set('[A1]');
+Atom.updateScheduled();
+
+b.set('[B1]');
+Atom.updateScheduled();
+12;
+*/
+
+/*
+
+const render = new Atom().getter('render', null, () => {
+    x++;
+    const val = (x % 2 == 0 ? b.get() : (a.get() + sum.get()));
+    console.log('render', val);
+})
+render.get();
+a.set('[A1]');
+setTimeout(() => {
+    a.set('[A0]');
+    setTimeout(() => {
+        a.set('[Ax]');
+    });
+});
+*/
+
+
+
+
