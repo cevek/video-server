@@ -26,11 +26,11 @@ export var prop:any = function (proto:any, prop:string, descriptor?:PropertyDesc
         const getterFn = new Function(`
             var atom = this.${_prop};
             if (atom) {
-                return atom.get();
+                return atom.getWithCalc();
             }
             else {
                 atom = this.${_prop} = new AtomGlob().getter('${fieldName}', this, this.${_prop}Getter);
-                return atom.get();
+                return atom.getWithCalc();
             }
             `);
         return {

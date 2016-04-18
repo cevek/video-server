@@ -47,10 +47,10 @@ export const autowatch = function (cls:any) {
     }
     cls.prototype.render = function () {
         if (this.componentAtom) {
-            return this.componentAtom.get(true);
+            return this.componentAtom.getWithForceCalc();
         }
         else {
-            return (this.componentAtom = new ComponentAtom(this)).get(true);
+            return (this.componentAtom = new ComponentAtom(this)).getWithForceCalc();
         }
     }
 }
