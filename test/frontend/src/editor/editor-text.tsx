@@ -7,6 +7,8 @@ import {Line} from "../models/line";
 import "./styles/editor-text.css";
 import {prop} from "../../atom-next/prop";
 import {autowatch} from "../../atom-next/autowatch";
+import {Escape} from "../escape";
+import {Form, TextInput} from "../form";
 
 class User {
     @prop firstName:string;
@@ -96,13 +98,15 @@ class TextLine extends React.Component<{model:EditorModel; line:EditorLine; line
 
     @prop editMode = false;
 
+    values = {text: ''}
+
     onEdit = () => {
         this.editMode = true;
     }
 
     onSave = () => {
         this.editMode = false;
-        this.props.model.textModel.setWords(this.props.linePos, this.props.lang, (this.refs['input'] as HTMLInputElement).value);
+        this.props.model.textModel.setWords(this.props.linePos, this.props.lang, this.values.text);
     }
 
     onCancel = () => {
@@ -114,11 +118,16 @@ class TextLine extends React.Component<{model:EditorModel; line:EditorLine; line
         const linePos = this.props.linePos;
         const lang = this.props.lang;
         const textLine = lang == Lang.RU ? line.ru : line.en; // todo
+
+
         return  <div className="textline ru" onClick={this.onTextLineClick}>
-            <span onClick={this.onEdit} className="textline-editbutton">Edit</span>
+            <Escape onEscape={this.onCancel}/>
+            <i className="fa fa-pencil-square-o textline-editbutton" onClick={this.onEdit}/>
             {this.editMode ?
                 <div className="textline-edit">
-                    <input type="text" ref="input" value={textLine.getText()}/>
+                    <Form values={this.values} onSubmit={this.onSave}>
+                        <TextInput name="text" value={textLine.getText()}/>
+                    </Form>
                     <button onClick={this.onSave}>Save</button>
                     <button onClick={this.onCancel}>Cancel</button>
                 </div>

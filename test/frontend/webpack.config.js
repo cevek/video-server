@@ -1,17 +1,31 @@
+var path = require('path');
+var webpack = require('webpack');
 var ExtractTextPlugin = require("extract-text-webpack-plugin");
 module.exports = {
     context: __dirname,
-    entry: {
-        app: './src/app.tsx'
-    },
+    entry: [
+        // 'webpack-dev-server/client?http://localhost:3000',
+        // 'webpack/hot/only-dev-server',
+        './src/app.tsx'
+    ],
     output: {
-        path: 'build',
+        path: path.join(__dirname, 'dist'),
         filename: 'bundle.js',
+        publicPath: '/static/'
     },
 
     module: {
         loaders: [
-            {test: /\.tsx?$/, loader: 'ts-loader'},
+            {
+                test: /\.tsx?$/,
+                loaders: [/*'react-hot', */'ts-loader'],
+                // include: __dirname
+
+            },
+            {
+                test: /\.(woff|woff2|eot|ttf|svg)/,
+                loader: "url?limit=100000"
+            },
             {test: /\.css$/, loader: ExtractTextPlugin.extract("style-loader?sourceMap", "css-loader?sourceMap")}
         ]
     },
@@ -26,6 +40,7 @@ module.exports = {
         children: false
     },
     plugins: [
+        // new webpack.HotModuleReplacementPlugin(),
         new ExtractTextPlugin("styles.css")
     ],
     devtool: 'inline-source-map'

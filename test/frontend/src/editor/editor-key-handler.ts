@@ -1,7 +1,7 @@
 import * as React from "react";
 import {EditorModel} from "./editor-model";
 import {autowatch} from "../../atom-next/autowatch";
-enum KeyCodes{
+enum KeyCodes {
     ENTER     = 13,
     BACKSPACE = 8,
     UP        = 38,
@@ -14,6 +14,9 @@ enum KeyCodes{
 @autowatch
 export class EditorKeyHandler extends React.Component<{model: EditorModel;},{}>{
     keyHandler = (e:KeyboardEvent) => {
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) {
+            return;
+        }
         const model = this.props.model;
 
         var handled = false;

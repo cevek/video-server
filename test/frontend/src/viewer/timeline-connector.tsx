@@ -112,7 +112,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
 
     render() {
         const connectorWidth = 50;
-        const svgWidth = 100;
+        const svgWidth = connectorWidth;
         const svgHeight = this.timeToY(this.props.player.duration);
         const lineH = this.props.lineH;
         const halfLineH = lineH / 2;

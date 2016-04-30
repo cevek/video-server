@@ -5,8 +5,9 @@
 
 .editor-text .line {
     border: 1px solid silver;
-    border-radius: 10px;
-    width: 500px;
+    border-radius: 0 10px 10px 0;
+    border-left: 0;
+    width: 650px;
     background: #eee;
     text-align: center;
     position: absolute;
@@ -25,7 +26,7 @@
 
 .editor-text .line .ru {
     font-size: 13px;
-    padding-bottom: 10px;
+    padding-bottom: 5px;
 }
 
 .editor-text .line .textline span {
@@ -39,8 +40,24 @@
 }
 
 .editor-text .speakers {
+    height: 20px;
     margin-top: -15px;
 }
+
+.textline-editbutton {
+    position: absolute;
+    right: -20px;
+    color: rgba(0,0,0,.3);
+}
+
+.textline{
+    white-space: nowrap;
+}
+
+.textline-editbutton:hover{
+    color: black;
+}
+
 
 .editor-text .speaker {
     display: inline-block;

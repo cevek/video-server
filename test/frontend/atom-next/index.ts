@@ -442,54 +442,54 @@ export class Atom {
 (window as any).AtomGlob = Atom;
 (window as any).debugAtom = Atom.debugAtom;
 /*
-const a1 = new Atom().prop('a1', 1);
-const a2 = new Atom().prop('a2', 2);
-const a3 = new Atom().prop('a3', 3);
-const a4 = new Atom().prop('a4', 4);
-const a5 = new Atom().prop('a5', 5);
-const a6 = new Atom().prop('a6', 6);
-const a7 = new Atom().prop('a7', 7);
-const a8 = new Atom().prop('a8', 8);
-const a9 = new Atom().prop('a9', 9);
-const a0 = new Atom().prop('a0', 0);
+ const a1 = new Atom().prop('a1', 1);
+ const a2 = new Atom().prop('a2', 2);
+ const a3 = new Atom().prop('a3', 3);
+ const a4 = new Atom().prop('a4', 4);
+ const a5 = new Atom().prop('a5', 5);
+ const a6 = new Atom().prop('a6', 6);
+ const a7 = new Atom().prop('a7', 7);
+ const a8 = new Atom().prop('a8', 8);
+ const a9 = new Atom().prop('a9', 9);
+ const a0 = new Atom().prop('a0', 0);
 
-const b1 = new Atom().prop('a1', 1);
-const b2 = new Atom().prop('a2', 2);
-const b3 = new Atom().prop('a3', 3);
-const b4 = new Atom().prop('a4', 4);
-const b5 = new Atom().prop('a5', 5);
-const b6 = new Atom().prop('a6', 6);
-const b7 = new Atom().prop('a7', 7);
-const b8 = new Atom().prop('a8', 8);
-const b9 = new Atom().prop('a9', 9);
-const b0 = new Atom().prop('a0', 0);
+ const b1 = new Atom().prop('a1', 1);
+ const b2 = new Atom().prop('a2', 2);
+ const b3 = new Atom().prop('a3', 3);
+ const b4 = new Atom().prop('a4', 4);
+ const b5 = new Atom().prop('a5', 5);
+ const b6 = new Atom().prop('a6', 6);
+ const b7 = new Atom().prop('a7', 7);
+ const b8 = new Atom().prop('a8', 8);
+ const b9 = new Atom().prop('a9', 9);
+ const b0 = new Atom().prop('a0', 0);
 
-let x = 0;
-const sum = new Atom().getter('sum', {}, () => {
-    a1.get();
-    a2.get();
-    a3.get();
-    a4.get();
-    a5.get();
-    a6.get();
-    a7.get();
-    a8.get();
-    a9.get();
-    a0.get();
-    //
-    // return x++ % 2 == 0 ? a.get() : b.get();
-});*/
+ let x = 0;
+ const sum = new Atom().getter('sum', {}, () => {
+ a1.get();
+ a2.get();
+ a3.get();
+ a4.get();
+ a5.get();
+ a6.get();
+ a7.get();
+ a8.get();
+ a9.get();
+ a0.get();
+ //
+ // return x++ % 2 == 0 ? a.get() : b.get();
+ });*/
 
 /*
-function abc() {
-    console.time('perf');
-    for (var i = 0; i < 1000000; i++) {
-        sum.calc();
-        // Atom.updateScheduled();
-    }
-    console.timeEnd('perf');
-}
-*/
+ function abc() {
+ console.time('perf');
+ for (var i = 0; i < 1000000; i++) {
+ sum.calc();
+ // Atom.updateScheduled();
+ }
+ console.timeEnd('perf');
+ }
+ */
 
 // abc();
 
@@ -531,7 +531,173 @@ function abc() {
  });
  });
  */
+/*
 
 
+class Model {
+    static find(exp:Expression) {
+        return this;
+    }
+
+    static findAll(exp:Expression) {
+        return this;
+    }
+
+    static include(model:typeof Model) {
+        return this;
+    }
+}
 
 
+class Expression {
+
+}
+
+class Prop<T> extends Expression {
+    eq(val:T | Prop<T>):this {
+        return this;
+    }
+
+    gt(val:T | Prop<T>):this {
+        return this;
+    }
+
+    lt(val:T | Prop<T>):this {
+        return this;
+    }
+
+    in(val:(T | Prop<T>)[]):this {
+        return this;
+    }
+
+    isNull():this {
+        return this;
+    }
+
+    isNotNull():this {
+        return this;
+    }
+}
+
+class HasOne<T> extends Prop<T> {
+    constructor(model:typeof Model) {
+        super();
+    }
+}
+class HasMany<T> extends Prop<T> {
+    constructor(model:typeof Model) {
+        super();
+    }
+}
+
+function $and(...exp:Expression[]):Expression {
+    return null;
+}
+function $or(...exp:Expression[]):Expression {
+    return null;
+}
+function $sql(...exp:Expression[]):typeof Model {
+    return null;
+}
+
+function leftJoin(aModel:typeof Model, bModel:typeof Model, on:Expression):Expression {
+    return null;
+}
+
+
+class User extends Model {
+    static id = new Prop<number>();
+    static name = new Prop<number>();
+    static isBot = new Prop<boolean>();
+    static points = new Prop<number>();
+}
+class Contest extends Model {
+    static id = new Prop<number>();
+    static createdAt = new Prop<Date>();
+    static endedAt = new Prop<Date>();
+}
+class ContestLineup extends Model {
+    static id = new Prop<number>();
+    static contestId = new HasOne<number>(Contest);
+    static lineupId = new HasOne<number>(Lineup);
+}
+class Lineup extends Model {
+    static userId = new HasOne<number>(User);
+}
+class Game extends Model {
+    static id = new Prop<number>();
+    static name = new Prop<number>();
+}
+class UserGame extends Model {
+    static id = new Prop<number>();
+    static userId = new HasMany<number>(User);
+    static gameId = new HasMany<number>(Game);
+}
+
+class Account extends Model {
+    static userId = new HasOne<number>(User);
+    static balance = new Prop<number>();
+}
+
+
+const u = User;
+const a = Account;
+
+interface iXXX {
+    id?:number;
+    hello:string;
+    name:string;
+    isBot:boolean;
+}
+
+let jprop:any;
+let json:any;
+
+class FModel<T> {
+    json:T;
+
+    constructor(json?:T) {
+        this.json = json;
+    }
+}
+
+class XXX extends FModel<iXXX> implements iXXX {
+    @json id:number;
+    @json hello:string;
+    @json name:string;
+    @json isBot:boolean;
+
+    static fetch(json:iXXX) {
+        new XXX(json);
+    }
+}
+
+interface iBBB extends iXXX {
+    fix:number;
+}
+class BBB extends XXX implements iBBB {
+    fix:number;
+
+    static fetch(json:iBBB) {
+        new BBB(json);
+    }
+}
+
+
+Contest.findAll([
+    Contest.createdAt.gt(new Date),
+    Contest.endedAt.isNull(),
+])
+Contest.findAll({
+    include: ContestLineup,
+    where: [
+        User.isBot.eq(true),
+    ],
+})
+
+
+$sql(leftJoin(User, Account, $and(a.userId.eq(u.id), a.balance.gt(0)))
+    .include(Account)
+    .findAll($and(u.name.eq(123), u.name.eq(123), u.points.gt(123))))
+
+*/

@@ -74,6 +74,7 @@ export class Router extends React.Component<{pages: RouterPage<any, any>[]}, {}>
 
     changeUrl(isBack = false, replaceCurrent = false) {
         var currentUrl = location.href;
+
         if (activeUrl == currentUrl) {
             this.hideMenu();
             return Promise.resolve();
@@ -102,11 +103,9 @@ export class Router extends React.Component<{pages: RouterPage<any, any>[]}, {}>
             this.activePage.url = activeUrl;
             this.forceUpdate();
             resolving = false;
-        }, (callback)=> {
+        }, (reason)=> {
             resolving = false;
-            if (typeof callback == 'function') {
-                callback();
-            }
+            return Promise.reject(reason);
         });
         return promise;
     }
@@ -124,6 +123,7 @@ export class Router extends React.Component<{pages: RouterPage<any, any>[]}, {}>
         }
 
         this.activePage = this.emptyPage;
+
         for (var i = 0; i < this.routes.length; i++) {
             var routeItem = this.routes[i];
             var params = routeItem.route.check(url);
