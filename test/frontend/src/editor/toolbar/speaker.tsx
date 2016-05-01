@@ -35,20 +35,26 @@ export class EditorToolbarSpeaker extends React.Component<{model:EditorModel; ad
         const speaker = this.props.speaker;
         return <div className="speaker">
             <Escape onEscape={this.onCancel}/>
-            {speaker}
             {this.editMode ?
                 <div>
                     <Form values={this.values} onSubmit={this.onSave}>
-                        <TextInput name="text" value={speaker}/>
+                        <TextInput className="speaker-text" name="text" required value={speaker}/>
+                        <button className="icon-button"><i className="fa fa-floppy-o"/></button>
+                        <button className="icon-button" type="button" onClick={this.onCancel}><i className="fa fa-ban"/></button>
                     </Form>
-                    <button onClick={this.onCancel}>Cancel</button>
-                    <button onClick={this.onSave}>Save</button>
                 </div>
                 :
-                <button onClick={this.onEdit}>{this.props.addMode ? 'Add' : 'Edit'}</button>
-            }
-            {this.props.addMode ? null
-                : <button onClick={this.onRemove}>X</button>
+                <div>
+                    {speaker}
+                    {this.props.addMode ?
+                        <button onClick={this.onEdit}><i className="fa fa-plus"/> Add</button>
+                        :
+                        <button onClick={this.onEdit} className="icon-button"><i className="fa fa-pencil-square-o"/></button>
+                    }
+                    {this.props.addMode ? null
+                        : <button className="icon-button" onClick={this.onRemove}><i className="fa fa-times"/></button>
+                    }
+                </div>
             }
         </div>
     }

@@ -5,6 +5,10 @@ export class Form extends React.Component<{values:any, onSubmit?:()=>void}, {}> 
         return {form: this.props.values};
     }
 
+    static childContextTypes = {
+        form: React.PropTypes.any
+    }
+
     onSubmit = (e:Event) => {
         if (this.props.onSubmit) {
             this.props.onSubmit();
@@ -22,12 +26,12 @@ export class Form extends React.Component<{values:any, onSubmit?:()=>void}, {}> 
 export class TextInput extends React.Component<{name: string, onChange?: (val:string)=>void; [prop: string]: any}, {}> {
     context:any;
 
-    el(){
+    el() {
         return (this.refs['ref'] as HTMLInputElement);
     }
 
     onInput = () => {
-        if (this.context && this.context.name) {
+        if (this.context.form) {
             this.context.form[this.props.name] = this.el().value;
         }
     }
@@ -39,6 +43,7 @@ export class TextInput extends React.Component<{name: string, onChange?: (val:st
     }
 
     render() {
-        return <input ref="ref" type="text" {...this.props} onChange={this.onChange} onInput={this.onInput}/>
+        const value = this.context.form ? this.context.form[this.props.name] : '';
+        return <input ref="ref" type="text" value={value} autoComplete="off" {...this.props} onChange={this.onChange} onInput={this.onInput}/>
     }
 }

@@ -59,7 +59,6 @@ export class EditorText extends React.Component<{model:EditorModel; renderLines:
 @autowatch
 class Speakers extends React.Component<{model:EditorModel; linePos:number;},{}> {
     setSpeaker(pos:number, speaker:string) {
-        console.log(pos, speaker);
         this.props.model.textModel.setSpeaker(pos, speaker);
     }
 
@@ -98,10 +97,15 @@ class TextLine extends React.Component<{model:EditorModel; line:EditorLine; line
 
     @prop editMode = false;
 
-    values = {text: ''}
+    @prop values:{text:string}
 
     onEdit = () => {
         this.editMode = true;
+        const line = this.props.line;
+        const lang = this.props.lang;
+        this.values = {
+            text: line.getTextLine(lang).getText()
+        }
     }
 
     onSave = () => {
@@ -126,10 +130,10 @@ class TextLine extends React.Component<{model:EditorModel; line:EditorLine; line
             {this.editMode ?
                 <div className="textline-edit">
                     <Form values={this.values} onSubmit={this.onSave}>
-                        <TextInput name="text" value={textLine.getText()}/>
+                        <TextInput className="speaker-text" name="text" required/>
+                        <button className="icon-button"><i className="fa fa-floppy-o"/></button>
+                        <button className="icon-button" type="button" onClick={this.onCancel}><i className="fa fa-ban"/></button>
                     </Form>
-                    <button onClick={this.onSave}>Save</button>
-                    <button onClick={this.onCancel}>Cancel</button>
                 </div>
                 :
                 textLine.words.map((w, wordPos) =>

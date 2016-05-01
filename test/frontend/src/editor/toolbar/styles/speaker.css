@@ -1,3 +1,7 @@
 .speaker {
 
 }
+
+.speaker-text{
+    width: calc(100% - 50px);
+}

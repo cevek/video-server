@@ -12,7 +12,7 @@ export class EditorTags extends React.Component<{model: EditorModel},{}> {
 
     render() {
         return <div className="editor-tags">
-            <TextInput placeholder="Tags..." name="title" onChange={this.onChange} value={this.props.model.tags}/>
+            <TextInput placeholder="Tags..." name="title" required onChange={this.onChange} value={this.props.model.tags}/>
         </div>
     }
 }

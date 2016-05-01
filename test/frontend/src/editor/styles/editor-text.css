@@ -58,6 +58,10 @@
     color: black;
 }
 
+.textline-edit .speaker-text{
+    width: calc(100% - 50px);
+}
+
 
 .editor-text .speaker {
     display: inline-block;

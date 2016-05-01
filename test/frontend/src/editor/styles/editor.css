@@ -4,3 +4,8 @@
     left: 500px;
     width: 500px;
 }
+
+.icon-button{
+    background: transparent;
+    border: 0;
+}
