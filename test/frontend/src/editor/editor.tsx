@@ -8,7 +8,7 @@ import {AudioPlayer} from "../utils/audio-player";
 import {LineAllocator} from "../utils/time-allocate";
 import {EditorText} from "./editor-text";
 import {config} from "../../../backend/config";
-import "./styles/editor.css";
+import {locals} from "./styles/editor.css";
 import {EditorToolbar} from "./toolbar/toolbar";
 import {EditorTitle} from "./editor-title";
 import {EditorTags} from "./editor-tags";
@@ -44,8 +44,8 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
         const renderLines = new LineAllocator(positions, 50).allocateRenderLines();
 
 
-        return <div className="editor">
-            <div className="editor-main">
+        return <div className={locals.editor}>
+            <div className={locals.editorMain}>
                 <EditorTitle model={this.model}/>
                 <EditorTags model={this.model}/>
                 <EditorText model={this.model} renderLines={renderLines}/>

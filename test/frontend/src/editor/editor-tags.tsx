@@ -1,6 +1,6 @@
 import * as React from "react";
 import {EditorModel} from "./editor-model";
-import "./styles/editor-tags.css";
+import {locals} from "./styles/editor-tags.css";
 import {autowatch} from "../../atom-next/autowatch";
 import {TextInput} from "../form";
 
@@ -11,7 +11,7 @@ export class EditorTags extends React.Component<{model: EditorModel},{}> {
     }
 
     render() {
-        return <div className="editor-tags">
+        return <div className={locals.editorTags}>
             <TextInput placeholder="Tags..." name="title" required onChange={this.onChange} value={this.props.model.tags}/>
         </div>
     }

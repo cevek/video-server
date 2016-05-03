@@ -1,10 +1,12 @@
 import * as React from "react";
 import {EditorModel} from "../editor-model";
-import "./styles/speaker.css";
+import {locals} from "./styles/speaker.css";
 import {prop} from "../../../atom-next/prop";
 import {autowatch} from "../../../atom-next/autowatch";
 import {Escape} from "../../escape";
 import {Form, TextInput} from "../../form";
+import {locals as i} from "../../font-awesome-4.6.1/css/font-awesome.css";
+import {locals as glob} from "../styles/glob.css";
 
 @autowatch
 export class EditorToolbarSpeaker extends React.Component<{model:EditorModel; addMode?:boolean; speaker:string; pos:number;}, {}> {
@@ -33,26 +35,35 @@ export class EditorToolbarSpeaker extends React.Component<{model:EditorModel; ad
 
     render() {
         const speaker = this.props.speaker;
-        return <div className="speaker">
+        return <div className={locals.speaker}>
             <Escape onEscape={this.onCancel}/>
             {this.editMode ?
                 <div>
                     <Form values={this.values} onSubmit={this.onSave}>
-                        <TextInput className="speaker-text" name="text" required value={speaker}/>
-                        <button className="icon-button"><i className="fa fa-floppy-o"/></button>
-                        <button className="icon-button" type="button" onClick={this.onCancel}><i className="fa fa-ban"/></button>
+                        <TextInput className={locals.speakerText} name="text" required value={speaker}/>
+                        <button className={glob.iconButton}>
+                            <i className={`${i.fa} ${i.faFloppyO}`}/>
+                        </button>
+                        <button className={glob.iconButton} type="button" onClick={this.onCancel}>
+                            <i className={`${i.fa} ${i.faBan}`}/>
+                        </button>
                     </Form>
                 </div>
                 :
                 <div>
                     {speaker}
                     {this.props.addMode ?
-                        <button onClick={this.onEdit}><i className="fa fa-plus"/> Add</button>
+                        <button onClick={this.onEdit}><i className={`${i.fa} ${i.faPlug}`}/> Add</button>
                         :
-                        <button onClick={this.onEdit} className="icon-button"><i className="fa fa-pencil-square-o"/></button>
+                        <button onClick={this.onEdit} className={glob.iconButton}>
+                            <i className={`${i.fa} ${i.faPencilSquareO}`}/>
+                        </button>
                     }
                     {this.props.addMode ? null
-                        : <button className="icon-button" onClick={this.onRemove}><i className="fa fa-times"/></button>
+                        :
+                        <button className={glob.iconButton} onClick={this.onRemove}>
+                            <i className={`${i.fa} ${i.faTimes}`}/>
+                        </button>
                     }
                 </div>
             }

@@ -4,7 +4,7 @@ import {PlayingStatus} from "sound-utils/Play";
 import {ITextLine} from "../../../interfaces/text-line";
 import {PostModel} from "../models/post";
 import {AudioPlayer} from "../utils/audio-player";
-import "./subtitles.css";
+import {locals} from "./subtitles.css";
 
 export class Subtitles extends React.Component<{postModel: PostModel; player: AudioPlayer; resizeKoef: number; renderLines: number[]}, {}> {
     duration:number = 0;
@@ -54,16 +54,16 @@ export class Subtitles extends React.Component<{postModel: PostModel; player: Au
 
     render() {
         const durationY = this.timeToY(this.duration);
-        return <div className="subtitles">
+        return <div className={locals.subtitles}>
             {this.props.postModel.lines.map((line, i) =>
                 <div
-                    className={classNames("line", {playing: this.playingLine == i, selected: this.isSelected(line.en)})}
+                    className={classNames(locals.line, {[locals.playing]: this.playingLine == i, [locals.selected]: this.isSelected(line.en)})}
                     onMouseDown={()=>this.showRuTextLine(i)}
                     onMouseUp={()=>this.hideRuTextLine(i)}
                     style={{top: this.props.renderLines[i]}}>
-                    <div className="en">{line.en ? line.en.text : ''}</div>
+                    <div className={locals.en}>{line.en ? line.en.text : ''}</div>
                     {this.openedRuTextLines[i] ?
-                        <div className="ru">{line.ru ? line.ru.text : ''}</div> : null}
+                        <div className={locals.ru}>{line.ru ? line.ru.text : ''}</div> : null}
                 </div>)}
         </div>
     }

@@ -1,6 +1,6 @@
 import * as React from "react";
 import {AudioPlayer} from "../utils/audio-player";
-import "./audio-selection.css";
+import {locals} from "./audio-selection.css";
 
 export class AudioSelectionData {
     start = 0;
@@ -107,10 +107,10 @@ export class AudioSelection extends React.Component<{pxPerSec: number; player: A
     }
 
     render() {
-        return <div className="audio-selection-wrapper" ref="root" style={{height: this.timeToPx(this.props.player.duration)}}>
-            <div className="audio-selection" ref="audioSelection"
+        return <div className={locals.audioSelectionWrapper} ref="root" style={{height: this.timeToPx(this.props.player.duration)}}>
+            <div className={locals.audioSelection} ref="audioSelection"
                  style={{top: this.timeToPx(audioSelection.start), height: this.timeToPx(audioSelection.end - audioSelection.start)}}></div>
-            <div className="current-time" ref="currentTime"></div>
+            <div className={locals.currentTime} ref="currentTime"></div>
         </div>
     }
 }

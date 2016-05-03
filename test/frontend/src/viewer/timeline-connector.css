@@ -20,6 +20,7 @@ svg.timeline-connector rect {
     fill: transparent;
 }
 
+
 svg.timeline-connector .top {
     cursor: ns-resize;
 }

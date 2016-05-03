@@ -1,3 +1,6 @@
+.editor {
+
+}
 .editor-main {
     position: absolute;
     top: 0;
@@ -5,7 +8,3 @@
     width: 500px;
 }
 
-.icon-button{
-    background: transparent;
-    border: 0;
-}
