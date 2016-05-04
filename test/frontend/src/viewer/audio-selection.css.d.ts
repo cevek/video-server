@@ -1,5 +1,3 @@
-export const locals: {
-	audioSelectionWrapper: string
-	audioSelection: string
-	currentTime: string
-}
+export let audioSelectionWrapper:''
+export let audioSelection:''
+export let currentTime:''

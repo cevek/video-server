@@ -1,3 +1,1 @@
-export const locals: {
-	iconButton: string
-}
+export let iconButton:''

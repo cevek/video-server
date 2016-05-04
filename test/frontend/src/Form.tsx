@@ -1,14 +1,15 @@
 import * as React from 'react';
+import {prop} from "../atom-next/prop";
 
-export class Form extends React.Component<{values:any, onSubmit?:()=>void}, {}> {
-    getChildContext() {
-        return {form: this.props.values};
+
+export class FormField<T> {
+    @prop value:T
+    constructor(value:T) {
+        this.value = value;
     }
+}
 
-    static childContextTypes = {
-        form: React.PropTypes.any
-    }
-
+export class Form extends React.Component<{onSubmit?:()=>void}, {}> {
     onSubmit = (e:Event) => {
         if (this.props.onSubmit) {
             this.props.onSubmit();
@@ -23,7 +24,7 @@ export class Form extends React.Component<{values:any, onSubmit?:()=>void}, {}> 
     }
 }
 
-export class TextInput extends React.Component<{name: string, onChange?: (val:string)=>void; [prop: string]: any}, {}> {
+export class TextInput extends React.Component<{field?:FormField<string>; onChange?:(val:string)=>void; [prop:string]:any}, {}> {
     context:any;
 
     el() {
@@ -31,8 +32,8 @@ export class TextInput extends React.Component<{name: string, onChange?: (val:st
     }
 
     onInput = () => {
-        if (this.context.form) {
-            this.context.form[this.props.name] = this.el().value;
+        if (this.props.field) {
+            this.props.field.value = this.el().value;
         }
     }
 
@@ -43,7 +44,12 @@ export class TextInput extends React.Component<{name: string, onChange?: (val:st
     }
 
     render() {
-        const value = this.context.form ? this.context.form[this.props.name] : '';
-        return <input ref="ref" type="text" value={value} autoComplete="off" {...this.props} onChange={this.onChange} onInput={this.onInput}/>
+        const value = this.props.field && this.props.field.value || '';
+        return <input ref="ref"
+                      type="text"
+                      value={value}
+                      autoComplete="off" {...this.props}
+                      onChange={this.onChange}
+                      onInput={this.onInput}/>
     }
 }

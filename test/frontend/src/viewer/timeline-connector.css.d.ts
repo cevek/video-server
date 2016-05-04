@@ -1,6 +1,4 @@
-export const locals: {
-	timelineConnector: string
-	resizing: string
-	top: string
-	bottom: string
-}
+export let timelineConnector:''
+export let resizing:''
+export let top:''
+export let bottom:''

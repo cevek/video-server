@@ -1,7 +1,7 @@
 import * as React from "react";
 import {EditorModel} from "./../editor-model";
 import {EditorToolbarSpeakers} from "./speakers";
-import {locals} from "./styles/toolbar.css";
+import * as style from "./styles/toolbar.css";
 import {autowatch} from "../../../atom-next/autowatch";
 
 @autowatch
@@ -19,7 +19,7 @@ export class EditorToolbar extends React.Component<{model: EditorModel;}, {}> {
     }
 
     render() {
-        return <div className={locals.editorToolbar}>
+        return <div className={style.editorToolbar}>
             <button onClick={this.onSave}>Save</button>
             <div>
                 <button onClick={this.onUndo}>Undo</button>

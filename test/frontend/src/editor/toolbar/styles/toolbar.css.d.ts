@@ -1,3 +1,1 @@
-export const locals: {
-	editorToolbar: string
-}
+export let editorToolbar:''

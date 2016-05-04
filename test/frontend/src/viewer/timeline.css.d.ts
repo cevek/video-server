@@ -1,4 +1,2 @@
-export const locals: {
-	timeline: string
-	spectrogram: string
-}
+export let timeline:''
+export let spectrogram:''

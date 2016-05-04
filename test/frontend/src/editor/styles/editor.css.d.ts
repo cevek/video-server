@@ -1,4 +1,2 @@
-export const locals: {
-	editor: string
-	editorMain: string
-}
+export let editor:''
+export let editorMain:''

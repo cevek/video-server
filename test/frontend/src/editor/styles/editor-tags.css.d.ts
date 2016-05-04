@@ -1,3 +1,1 @@
-export const locals: {
-	editorTags: string
-}
+export let editorTags:''

@@ -8,7 +8,7 @@ import {Subtitles} from "./subtitles";
 import {AudioPlayer} from "../utils/audio-player";
 import {config} from "../../../backend/config";
 import {EditorHistory} from "../utils/history";
-import {locals} from "./viewer.css";
+import  * as style from "./viewer.css";
 
 export class Viewer extends React.Component<{params: any, resolved: PostModel}, {}> {
     audioPlayer = new AudioPlayer();
@@ -38,7 +38,7 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
         const renderLines = new LineAllocator(positions, 50).allocateRenderLines();
 
         return <div>
-            <div className={locals.toolbar}>
+            <div className={style.toolbar}>
                 <button onClick={()=>this.history.undo()}>Undo</button>
                 <button onClick={()=>this.history.redo()}>Redo</button>
             </div>

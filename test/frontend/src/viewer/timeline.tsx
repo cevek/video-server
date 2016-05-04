@@ -1,7 +1,7 @@
 import * as React from "react";
 import {AudioSelection} from "./audio-selection";
 import {AudioPlayer} from "../utils/audio-player";
-import {locals} from "./timeline.css";
+import  * as style from "./timeline.css";
 
 export class Timeline extends React.Component<{player: AudioPlayer; resizeKoef: number}, {}> {
     timeToY(time:number) {
@@ -14,8 +14,8 @@ export class Timeline extends React.Component<{player: AudioPlayer; resizeKoef: 
 
     render() {
         const durationY = this.timeToY(this.props.player.duration);
-        return <div className={locals.timeline} ref="timeline">
-            <canvas className={locals.spectrogram} ref="spectrogram" style={{height: durationY}}/>
+        return <div className={style.timeline} ref="timeline">
+            <canvas className={style.spectrogram} ref="spectrogram" style={{height: durationY}}/>
             <AudioSelection pxPerSec={100 / this.props.resizeKoef} player={this.props.player}/>
         </div>
     }

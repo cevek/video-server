@@ -1,3 +1,1 @@
-export const locals: {
-	
-}
+export let timelineEditor:''

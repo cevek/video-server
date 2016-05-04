@@ -1,4 +1,2 @@
-export const locals: {
-	speaker: string
-	speakerText: string
-}
+export let speaker:''
+export let speakerText:''

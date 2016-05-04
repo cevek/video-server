@@ -1,12 +1,12 @@
 import * as React from "react";
 import {EditorModel} from "../editor-model";
-import {locals} from "./styles/speaker.css";
+import  * as style from "./styles/speaker.css";
 import {prop} from "../../../atom-next/prop";
 import {autowatch} from "../../../atom-next/autowatch";
 import {Escape} from "../../escape";
-import {Form, TextInput} from "../../form";
-import {locals as i} from "../../font-awesome-4.6.1/css/font-awesome.css";
-import {locals as glob} from "../styles/glob.css";
+import {Form, TextInput, FormField} from "../../form";
+import * as i from "../../font-awesome-4.6.1/css/font-awesome.css";
+import * as glob from "../styles/glob.css";
 
 @autowatch
 export class EditorToolbarSpeaker extends React.Component<{model:EditorModel; addMode?:boolean; speaker:string; pos:number;}, {}> {
@@ -24,23 +24,23 @@ export class EditorToolbarSpeaker extends React.Component<{model:EditorModel; ad
     onSave = () => {
         const pos = this.props.pos;
         this.editMode = false;
-        this.props.model.speakers.save(pos, this.values.text);
+        this.props.model.speakers.save(pos, this.values.text.value);
     }
 
     onCancel = () => {
         this.editMode = false;
     }
 
-    values = {text: ''};
+    values = {text: new FormField('')};
 
     render() {
         const speaker = this.props.speaker;
-        return <div className={locals.speaker}>
+        return <div className={style.speaker}>
             <Escape onEscape={this.onCancel}/>
             {this.editMode ?
                 <div>
-                    <Form values={this.values} onSubmit={this.onSave}>
-                        <TextInput className={locals.speakerText} name="text" required value={speaker}/>
+                    <Form onSubmit={this.onSave}>
+                        <TextInput className={style.speakerText} field={this.values.text} required value={speaker}/>
                         <button className={glob.iconButton}>
                             <i className={`${i.fa} ${i.faFloppyO}`}/>
                         </button>

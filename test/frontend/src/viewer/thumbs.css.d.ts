@@ -1,4 +1,2 @@
-export const locals: {
-	thumbs: string
-	thumb: string
-}
+export let thumbs:''
+export let thumb:''

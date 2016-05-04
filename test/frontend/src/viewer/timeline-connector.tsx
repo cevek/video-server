@@ -5,7 +5,7 @@ import {AudioPlayer} from "../utils/audio-player";
 import {EditorHistory, EditorHistoryData} from "../utils/history";
 import {Line} from "../models/line";
 import {Lang} from "../../../interfaces/lang";
-import {locals} from "./timeline-connector.css";
+import * as style from "./timeline-connector.css";
 
 
 export class HistoryTimeline extends EditorHistoryData<HistoryTimeline> {
@@ -55,7 +55,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
         this.activeLineDur = textLine.dur;
         this.y = e.pageY;
         e.preventDefault();
-        document.body.classList.add(locals.resizing);
+        document.body.classList.add(style.resizing);
     }
 
     historyListen = (data:HistoryTimeline, isRedo:boolean) => {
@@ -92,7 +92,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
             if (this.activeLine > -1) {
                 const textLine = this.props.lines[this.activeLine].en;
                 this.playTextLine(textLine);
-                document.body.classList.remove(locals.resizing);
+                document.body.classList.remove(style.resizing);
                 if (this.activeLineStart != textLine.start || this.activeLineDur != textLine.dur) {
                     this.props.history.add(new HistoryTimeline({
                         lineN: this.activeLine,
@@ -118,7 +118,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
         const halfLineH = lineH / 2;
         const resizeKoef = this.props.resizeKoef;
 
-        return <svg className={locals.timelineConnector} width={svgWidth} height={svgHeight}>
+        return <svg className={style.timelineConnector} width={svgWidth} height={svgHeight}>
             {this.props.renderLines.map((pos, i) => {
                 const textLine = this.props.lines[i].en;
                 if (textLine) {
@@ -127,11 +127,11 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
                     const tr = pos - halfLineH;
                     const br = pos + halfLineH;
                     const color = 'hsla(' + (textLine.start) + ', 50%,60%, 1)';
-                    return <g key={i} className={i == this.activeLine ? locals.resizing : ''}>
+                    return <g key={i} className={i == this.activeLine ? style.resizing : ''}>
                         <path onClick={()=>this.playTextLine(textLine)} fill={color}
                               d={svgPathGenerator(tl, bl, tr, br, connectorWidth)}/>
-                        <rect onMouseDown={(e:any)=>this.onMouseDown(e, i, true)} className={locals.top} y={tl}/>
-                        <rect onMouseDown={(e:any)=>this.onMouseDown(e, i, false)} className={locals.bottom} y={bl-20}/>
+                        <rect onMouseDown={(e:any)=>this.onMouseDown(e, i, true)} className={style.top} y={tl}/>
+                        <rect onMouseDown={(e:any)=>this.onMouseDown(e, i, false)} className={style.bottom} y={bl-20}/>
                     </g>
                 }
                 return null;

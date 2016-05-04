@@ -1,4 +1,4 @@
-import {locals} from "./video.css";
+import * as style from "./video.css";
 import * as React from "react";
 import {PostModel} from "../models/post";
 
@@ -55,13 +55,13 @@ export class Video extends React.Component<{postModel: PostModel; resizeKoef: nu
 
     render() {
         return <div>
-            <div ref={d => this.videoWrapper = d} className={locals.video}>
-                <div className={locals.overlay}></div>
+            <div ref={d => this.videoWrapper = d} className={style.video}>
+                <div className={style.overlay}></div>
                 {!this.isStarted || this.isEnded ?
-                <div className={locals.cover}></div>: null}
+                <div className={style.cover}></div>: null}
             </div>
             {this.ytReady ?
-                <div className={locals.controls}>
+                <div className={style.controls}>
                     {this.isPlaying ?
                         <button onClick={()=>this.videoPlayer.pauseVideo()}>Stop</button>
                         :

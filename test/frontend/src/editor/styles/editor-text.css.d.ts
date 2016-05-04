@@ -1,13 +1,11 @@
-export const locals: {
-	editorText: string
-	line: string
-	textline: string
-	en: string
-	ru: string
-	selected: string
-	speakers: string
-	textlineEditbutton: string
-	textlineEdit: string
-	speakerText: string
-	speaker: string
-}
+export let editorText:''
+export let line:''
+export let textline:''
+export let en:''
+export let ru:''
+export let selected:''
+export let speakers:''
+export let textlineEditbutton:''
+export let textlineEdit:''
+export let speakerText:''
+export let speaker:''

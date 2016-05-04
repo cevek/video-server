@@ -1,6 +1,4 @@
-export const locals: {
-	video: string
-	overlay: string
-	cover: string
-	controls: string
-}
+export let video:''
+export let overlay:''
+export let cover:''
+export let controls:''

@@ -1,3 +1,1 @@
-export const locals: {
-	speakers: string
-}
+export let speakers:''

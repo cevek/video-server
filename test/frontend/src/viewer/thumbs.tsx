@@ -1,7 +1,7 @@
 import * as React from "react";
 import {config} from "../../../backend/config";
 import {PostModel} from "../models/post";
-import {locals} from "./thumbs.css";
+import * as style from "./thumbs.css";
 
 export class Thumbs extends React.Component<{postModel: PostModel; resizeKoef: number;}, {}> {
     timeToY(time:number) {
@@ -36,9 +36,9 @@ export class Thumbs extends React.Component<{postModel: PostModel; resizeKoef: n
             })
         }
 
-        return <div className={locals.thumbs}>
+        return <div className={style.thumbs}>
             {thumbsItems.map((thumb, i) =>
-                <div className={locals.thumb} key={i}
+                <div className={style.thumb} key={i}
                      style={{top: thumb.top, background: `url(${thumbImg}) ${-thumb.imgLeft}px ${-thumb.imgTop}px`}}>
                 </div>)}
         </div>
