@@ -1,5 +1,6 @@
 .audio-selection-wrapper {
     position: absolute;
+    background: black;
     left: 0;
     width: 100%;
     top: 0;
@@ -7,22 +8,20 @@
 
 .audio-selection {
     width: 100%;
-    background: #FBFFEF;
-    mix-blend-mode: exclusion;
+    background: #FFE75B;
     border: 1px solid rgba(0, 0, 0, .3);
     border-left: 0;
     border-right: 0;
     position: absolute;
     top: 0;
     left: 0;
-    z-index: 1000;
 }
 
 .current-time {
     position: absolute;
     width: 100%;
     height: 2px;
-    background: white;
+    background: black;
     margin-top: -1px;
 }
 

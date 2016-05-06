@@ -5,7 +5,7 @@ import {Play} from "sound-utils/Play";
 var audioContext = new AudioContext();
 
 class GradiendGenerator {
-    constructor(protected points:[number,number,number,number][]) {}
+    constructor(protected points:[number,number,number,number, number][]) {}
 
     generate(len:number) {
         const colorMap:number[] = [];
@@ -21,7 +21,8 @@ class GradiendGenerator {
             let red = Math.round(prevPoint[1] + pointPercent * (nextPoint[1] - prevPoint[1]));
             let green = Math.round(prevPoint[2] + pointPercent * (nextPoint[2] - prevPoint[2]));
             let blue = Math.round(prevPoint[3] + pointPercent * (nextPoint[3] - prevPoint[3]));
-            let color = (red << 16) + (green << 8) + blue;
+            let alpha = Math.round(prevPoint[4] + pointPercent * (nextPoint[4] - prevPoint[4]));
+            let color = (red << 24) + (green << 16) + (blue << 8) + alpha;
             colorMap.push(color);
         }
         return colorMap;
@@ -30,12 +31,12 @@ class GradiendGenerator {
 
 const colorSize = 10000;
 const gradient = new GradiendGenerator([
-    [0, 0, 0, 0],
-    [.15, 0, 0, 150],
-    [.25, 150, 50, 255],
-    [.5, 255, 100, 0],
-    [.75, 255, 255, 0],
-    [1, 255, 255, 255],
+    [0, 0, 0, 0, 0],
+    [.15, 0, 0, 150, 150],
+    [.25, 150, 50, 255, 255],
+    [.5, 255, 100, 0, 255],
+    [.75, 255, 255, 0, 255],
+    [1, 255, 255, 255, 255],
 ]).generate(colorSize);
 
 
@@ -87,10 +88,10 @@ export class AudioPlayer {
                 var pos = (i * valsLen + valsLen - j) * 4;
 
                 const color = gradient[val];
-                imdd[pos] = color >> 16 & 0xFF;
-                imdd[pos + 1] = color >> 8 & 0xFF;
-                imdd[pos + 2] = color & 0xFF;
-                imdd[pos + 3] = 255;
+                imdd[pos] = color >> 24 & 0xFF;
+                imdd[pos + 1] = color >> 16 & 0xFF;
+                imdd[pos + 2] = color >> 8 & 0xFF;
+                imdd[pos + 3] = color & 0xFF;
             }
         }
         ctx.putImageData(imd, 0, 0);
