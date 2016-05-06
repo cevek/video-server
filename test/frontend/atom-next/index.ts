@@ -20,7 +20,6 @@ export enum AtomAffectStatus{
 
 export enum TaskType {
     CHANGE = 10,
-    CLEAR_MASTERS = 20,
     DESTROY = 50,
     MODIFY = 100,
 }
@@ -31,7 +30,7 @@ export interface IDMap<T> {
 
 interface Shared extends Array<Atom | number> {
     len:number;
-    k:number;
+    lastModifyTaskId:number;
 }
 
 export class TaskList {
@@ -91,6 +90,7 @@ export class Atom {
     protected field:string;
     protected value:any;
     protected owner:any;
+    protected lastModifyTaskId:number;
     protected calcFn:()=>void;
     protected static activeSlave:Atom = null;
     protected static atomId = 0;
@@ -122,6 +122,7 @@ export class Atom {
         this.calcFn = calcFn;
         this.owner = owner;
         this.masters = [];
+        this.lastModifyTaskId = null;
         this.status = AtomStatus.GETTER_NO_VAL;
         return this;
     }
@@ -147,7 +148,7 @@ export class Atom {
             var len = activeSlaveMasters.length;
             var shared = Atom.shared;
             // if find self in activeSlave masters exit
-            var k = shared.k;
+            var k = shared.lastModifyTaskId;
             for (var i = 0; i < len; i++) {
                 if (activeSlaveMasters[i] === this) {
                     shared[i] = k;
@@ -239,10 +240,12 @@ export class Atom {
 
     protected static getShared() {
         const a = [] as Shared;
-        a.k = 0;
+        a.lastModifyTaskId = 0;
         a.len = 0;
         return a;
     }
+
+    protected static lastModifyTaskId = 0;
 
     protected calc() {
         const oldActiveSlave = Atom.activeSlave;
@@ -250,7 +253,7 @@ export class Atom {
         var prevShared = Atom.shared;
         Atom.shared = Atom.sharedCachePos === -1 ? Atom.getShared() : Atom.sharedCache[Atom.sharedCachePos--];
         Atom.shared.len = this.masters.length;
-        Atom.shared.k++;
+        this.lastModifyTaskId = Atom.shared.lastModifyTaskId = Atom.lastModifyTaskId++;
         const oldValue = this.value;
         this.value = this.calcFn.call(this.owner);
         Atom.scheduledTasks.addTask(TaskType.MODIFY, this, Atom.shared);
@@ -263,7 +266,10 @@ export class Atom {
     }
 
     protected applyModify(shared:Shared) {
-        var k = shared.k;
+        if (this.lastModifyTaskId !== shared.lastModifyTaskId) {
+            return;
+        }
+        var k = shared.lastModifyTaskId;
         const masters = this.masters;
         const len = masters.length;
 
