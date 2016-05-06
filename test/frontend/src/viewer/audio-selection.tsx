@@ -109,15 +109,16 @@ export class AudioSelection extends React.Component<{pxPerSec: number; player: A
         const canvas = document.createElement('canvas');
         this.props.player.applySpectrogramToCanvas(canvas);
         spectrogram.src = canvas.toDataURL();
+        // document.body.appendChild(canvas);
     }
 
     render() {
         const durationY = this.timeToPx(this.props.player.duration);
         return <div className={style.audioSelectionWrapper} ref="root" style={{height: this.timeToPx(this.props.player.duration)}}>
+            <img className={style.spectrogram} ref="spectrogram" style={{height: durationY}}/>
             <div className={style.audioSelection} ref="audioSelection"
                  style={{top: this.timeToPx(audioSelection.start), height: this.timeToPx(audioSelection.end - audioSelection.start)}}></div>
             <div className={style.currentTime} ref="currentTime"></div>
-            <img className={style.spectrogram} ref="spectrogram" style={{height: durationY}}/>
         </div>
     }
 }

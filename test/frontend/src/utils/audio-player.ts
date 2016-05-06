@@ -3,6 +3,42 @@ import {SoundLoader} from "sound-utils/SoundLoader";
 import {Play} from "sound-utils/Play";
 
 var audioContext = new AudioContext();
+
+class GradiendGenerator {
+    constructor(protected points:[number,number,number,number][]) {}
+
+    generate(len:number) {
+        const colorMap:number[] = [];
+        let pointIndex = 0;
+        for (var i = 0; i < len; i++) {
+            const currPercent = i / (len - 1);
+            if (currPercent > this.points[pointIndex + 1][0]) {
+                pointIndex++;
+            }
+            const prevPoint = this.points[pointIndex];
+            const nextPoint = this.points[pointIndex + 1];
+            const pointPercent = (currPercent - prevPoint[0]) / (nextPoint[0] - prevPoint[0]);
+            let red = Math.round(prevPoint[1] + pointPercent * (nextPoint[1] - prevPoint[1]));
+            let green = Math.round(prevPoint[2] + pointPercent * (nextPoint[2] - prevPoint[2]));
+            let blue = Math.round(prevPoint[3] + pointPercent * (nextPoint[3] - prevPoint[3]));
+            let color = (red << 16) + (green << 8) + blue;
+            colorMap.push(color);
+        }
+        return colorMap;
+    }
+}
+
+const colorSize = 10000;
+const gradient = new GradiendGenerator([
+    [0, 0, 0, 0],
+    [.15, 0, 0, 150],
+    [.25, 150, 50, 255],
+    [.5, 255, 100, 0],
+    [.75, 255, 255, 0],
+    [1, 255, 255, 255],
+]).generate(colorSize);
+
+
 export class AudioPlayer {
     currentTime:number = 0;
     duration:number = 0;
@@ -12,19 +48,26 @@ export class AudioPlayer {
     spectrogramData:Uint8ClampedArray[];
     audioBuffer:AudioBuffer;
 
-    loadSound(url: string) {
+    loadSound(url:string) {
         return new SoundLoader(audioContext).fromUrl(url).then(audioBuffer => {
             this.audioBuffer = audioBuffer;
             this.duration = audioBuffer.duration;
             this.player.setAudio(audioBuffer);
-            this.spectrogramData = this.process(audioBuffer, 64);
-            // this.spectrogram.process(audioBuffer);
+            const sampleRate = 4000;
+
+            const leftChannel = audioBuffer.getChannelData(0);
+            const step = audioBuffer.sampleRate / sampleRate;
+            const xLeftChannel = new Float32Array(leftChannel.length / step | 0);
+            for (var i = 0; i < leftChannel.length; i++) {
+                xLeftChannel[i / step | 0] += leftChannel[i] / step;
+            }
+            this.spectrogramData = this.process(xLeftChannel, 128);
             this.soundLoaded = true;
 
         });
     }
 
-    applySpectrogramToCanvas(canvas: HTMLCanvasElement) {
+    applySpectrogramToCanvas(canvas:HTMLCanvasElement) {
         const data = this.spectrogramData;
         const ctx = canvas.getContext('2d');
         var timeLen = data.length;
@@ -37,45 +80,33 @@ export class AudioPlayer {
         for (var i = 0; i < timeLen; i++) {
             var vals = data[i];
             for (var j = 0; j < valsLen; j++) {
-                var val = 255 - vals[j] * 5;
+                var val = Math.min(vals[j] * 700000 | 0, colorSize - 1); // max 300
+                if (j == 0) {
+                    val = 0;
+                }
                 var pos = (i * valsLen + valsLen - j) * 4;
-                imdd[pos] = 0;
-                imdd[pos + 1] = 0;
-                imdd[pos + 2] = 0;
-                imdd[pos + 3] = 255 - val;
+
+                const color = gradient[val];
+                imdd[pos] = color >> 16 & 0xFF;
+                imdd[pos + 1] = color >> 8 & 0xFF;
+                imdd[pos + 2] = color & 0xFF;
+                imdd[pos + 3] = 255;
             }
         }
         ctx.putImageData(imd, 0, 0);
         return imd;
     }
 
-    private process(audioBuffer:AudioBuffer, fftSize:number) {
+    private process(signal:Float32Array, fftSize:number) {
         const data:Uint8ClampedArray[] = [];
-        const koef = 30;
-        var bufferSize = fftSize;
-        var bufferDataSize = fftSize * koef;
-        var fft = new FFT(bufferSize, 0);
-        var signal:Float32Array = audioBuffer.getChannelData(0);
-        var bufferSignal = new Float32Array(bufferSize);
-        var k = 0;
-        while (signal.length > k + bufferDataSize) {
-            const bb = signal.subarray(k, k + bufferDataSize);
-            const kk = new Float32Array(bufferSize);
-            for (var i = 0; i < bb.length; i += koef) {
-                kk[i / koef | 0] = bb[i];
-            }
-            bufferSignal.set(kk);
-            k += bufferDataSize;
-            fft.forward(bufferSignal);
-            var spectrum = fft.spectrum;
-            var arr = new Uint8ClampedArray(spectrum.length);
-            for (var j = 0; j < spectrum.length; j++) {
-                // equalize, attenuates low freqs and boosts highs
-                //arr[j] = spectrum[j] * -1 * Math.log((bufferSize / 2 - j) * (0.5 / bufferSize / 2)) * bufferSize | 0;
-                arr[j] = spectrum[j] * 5000;
-            }
-            data.push(arr);
+        var fft = new FFT(fftSize, 0);
+        for (var i = 0; i < signal.length - fftSize + 1; i += fftSize) {
+            const bb = signal.subarray(i, i + fftSize);
+            fft.forward(bb);
+            data.push(fft.spectrum.slice());
         }
+        console.log(data);
+
         return data;
     }
 }
