@@ -2,13 +2,6 @@
     position: absolute;
     top: 0;
     left: 400px;
-    width: 50px;
-}
-
-canvas.spectrogram {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 50px;
+    width: 40px;
 }
 

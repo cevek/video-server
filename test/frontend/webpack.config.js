@@ -26,7 +26,7 @@ module.exports = {
                 test: /\.(woff|woff2|eot|ttf|svg)/,
                 loader: "url?limit=100000"
             },
-            {test: /\.css$/, loader: ExtractTextPlugin.extract("style-loader?sourceMap", "css-loader?sourceMap&modules&camelCase")}
+            {test: /\.css$/, loader: ExtractTextPlugin.extract("style-loader?sourceMap", "css-loader?sourceMap&modules&camelCase&localIdentName=[local]_[hash:base64:2]")}
         ]
     },
     resolve: {

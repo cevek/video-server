@@ -51,7 +51,7 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
                                        renderLines={renderLines}/>
                 </div> : null
             }
-            <Thumbs postModel={postModel} resizeKoef={resizeKoef}/>
+            <Thumbs postModel={postModel} model={null} resizeKoef={resizeKoef}/>
             {/*<Video postModel={postModel} resizeKoef={resizeKoef}/>*/}
             <Subtitles postModel={postModel} player={this.audioPlayer} resizeKoef={resizeKoef}
                        renderLines={renderLines}/>

@@ -17,7 +17,7 @@ export class AudioPlayer {
             this.audioBuffer = audioBuffer;
             this.duration = audioBuffer.duration;
             this.player.setAudio(audioBuffer);
-            this.spectrogramData = this.process(audioBuffer, 128);
+            this.spectrogramData = this.process(audioBuffer, 64);
             // this.spectrogram.process(audioBuffer);
             this.soundLoaded = true;
 
@@ -39,10 +39,10 @@ export class AudioPlayer {
             for (var j = 0; j < valsLen; j++) {
                 var val = 255 - vals[j] * 5;
                 var pos = (i * valsLen + valsLen - j) * 4;
-                imdd[pos + 0] = val;
-                imdd[pos + 1] = val;
-                imdd[pos + 2] = val;
-                imdd[pos + 3] = 255;
+                imdd[pos] = 0;
+                imdd[pos + 1] = 0;
+                imdd[pos + 2] = 0;
+                imdd[pos + 3] = 255 - val;
             }
         }
         ctx.putImageData(imd, 0, 0);

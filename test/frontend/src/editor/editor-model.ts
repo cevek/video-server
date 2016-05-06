@@ -23,6 +23,7 @@ export class EditorModel {
     @prop tags = '';
     @prop speakers:EditorSpeakerList;
     @prop textModel:EditorTextModel;
+    @prop cover = 0;
 
     historySetTitle = (data:EditorHistoryStringData, isRedo:boolean) => {
         this.title = isRedo ? data.newValue : data.oldValue

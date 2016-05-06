@@ -104,13 +104,20 @@ export class AudioSelection extends React.Component<{pxPerSec: number; player: A
         root.addEventListener('mousedown', e => this.selectStart(e));
         document.addEventListener('mousemove', e => this.selectMove(e));
         document.addEventListener('mouseup', e => this.selectEnd(e));
+
+        const spectrogram = this.refs['spectrogram'] as HTMLImageElement
+        const canvas = document.createElement('canvas');
+        this.props.player.applySpectrogramToCanvas(canvas);
+        spectrogram.src = canvas.toDataURL();
     }
 
     render() {
+        const durationY = this.timeToPx(this.props.player.duration);
         return <div className={style.audioSelectionWrapper} ref="root" style={{height: this.timeToPx(this.props.player.duration)}}>
             <div className={style.audioSelection} ref="audioSelection"
                  style={{top: this.timeToPx(audioSelection.start), height: this.timeToPx(audioSelection.end - audioSelection.start)}}></div>
             <div className={style.currentTime} ref="currentTime"></div>
+            <img className={style.spectrogram} ref="spectrogram" style={{height: durationY}}/>
         </div>
     }
 }

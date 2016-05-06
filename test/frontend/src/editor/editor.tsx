@@ -60,7 +60,7 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
                                        renderLines={renderLines}/>
                 </div> : null
             }
-            <Thumbs postModel={postModel} resizeKoef={this.model.resizeKoef}/>
+            <Thumbs postModel={postModel} model={this.model} resizeKoef={this.model.resizeKoef}/>
             <EditorToolbar model={this.model}/>
         </div>
     }

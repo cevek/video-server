@@ -53,7 +53,7 @@ export class EditorToolbarSpeaker extends React.Component<{model:EditorModel; ad
                 <div>
                     {speaker}
                     {this.props.addMode ?
-                        <button onClick={this.onEdit}><i className={`${i.fa} ${i.faPlug}`}/> Add</button>
+                        <button onClick={this.onEdit}><i className={`${i.fa} ${i.faPlus}`}/> Add</button>
                         :
                         <button onClick={this.onEdit} className={glob.iconButton}>
                             <i className={`${i.fa} ${i.faPencilSquareO}`}/>
