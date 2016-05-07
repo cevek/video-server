@@ -9,13 +9,7 @@ export enum AtomStatus {
     GETTER_NO_VAL = 2,
     GETTER = 3,
     DESTROYED = -1,
-}
-
-export enum AtomAffectStatus{
-    NEEDCALC = 1,
-    CALC = 5,
-    NEEDNOT_CALC = 10,
-    WAIT_PARENT_CALC = 30,
+    CALCULATING = 10,
 }
 
 export enum TaskType {
@@ -30,7 +24,7 @@ export interface IDMap<T> {
 
 interface Shared extends Array<Atom | number> {
     len:number;
-    lastModifyTaskId:number;
+    counter:number;
 }
 
 export class TaskList {
@@ -45,7 +39,21 @@ export class TaskList {
         for (var i = this.donePos; i < this.pos; i += 3) {
             const pos = i % this.size;
             const type:TaskType = this.queue[pos];
-            items.push({type: type, atom: this.queue[pos + 1], slave: this.queue[pos + 2]});
+            items.push({
+                type: type,
+                atom: this.queue[pos + 1],
+                atomName: this.queue[pos + 1].field,
+                slave: this.queue[pos + 2]
+            });
+        }
+        return items;
+    }
+
+    get namedList() {
+        const items:string[] = [];
+        for (var i = this.donePos; i < this.pos; i += 3) {
+            const pos = i % this.size;
+            items.push(this.queue[pos + 1].field);
         }
         return items;
     }
@@ -90,7 +98,7 @@ export class Atom {
     protected field:string;
     protected value:any;
     protected owner:any;
-    protected lastModifyTaskId:number;
+    protected counter:number;
     protected calcFn:()=>void;
     protected static activeSlave:Atom = null;
     protected static atomId = 0;
@@ -111,6 +119,7 @@ export class Atom {
         this.value = value;
         this.field = field;
         this.slaves = null;
+        this.counter = 0;
         this.status = AtomStatus.PROP;
         return this;
     }
@@ -122,7 +131,7 @@ export class Atom {
         this.calcFn = calcFn;
         this.owner = owner;
         this.masters = [];
-        this.lastModifyTaskId = null;
+        this.counter = 0;
         this.status = AtomStatus.GETTER_NO_VAL;
         return this;
     }
@@ -148,7 +157,7 @@ export class Atom {
             var len = activeSlaveMasters.length;
             var shared = Atom.shared;
             // if find self in activeSlave masters exit
-            var k = shared.lastModifyTaskId;
+            var k = shared.counter;
             for (var i = 0; i < len; i++) {
                 if (activeSlaveMasters[i] === this) {
                     shared[i] = k;
@@ -172,7 +181,7 @@ export class Atom {
         this.checkForDestroy();
         if (this.value !== value) {
             this.value = value;
-            this.change();
+            Atom.scheduledTasks.addTask(TaskType.CHANGE, this);
         }
     }
 
@@ -240,12 +249,12 @@ export class Atom {
 
     protected static getShared() {
         const a = [] as Shared;
-        a.lastModifyTaskId = 0;
+        a.counter = 0;
         a.len = 0;
         return a;
     }
 
-    protected static lastModifyTaskId = 0;
+    protected static counter = 0;
 
     protected calc() {
         const oldActiveSlave = Atom.activeSlave;
@@ -253,7 +262,7 @@ export class Atom {
         var prevShared = Atom.shared;
         Atom.shared = Atom.sharedCachePos === -1 ? Atom.getShared() : Atom.sharedCache[Atom.sharedCachePos--];
         Atom.shared.len = this.masters.length;
-        this.lastModifyTaskId = Atom.shared.lastModifyTaskId = Atom.lastModifyTaskId++;
+        this.counter = Atom.shared.counter = ++Atom.counter;
         const oldValue = this.value;
         this.value = this.calcFn.call(this.owner);
         Atom.scheduledTasks.addTask(TaskType.MODIFY, this, Atom.shared);
@@ -266,10 +275,10 @@ export class Atom {
     }
 
     protected applyModify(shared:Shared) {
-        if (this.lastModifyTaskId !== shared.lastModifyTaskId) {
+        if (this.counter !== shared.counter) {
             return;
         }
-        var k = shared.lastModifyTaskId;
+        var k = shared.counter;
         const masters = this.masters;
         const len = masters.length;
 
@@ -335,67 +344,46 @@ export class Atom {
         }
     }
 
-
-    protected affect(affectAtoms:IDMap<AtomAffectStatus>) {
-        affectAtoms[this.id] = 1;
-
-        var slaves = this.slaves;
-        if (slaves) {
-            for (var i = 0, len = slaves.length; i < len; i++) {
-                slaves[i].affect(affectAtoms);
+    protected affect(transactionId:number) {
+        if (this.counter !== transactionId) {
+            this.counter = transactionId;
+            if (this.status == AtomStatus.GETTER) {
+                this.status = AtomStatus.CALCULATING;
+            }
+            var slaves = this.slaves;
+            if (slaves) {
+                for (var i = 0, len = slaves.length; i < len; i++) {
+                    slaves[i].affect(transactionId);
+                }
             }
         }
     }
 
-    protected needToRecalc(affectAtoms:IDMap<AtomAffectStatus>) {
-        if (this.status == AtomStatus.DESTROYED) {
-            return AtomAffectStatus.NEEDNOT_CALC;
-        }
-        let status = AtomAffectStatus.NEEDNOT_CALC;
-        var masters = this.masters;
-        if (masters) {
-            for (var i = 0, len = masters.length; i < len; i++) {
-                const master = masters[i]
-                const masterAffectStatus = affectAtoms[master.id];
-                if (masterAffectStatus === AtomAffectStatus.NEEDCALC) {
-                    return AtomAffectStatus.WAIT_PARENT_CALC;
-                }
-                if (masterAffectStatus === AtomAffectStatus.CALC) {
-                    status = AtomAffectStatus.CALC;
+    protected update(transactionId:number) {
+        const masters = this.masters;
+        if (masters && masters.length > 1) {
+            for (let i = 0, len = masters.length; i < len; i++) {
+                const master = masters[i];
+                if (master.counter === transactionId && master.status === AtomStatus.CALCULATING) {
+                    return;
                 }
             }
         }
-        return status;
-    }
-
-    protected update(topLevel:boolean, affectAtoms:IDMap<AtomAffectStatus>) {
-        if (affectAtoms[this.id] === AtomAffectStatus.CALC) {
-            return;
+        if (Atom.debugAtoms && (Atom.debugAtoms[this.field] || Atom.debugAtoms[this.id])) {
+            Atom.debug();
         }
-        const status = topLevel ? AtomAffectStatus.CALC : this.needToRecalc(affectAtoms);
-        if (status === AtomAffectStatus.WAIT_PARENT_CALC) {
-            return;
+        if (this.status == AtomStatus.GETTER) {
+            throw new Error('Atom yet calculated');
         }
-        if (status === AtomAffectStatus.CALC && this.status === AtomStatus.GETTER) {
+        if (this.status === AtomStatus.CALCULATING) {
             this.calc();
+            this.status = AtomStatus.GETTER;
         }
-        affectAtoms[this.id] = status;
-        if (this.slaves) {
-            for (var i = 0; i < this.slaves.length; i++) {
-                this.slaves[i].update(false, affectAtoms);
+        const slaves = this.slaves;
+        if (slaves) {
+            for (let i = 0; i < slaves.length; i++) {
+                slaves[i].update(transactionId);
             }
-        }
-    }
-
-    protected static batchUpdate(changeAtoms:Atom[]) {
-        // Atom.affectAtoms = {};
-        const affectAtoms:IDMap<AtomAffectStatus> = {}
-
-        for (var i = 0; i < changeAtoms.length; i++) {
-            changeAtoms[i].affect(affectAtoms);
-        }
-        for (var i = 0; i < changeAtoms.length; i++) {
-            changeAtoms[i].update(true, affectAtoms);
         }
     }
 
@@ -403,9 +391,9 @@ export class Atom {
 
     static updateScheduled() {
         // console.log("start schedule runner");
-        let changeAtoms:Atom[];
-        let prevType:TaskType;
-
+        let prevType:TaskType = null;
+        let transactionId = -1;
+        let transactionStartPos = -1;
 
         const sc = Atom.scheduledTasks;
         if (sc.pos - sc.donePos > sc.size) {
@@ -416,21 +404,20 @@ export class Atom {
             const type:TaskType = sc.queue[pos];
             const atom:Atom = sc.queue[pos + 1];
             const param = type == TaskType.MODIFY ? sc.queue[pos + 2] : null;
-            const isLast = i == sc.pos - 3;
 
             if (type == TaskType.CHANGE) {
-                if (!changeAtoms) {
-                    changeAtoms = [];
+                if (transactionId === -1) {
+                    transactionId = ++Atom.counter;
+                    transactionStartPos = i;
                 }
-                changeAtoms.push(atom);
-                if (isLast) {
-                    Atom.batchUpdate(changeAtoms);
-                    changeAtoms = [];
-                }
+                atom.affect(transactionId);
             }
             else if (prevType == TaskType.CHANGE) {
-                Atom.batchUpdate(changeAtoms);
-                changeAtoms = null;
+                for (let j = transactionStartPos; j < i; j += 3) {
+                    const atom = sc.queue[j % sc.size + 1];
+                    atom.update(transactionId);
+                }
+                transactionId = -1;
             }
             if (type == TaskType.MODIFY) {
                 atom.applyModify(param);
@@ -441,8 +428,16 @@ export class Atom {
             prevType = type;
             sc.donePos += 3;
         }
+        if (transactionId > -1) {
+            for (let j = transactionStartPos; j < i; j += 3) {
+                const atom = sc.queue[j % sc.size + 1];
+                atom.update(transactionId);
+            }
+        }
+
         sc.asyncRunned = false;
     }
+
 }
 
 (window as any).AtomGlob = Atom;
@@ -540,170 +535,170 @@ export class Atom {
 /*
 
 
-class Model {
-    static find(exp:Expression) {
-        return this;
-    }
+ class Model {
+ static find(exp:Expression) {
+ return this;
+ }
 
-    static findAll(exp:Expression) {
-        return this;
-    }
+ static findAll(exp:Expression) {
+ return this;
+ }
 
-    static include(model:typeof Model) {
-        return this;
-    }
-}
-
-
-class Expression {
-
-}
-
-class Prop<T> extends Expression {
-    eq(val:T | Prop<T>):this {
-        return this;
-    }
-
-    gt(val:T | Prop<T>):this {
-        return this;
-    }
-
-    lt(val:T | Prop<T>):this {
-        return this;
-    }
-
-    in(val:(T | Prop<T>)[]):this {
-        return this;
-    }
-
-    isNull():this {
-        return this;
-    }
-
-    isNotNull():this {
-        return this;
-    }
-}
-
-class HasOne<T> extends Prop<T> {
-    constructor(model:typeof Model) {
-        super();
-    }
-}
-class HasMany<T> extends Prop<T> {
-    constructor(model:typeof Model) {
-        super();
-    }
-}
-
-function $and(...exp:Expression[]):Expression {
-    return null;
-}
-function $or(...exp:Expression[]):Expression {
-    return null;
-}
-function $sql(...exp:Expression[]):typeof Model {
-    return null;
-}
-
-function leftJoin(aModel:typeof Model, bModel:typeof Model, on:Expression):Expression {
-    return null;
-}
+ static include(model:typeof Model) {
+ return this;
+ }
+ }
 
 
-class User extends Model {
-    static id = new Prop<number>();
-    static name = new Prop<number>();
-    static isBot = new Prop<boolean>();
-    static points = new Prop<number>();
-}
-class Contest extends Model {
-    static id = new Prop<number>();
-    static createdAt = new Prop<Date>();
-    static endedAt = new Prop<Date>();
-}
-class ContestLineup extends Model {
-    static id = new Prop<number>();
-    static contestId = new HasOne<number>(Contest);
-    static lineupId = new HasOne<number>(Lineup);
-}
-class Lineup extends Model {
-    static userId = new HasOne<number>(User);
-}
-class Game extends Model {
-    static id = new Prop<number>();
-    static name = new Prop<number>();
-}
-class UserGame extends Model {
-    static id = new Prop<number>();
-    static userId = new HasMany<number>(User);
-    static gameId = new HasMany<number>(Game);
-}
+ class Expression {
 
-class Account extends Model {
-    static userId = new HasOne<number>(User);
-    static balance = new Prop<number>();
-}
+ }
 
+ class Prop<T> extends Expression {
+ eq(val:T | Prop<T>):this {
+ return this;
+ }
 
-const u = User;
-const a = Account;
+ gt(val:T | Prop<T>):this {
+ return this;
+ }
 
-interface iXXX {
-    id?:number;
-    hello:string;
-    name:string;
-    isBot:boolean;
-}
+ lt(val:T | Prop<T>):this {
+ return this;
+ }
 
-let jprop:any;
-let json:any;
+ in(val:(T | Prop<T>)[]):this {
+ return this;
+ }
 
-class FModel<T> {
-    json:T;
+ isNull():this {
+ return this;
+ }
 
-    constructor(json?:T) {
-        this.json = json;
-    }
-}
+ isNotNull():this {
+ return this;
+ }
+ }
 
-class XXX extends FModel<iXXX> implements iXXX {
-    @json id:number;
-    @json hello:string;
-    @json name:string;
-    @json isBot:boolean;
+ class HasOne<T> extends Prop<T> {
+ constructor(model:typeof Model) {
+ super();
+ }
+ }
+ class HasMany<T> extends Prop<T> {
+ constructor(model:typeof Model) {
+ super();
+ }
+ }
 
-    static fetch(json:iXXX) {
-        new XXX(json);
-    }
-}
+ function $and(...exp:Expression[]):Expression {
+ return null;
+ }
+ function $or(...exp:Expression[]):Expression {
+ return null;
+ }
+ function $sql(...exp:Expression[]):typeof Model {
+ return null;
+ }
 
-interface iBBB extends iXXX {
-    fix:number;
-}
-class BBB extends XXX implements iBBB {
-    fix:number;
-
-    static fetch(json:iBBB) {
-        new BBB(json);
-    }
-}
+ function leftJoin(aModel:typeof Model, bModel:typeof Model, on:Expression):Expression {
+ return null;
+ }
 
 
-Contest.findAll([
-    Contest.createdAt.gt(new Date),
-    Contest.endedAt.isNull(),
-])
-Contest.findAll({
-    include: ContestLineup,
-    where: [
-        User.isBot.eq(true),
-    ],
-})
+ class User extends Model {
+ static id = new Prop<number>();
+ static name = new Prop<number>();
+ static isBot = new Prop<boolean>();
+ static points = new Prop<number>();
+ }
+ class Contest extends Model {
+ static id = new Prop<number>();
+ static createdAt = new Prop<Date>();
+ static endedAt = new Prop<Date>();
+ }
+ class ContestLineup extends Model {
+ static id = new Prop<number>();
+ static contestId = new HasOne<number>(Contest);
+ static lineupId = new HasOne<number>(Lineup);
+ }
+ class Lineup extends Model {
+ static userId = new HasOne<number>(User);
+ }
+ class Game extends Model {
+ static id = new Prop<number>();
+ static name = new Prop<number>();
+ }
+ class UserGame extends Model {
+ static id = new Prop<number>();
+ static userId = new HasMany<number>(User);
+ static gameId = new HasMany<number>(Game);
+ }
+
+ class Account extends Model {
+ static userId = new HasOne<number>(User);
+ static balance = new Prop<number>();
+ }
 
 
-$sql(leftJoin(User, Account, $and(a.userId.eq(u.id), a.balance.gt(0)))
-    .include(Account)
-    .findAll($and(u.name.eq(123), u.name.eq(123), u.points.gt(123))))
+ const u = User;
+ const a = Account;
 
-*/
+ interface iXXX {
+ id?:number;
+ hello:string;
+ name:string;
+ isBot:boolean;
+ }
+
+ let jprop:any;
+ let json:any;
+
+ class FModel<T> {
+ json:T;
+
+ constructor(json?:T) {
+ this.json = json;
+ }
+ }
+
+ class XXX extends FModel<iXXX> implements iXXX {
+ @json id:number;
+ @json hello:string;
+ @json name:string;
+ @json isBot:boolean;
+
+ static fetch(json:iXXX) {
+ new XXX(json);
+ }
+ }
+
+ interface iBBB extends iXXX {
+ fix:number;
+ }
+ class BBB extends XXX implements iBBB {
+ fix:number;
+
+ static fetch(json:iBBB) {
+ new BBB(json);
+ }
+ }
+
+
+ Contest.findAll([
+ Contest.createdAt.gt(new Date),
+ Contest.endedAt.isNull(),
+ ])
+ Contest.findAll({
+ include: ContestLineup,
+ where: [
+ User.isBot.eq(true),
+ ],
+ })
+
+
+ $sql(leftJoin(User, Account, $and(a.userId.eq(u.id), a.balance.gt(0)))
+ .include(Account)
+ .findAll($and(u.name.eq(123), u.name.eq(123), u.points.gt(123))))
+
+ */

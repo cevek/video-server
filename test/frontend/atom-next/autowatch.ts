@@ -8,21 +8,27 @@ class ComponentAtom extends Atom {
         this.cmp = cmp;
     }
 
-    protected update(topLevel:boolean, affectAtoms:IDMap<AtomAffectStatus>) {
-        if (affectAtoms[this.id] === AtomAffectStatus.CALC) {
-            return;
+    protected update(transactionId: number) {
+        const masters = this.masters;
+        if (masters && masters.length > 1) {
+            for (let i = 0, len = masters.length; i < len; i++) {
+                const master = masters[i] as ComponentAtom;
+                if (master.counter === transactionId && master.status === AtomStatus.CALCULATING) {
+                    return;
+                }
+            }
         }
-        const status = topLevel ? AtomAffectStatus.CALC : this.needToRecalc(affectAtoms);
-        if (status === AtomAffectStatus.WAIT_PARENT_CALC) {
-            return;
-        }
+
+        console.info("Update", this.cmp.constructor.name);
+
+
         if (Atom.debugAtoms && (Atom.debugAtoms[this.field] || Atom.debugAtoms[this.id])) {
             Atom.debug();
         }
-        if (status === AtomAffectStatus.CALC && this.status === AtomStatus.GETTER) {
+        if (this.status === AtomStatus.CALCULATING) {
             this.cmp.forceUpdate();
+            this.status = AtomStatus.GETTER;
         }
-        affectAtoms[this.id] = status;
     }
 }
 
