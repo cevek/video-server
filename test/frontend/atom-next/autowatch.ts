@@ -19,7 +19,7 @@ class ComponentAtom extends Atom {
             }
         }
 
-        console.info("Update", this.cmp.constructor.name);
+        // console.info("Update", this.cmp.constructor.name);
 
 
         if (Atom.debugAtoms && (Atom.debugAtoms[this.field] || Atom.debugAtoms[this.id])) {
