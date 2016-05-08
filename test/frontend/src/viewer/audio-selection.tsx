@@ -1,20 +1,12 @@
 import * as React from "react";
 import {AudioPlayer} from "../utils/audio-player";
 import * as style from "./audio-selection.css";
+import {autowatch} from "../../atom-next/autowatch";
+import {prop} from "../../atom-next/prop";
+import {AudioSelectionData} from "../audio-selection-model";
 
-export class AudioSelectionData {
-    start = 0;
-    end = 0;
-}
-
-var audioSelection = new AudioSelectionData();
-function setAudioSelection(start:number, end:number) {
-    audioSelection.start = start;
-    audioSelection.end = end;
-}
-
-
-export class AudioSelection extends React.Component<{pxPerSec: number; player: AudioPlayer},{}> {
+@autowatch
+export class AudioSelection extends React.Component<{audioSelectionModel: AudioSelectionData; pxPerSec: number; player: AudioPlayer},{}> {
     selecting = false;
     currentTime:HTMLElement;
     el:HTMLElement;
@@ -33,15 +25,18 @@ export class AudioSelection extends React.Component<{pxPerSec: number; player: A
     }
 
     setAudioSelection() {
+        const audioSelection = this.props.audioSelectionModel;
+
         const startTime = this.pxToTime(this.startY);
         const endTime = this.pxToTime(this.endY);
         if (endTime <= startTime) {
-            setAudioSelection(endTime, startTime);
+            audioSelection.start = endTime;
+            audioSelection.end = startTime;
         }
         else {
-            setAudioSelection(startTime, endTime);
+            audioSelection.start = startTime;
+            audioSelection.end = endTime;
         }
-        this.forceUpdate();
     }
 
     selectStart(e:MouseEvent) {
@@ -64,35 +59,16 @@ export class AudioSelection extends React.Component<{pxPerSec: number; player: A
         if (this.selecting) {
             this.selecting = false;
             this.play();
-            this.forceUpdate();
         }
     }
 
     play() {
-        this.startCurrentTime();
-        this.props.player.player.play(audioSelection.start, audioSelection.end - audioSelection.start);
-        console.log('play', audioSelection.start, audioSelection.end - audioSelection.start);
-
+        const audioSelection = this.props.audioSelectionModel;
+        this.props.player.play(audioSelection.start, audioSelection.end - audioSelection.start);
     }
 
     stop() {
-        this.stopCurrentTime();
-        this.props.player.player.stop();
-    }
-
-    startCurrentTime() {
-        var dur = (audioSelection.end - audioSelection.start);
-        this.currentTime.style.transition = '';
-        this.currentTime.style.transform = `translateY(${this.timeToPx(audioSelection.start)}px)`;
-        //noinspection BadExpressionStatementJS
-        this.currentTime.offsetHeight; //force reflow
-        this.currentTime.style.transition = 'all linear';
-        this.currentTime.style.transform = `translateY(${this.timeToPx(audioSelection.end)}px)`;
-        this.currentTime.style.transitionDuration = dur / this.audioRate + 's';
-    }
-
-    stopCurrentTime() {
-        this.currentTime.style.transition = '';
+        this.props.player.stop();
     }
 
     componentDidMount() {
@@ -113,12 +89,14 @@ export class AudioSelection extends React.Component<{pxPerSec: number; player: A
     }
 
     render() {
+        const audioSelection = this.props.audioSelectionModel;
         const durationY = this.timeToPx(this.props.player.duration);
+        const currentTimePx = this.timeToPx(this.props.player.currentTime);
         return <div className={style.audioSelectionWrapper} ref="root" style={{height: this.timeToPx(this.props.player.duration)}}>
             <div className={style.audioSelection} ref="audioSelection"
                  style={{top: this.timeToPx(audioSelection.start), height: this.timeToPx(audioSelection.end - audioSelection.start)}}></div>
             <img className={style.spectrogram} ref="spectrogram" style={{height: durationY}}/>
-            <div className={style.currentTime} ref="currentTime"></div>
+            <div className={style.currentTime} style={{transform: `translateY(${currentTimePx}px)`}} ref="currentTime"></div>
         </div>
     }
 }

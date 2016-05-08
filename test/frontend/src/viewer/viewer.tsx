@@ -44,9 +44,10 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
             </div>
             {this.audioPlayer.soundLoaded ?
                 <div>
-                    <Timeline resizeKoef={resizeKoef} player={this.audioPlayer}/>
+                    <Timeline audioSelectionModel={null} resizeKoef={resizeKoef} player={this.audioPlayer}/>
                     <TimelineConnector lines={postModel.lines} lineH={lineH} resizeKoef={resizeKoef}
                                        player={this.audioPlayer}
+                                       audioSelectionModel={null}
                                        history={this.history}
                                        renderLines={renderLines}/>
                 </div> : null

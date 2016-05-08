@@ -12,32 +12,6 @@ import {autowatch} from "../../atom-next/autowatch";
 import {Escape} from "../escape";
 import {Form, TextInput, FormField} from "../form";
 
-class User {
-    @prop firstName:string;
-    @prop lastName:string;
-
-    @prop get fullName() {
-        return this.firstName + ' ' + this.lastName;
-    }
-}
-const user = new User();
-user.firstName = "John";
-user.lastName = "Miller";
-
-
-(window as any).user = user;
-@autowatch
-class Cmp {
-    render() {
-        console.log(user.fullName);
-    }
-
-    forceUpdate() {
-        this.render();
-    }
-}
-
-new Cmp().render();
 
 @autowatch
 export class EditorText extends React.Component<{model:EditorModel; renderLines:number[];}, {}> {

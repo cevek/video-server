@@ -6,6 +6,8 @@ import {EditorHistory, EditorHistoryData} from "../utils/history";
 import {Line} from "../models/line";
 import {Lang} from "../../../interfaces/lang";
 import * as style from "./timeline-connector.css";
+import {autowatch} from "../../atom-next/autowatch";
+import {AudioSelectionData} from "../audio-selection-model";
 
 
 export class HistoryTimeline extends EditorHistoryData<HistoryTimeline> {
@@ -26,17 +28,21 @@ interface TimelineConnectorProps {
     lineH:number;
     renderLines:number[];
     history:EditorHistory;
+    audioSelectionModel: AudioSelectionData;
 }
+
+@autowatch
 export class TimelineConnector extends React.Component<TimelineConnectorProps, {}> {
     timeToY(time:number) {
         return time * 100 / this.props.resizeKoef;
     }
 
     playTextLine(textLine:ITextLine) {
-        //todo: audioselection
-        this.props.player.player.play(textLine.start / 100, textLine.dur / 100, false, ()=> {
-            // console.log("EEEEnd");
-        });
+        const start = textLine.start / 100;
+        const dur = textLine.dur / 100;
+        this.props.player.play(start, dur);
+        this.props.audioSelectionModel.start = start;
+        this.props.audioSelectionModel.end = start + dur;
     }
 
     activeLine = -1;
@@ -85,7 +91,6 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
                 } else {
                     textLine.dur = this.activeLineDur - diff > minH ? this.activeLineDur - diff : minH;
                 }
-                this.forceUpdate();
             }
         })
         document.addEventListener("mouseup", e => {
@@ -105,7 +110,6 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
                     }));
                 }
                 this.activeLine = -1;
-                this.forceUpdate();
             }
         })
     }

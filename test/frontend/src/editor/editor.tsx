@@ -30,9 +30,7 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
         var data = this.model.postModel.data;
         const enAudio = data.mediaFiles[data.post.enAudio];
         const url = config.baseUrl + '/' + enAudio.url;
-        this.audioPlayer.loadSound(url).then(() => {
-            this.forceUpdate();
-        })
+        this.audioPlayer.loadSound(url);
     }
 
     render() {
@@ -53,9 +51,10 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
             </div>
             {this.audioPlayer.soundLoaded ?
                 <div>
-                    <Timeline resizeKoef={this.model.resizeKoef} player={this.audioPlayer}/>
+                    <Timeline resizeKoef={this.model.resizeKoef} audioSelectionModel={this.model.audioSelection} player={this.audioPlayer}/>
                     <TimelineConnector lines={this.model.lines} lineH={this.model.lineH} resizeKoef={this.model.resizeKoef}
                                        player={this.audioPlayer}
+                                       audioSelectionModel={this.model.audioSelection}
                                        history={this.model.history}
                                        renderLines={renderLines}/>
                 </div> : null

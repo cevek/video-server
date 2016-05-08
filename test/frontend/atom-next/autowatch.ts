@@ -1,4 +1,4 @@
-import {Atom, TaskType, IDMap, AtomAffectStatus, AtomStatus} from "./index";
+import {Atom, AtomStatus} from "./index";
 class ComponentAtom extends Atom {
     protected cmp:any;
 

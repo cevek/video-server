@@ -28,7 +28,7 @@ export class Subtitles extends React.Component<{postModel: PostModel; player: Au
     componentDidMount(){
         setInterval(()=> {
             let playingLine = -1;
-            if (this.props.player.player.getState() == PlayingStatus.PLAYING) {
+            if (this.props.player.state == PlayingStatus.PLAYING) {
                 for (var i = 0; i < this.props.postModel.lines.length; i++) {
                     var line = this.props.postModel.lines[i];
                     if (this.isSelected(line.en)){
@@ -46,7 +46,7 @@ export class Subtitles extends React.Component<{postModel: PostModel; player: Au
     playingLine = -1;
 
     isSelected(textLine:ITextLine) {
-        const currentTime = this.props.player.player.getCurrentTime();
+        const currentTime = this.props.player.currentTime;
         return ((textLine.start) / 100) <= currentTime && currentTime <= (textLine.start + textLine.dur) / 100
     }
 

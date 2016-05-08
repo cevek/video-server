@@ -1,6 +1,7 @@
 import {FFT} from "sound-utils/FFT";
 import {SoundLoader} from "sound-utils/SoundLoader";
-import {Play} from "sound-utils/Play";
+import {Play, PlayingStatus} from "sound-utils/Play";
+import {prop} from "../../atom-next/prop";
 
 var audioContext = new AudioContext();
 
@@ -41,10 +42,35 @@ const gradient = new GradiendGenerator([
 
 
 export class AudioPlayer {
-    currentTime:number = 0;
-    duration:number = 0;
-    player = new Play(audioContext);
-    soundLoaded = false;
+    @prop currentTime:number = 0;
+    @prop duration:number = 0;
+    @prop soundLoaded = false;
+    @prop state = PlayingStatus.STOPPING;
+
+    protected player = new Play(audioContext);
+
+    protected onInterval = () => {
+        this.currentTime = this.player.getCurrentTime();
+        this.state = this.player.getState();
+        if (this.state == PlayingStatus.PLAYING) {
+            setTimeout(this.onInterval);
+        }
+    }
+
+    protected interval:number;
+
+    play(start: number, dur: number){
+        if (dur > 0) {
+            this.player.play(start, dur, false);
+            clearTimeout(this.interval);
+            this.interval = setTimeout(this.onInterval);
+            this.state = this.player.getState();
+        }
+    }
+
+    stop(){
+        this.player.stop();
+    }
 
     spectrogramData:Uint8ClampedArray[];
     audioBuffer:AudioBuffer;
@@ -64,7 +90,6 @@ export class AudioPlayer {
             }
             this.spectrogramData = this.process(xLeftChannel, 128);
             this.soundLoaded = true;
-
         });
     }
 
@@ -106,8 +131,6 @@ export class AudioPlayer {
             fft.forward(bb);
             data.push(fft.spectrum.slice());
         }
-        console.log(data);
-
         return data;
     }
 }

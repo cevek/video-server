@@ -6,6 +6,7 @@ import {ITextLine} from "../../../interfaces/text-line";
 import {EditorTextModel} from "./editor-text-model";
 import {EditorSpeakerList} from "./editor-speakerlist-model";
 import {prop} from "../../atom-next/prop";
+import {AudioSelectionData} from "../audio-selection-model";
 
 const historyTitle = 'title';
 const historyTags = 'tags';
@@ -24,6 +25,7 @@ export class EditorModel {
     @prop speakers:EditorSpeakerList;
     @prop textModel:EditorTextModel;
     @prop cover = 0;
+    audioSelection = new AudioSelectionData();
 
     historySetTitle = (data:EditorHistoryStringData, isRedo:boolean) => {
         this.title = isRedo ? data.newValue : data.oldValue
