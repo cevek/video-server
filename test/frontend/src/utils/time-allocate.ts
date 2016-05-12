@@ -18,6 +18,13 @@ export class LineAllocator {
     private render:number[];
 
     constructor(private positions:number[], private lineHeight:number) {
+        for (let i = 1; i < positions.length; i++) {
+            const val = positions[i];
+            const prev = positions[i - 1];
+            if (val <= prev) {
+                positions[i] = prev;
+            }
+        }
     }
 
     private moveGroup(start:number, end:number, moveSize:number) {
@@ -43,6 +50,9 @@ export class LineAllocator {
         const groupEndPos = startPos;
         for (let i = startPos - 1; i >= 0; i--) {
             const y = this.positions[i];
+            if (debug) {
+                console.log('fitToUp iter', i, y);
+            }
             const renderY = this.render[i];
             const bottomSpaceSize = (lastRenderY - renderY) - this.lineHeight;
             // we have a space
@@ -71,7 +81,7 @@ export class LineAllocator {
                 }
 
                 if (isNeedSpaceFit) {
-                    if (Math.abs(groupWeight) > 1) {
+                    if (Math.abs(groupWeight) > 50) {
                         console.error('break', {groupWeight});
                     }
                     if (debug) {
@@ -115,3 +125,4 @@ export class LineAllocator {
     }
 
 }
+

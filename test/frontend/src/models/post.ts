@@ -16,7 +16,7 @@ export class PostModel {
         const shiftRuSubs = data.mediaFiles[data.post.ruSub].shiftTime * 100;
         const shiftEnAudio = data.mediaFiles[data.post.enAudio].shiftTime * 100;
         const shiftRuAudio = data.mediaFiles[data.post.ruAudio].shiftTime * 100;
-        return data.lines.filter(line => Boolean(data.textLines[line.en])).map(line => {
+        return data.lines.map(line => {
             const en = data.textLines[line.en];
             const ru = data.textLines[line.ru];
             if (en) {

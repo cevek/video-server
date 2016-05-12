@@ -127,7 +127,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
         return <svg className={style.timelineConnector} width={svgWidth} height={svgHeight}>
             {this.props.renderLines.map((pos, i) => {
                 const textLine = this.props.lines[i].en;
-                if (textLine) {
+                if (textLine.start != null) {
                     const tl = textLine.start / resizeKoef;
                     const bl = (textLine.start + textLine.dur) / resizeKoef;
                     const tr = pos - halfLineH;

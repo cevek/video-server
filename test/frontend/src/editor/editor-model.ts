@@ -57,8 +57,8 @@ export class EditorModel {
         this.postModel = postModel;
         this.lines = this.postModel.lines.map(line =>
             new EditorLine(
-                new EditorTextLine(Lang.EN, line.en.start, line.en.dur, line.en ? line.en.text.split(/\s+/).map(w => new EditorWord(w)) : []),
-                new EditorTextLine(Lang.RU, line.ru.start, line.ru.dur, line.ru ? line.ru.text.split(/\s+/).map(w => new EditorWord(w)) : [])
+                new EditorTextLine(Lang.EN, line.en ? line.en.start : null, line.en ? line.en.dur : null, line.en ? line.en.text.split(/\s+/).map(w => new EditorWord(w)) : []),
+                new EditorTextLine(Lang.RU, line.ru ? line.ru.start : null, line.ru ? line.ru.dur : null, line.ru ? line.ru.text.split(/\s+/).map(w => new EditorWord(w)) : [])
             ))
         this.textModel = new EditorTextModel(this);
         this.speakers = new EditorSpeakerList(this);
