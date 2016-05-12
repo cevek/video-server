@@ -8,6 +8,8 @@ import {Lang} from "../../../interfaces/lang";
 import * as style from "./timeline-connector.css";
 import {autowatch} from "../../atom-next/autowatch";
 import {AudioSelectionData} from "../audio-selection-model";
+import {classes} from "../utils/cl";
+import {prop} from "../../atom-next/prop";
 
 
 export class HistoryTimeline extends EditorHistoryData<HistoryTimeline> {
@@ -45,10 +47,10 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
         this.props.audioSelectionModel.end = start + dur;
     }
 
-    activeLine = -1;
-    activeLineStart = 0;
-    activeLineDur = 0;
-    activeIsTop = false;
+    @prop activeLine = -1;
+    @prop activeLineStart = 0;
+    @prop activeLineDur = 0;
+    @prop activeIsTop = false;
     y = 0;
 
     moveResizeKoef = 1 / 2;
@@ -131,7 +133,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
                     const tr = pos - halfLineH;
                     const br = pos + halfLineH;
                     const color = 'hsla(' + (textLine.start) + ', 50%,60%, 1)';
-                    return <g key={i} className={i == this.activeLine ? style.resizing : ''}>
+                    return <g key={i} className={classes(style.resizing, i == this.activeLine)}>
                         <path onClick={()=>this.playTextLine(textLine)} fill={color}
                               d={svgPathGenerator(tl, bl, tr, br, connectorWidth)}/>
                         <rect onMouseDown={(e:any)=>this.onMouseDown(e, i, true)} className={style.top} y={tl}/>
