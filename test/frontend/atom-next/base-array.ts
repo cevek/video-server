@@ -1,9 +1,42 @@
-import {Atom} from "./index";
-import {prop} from "./prop";
+import {Atom, AtomStatus, TaskType, Shared} from "./index";
+import {prop, getAtomFieldName} from "./prop";
+class BaseArrayServiceAtom extends Atom {
+    constructor(owner: BaseArray<{}>){
+        super();
+        this.getter('index.array.service', owner, this.nothing);
+        this.status = AtomStatus.GETTER;
+    }
+
+    protected nothing(){
+
+    }
+
+    protected updateCalc() {
+        console.log("UpdateCalc");
+
+        this.clearMasters();
+        this.owner.clearIndex();
+        return true;
+    }
+
+    addMaster(atom:BaseArrayServiceAtom) {
+        if (!this.masters) {
+            this.masters = [];
+        }
+        if (!atom.slaves) {
+            atom.slaves = [];
+        }
+        this.masters.push(atom);
+        atom.slaves.push(this);
+    }
+}
+
 export class BaseArray<T> {
+    protected indexAtom = new BaseArrayServiceAtom(this);
+
     @prop protected items:T[];
 
-    @prop get length() {
+    get length() {
         return this.items.length;
     }
 
@@ -20,6 +53,62 @@ export class BaseArray<T> {
 
     protected mutate() {
         this.atom.change();
+        this.clearIndex();
+    }
+
+    protected index:{[key:string]:{[value:string]:BaseArray<T>}};
+
+    clearIndex() {
+        if (this.index) {
+            console.log('clearIndex', this);
+            this.index = null;
+        }
+    }
+
+    protected createIndex(key:string) {
+        console.log('createIndex', key);
+        const keyIndex:{[value:string]:BaseArray<T>} = {};
+        for (let i = 0; i < this.items.length; i++) {
+            const item:any = this.items[i];
+            if (item) {
+                //todo: get raw atom if possible
+                const atomProp = getAtomFieldName(key);
+                const atom = item[atomProp];
+                let itemVal:string;
+                if (atom) {
+                    this.indexAtom.addMaster(atom);
+                    itemVal = atom.get();
+                } else {
+                    itemVal = item[key];
+                }
+                // this.indexAtom.startCapture();
+                // this.indexAtom.stopCapture();
+                if (itemVal) {
+                    let keyIndexArray = keyIndex[itemVal];
+                    if (!keyIndexArray) {
+                        keyIndexArray = keyIndex[itemVal] = new BaseArray<T>([]);
+                    }
+                    keyIndexArray.push(item);
+                }
+            }
+        }
+        return keyIndex;
+    }
+
+    getBy(key:string, value:string | number) {
+        this.indexAtom.get(); // need to subscribe when use
+        if (!this.index) {
+            this.index = {};
+        }
+        var indexKey = this.index[key];
+        if (!indexKey) {
+            indexKey = this.index[key] = this.createIndex(key);
+        }
+        let val = indexKey[value];
+        if (!val) {
+            val = indexKey[value] = new BaseArray<T>([]);
+        }
+        return val;
     }
 
     push(...items:T[]) {
@@ -130,3 +219,43 @@ export class BaseArray<T> {
         return this.items.reduceRight(callbackfn, initialValue);
     }
 }
+
+/*
+
+class X {
+    @prop id:number;
+    @prop name:string;
+    @prop tid:number;
+
+    constructor(id:number, name:string, tid:number) {
+        this.id = id;
+        this.name = name;
+        this.tid = tid;
+    }
+
+    toString() {
+        return `id: ${this.id}, name: ${this.name}, tid: ${this.tid}`;
+    }
+}
+
+const arr = new BaseArray([
+    new X(1, 'One', 100),
+    new X(2, 'Two', 100),
+    new X(3, 'Three', 200),
+    new X(4, 'Four', 200),
+]);
+
+window.X = X;
+
+window.arr = arr;
+
+@autowatch
+class Comp extends React.Component<{}, {}> {
+    render() {
+        return <div>
+            {arr.getBy('tid', 100).map(item => <div>id: {item.id}, {item.name}, {item.tid}</div>)}
+        </div>
+    }
+}
+
+ReactDOM.render(<Comp/>, document.querySelector('#main'));*/

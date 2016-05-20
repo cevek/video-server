@@ -115,7 +115,7 @@ export class Atom {
         debugger;
     }
 
-    prop(field:string, value:any) {
+    prop(field:string, value:any):this {
         this.value = value;
         this.field = field;
         this.slaves = null;
@@ -124,7 +124,7 @@ export class Atom {
         return this;
     }
 
-    getter(field:string, owner:any, calcFn:()=>void) {
+    getter(field:string, owner:any, calcFn:()=>void):this {
         this.value = null;
         this.field = field;
         this.slaves = null;
@@ -359,6 +359,10 @@ export class Atom {
         }
     }
 
+    protected updateCalc() {
+        return this.calc();
+    }
+
     protected update(transactionId:number) {
         const masters = this.masters;
         if (masters && masters.length > 1) {
@@ -372,11 +376,11 @@ export class Atom {
         if (Atom.debugAtoms && (Atom.debugAtoms[this.field] || Atom.debugAtoms[this.id])) {
             Atom.debug();
         }
-        if (this.status == AtomStatus.GETTER) {
-            throw new Error('Atom yet calculated');
-        }
+        // if (this.status == AtomStatus.GETTER) {
+        //     throw new Error('Atom yet calculated');
+        // }
         if (this.status === AtomStatus.CALCULATING) {
-            this.calc();
+            this.updateCalc();
             this.status = AtomStatus.GETTER;
         }
         const slaves = this.slaves;

@@ -8,27 +8,9 @@ class ComponentAtom extends Atom {
         this.cmp = cmp;
     }
 
-    protected update(transactionId: number) {
-        const masters = this.masters;
-        if (masters && masters.length > 1) {
-            for (let i = 0, len = masters.length; i < len; i++) {
-                const master = masters[i] as ComponentAtom;
-                if (master.counter === transactionId && master.status === AtomStatus.CALCULATING) {
-                    return;
-                }
-            }
-        }
-
-        // console.info("Update", this.cmp.constructor.name);
-
-
-        if (Atom.debugAtoms && (Atom.debugAtoms[this.field] || Atom.debugAtoms[this.id])) {
-            Atom.debug();
-        }
-        if (this.status === AtomStatus.CALCULATING) {
-            this.cmp.forceUpdate();
-            this.status = AtomStatus.GETTER;
-        }
+    protected updateCalc() {
+        this.cmp.forceUpdate();
+        return true;
     }
 }
 

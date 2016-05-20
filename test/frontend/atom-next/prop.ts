@@ -1,5 +1,8 @@
+export function getAtomFieldName(prop:string) {
+    return '_' + prop;
+}
 export var prop:any = function (proto:any, prop:string, descriptor?:PropertyDescriptor) {
-    var _prop = ('_' + prop).substr(0);
+    var _prop = getAtomFieldName(prop);
     const fieldName = proto.constructor.name + '.' + prop;
 
     const getFn = new Function(`
