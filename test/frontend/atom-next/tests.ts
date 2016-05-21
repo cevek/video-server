@@ -1,4 +1,4 @@
-import {AtomArray} from "./base-array";
+import {AtomArray} from "./atom-array";
 import {prop} from "./prop";
 import {autowatch} from "./autowatch";
 class User {
