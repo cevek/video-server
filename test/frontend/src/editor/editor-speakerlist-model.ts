@@ -1,7 +1,7 @@
 import {EditorHistoryData} from "../utils/history";
 import {EditorModel} from "./editor-model";
 import {prop} from "../../atom-next/prop";
-import {BaseArray} from "../../atom-next/base-array";
+import {AtomArray} from "../../atom-next/base-array";
 
 enum SpeakersListHistoryType{
     ADD = 1,
@@ -21,7 +21,7 @@ class HistorySpeakersList extends EditorHistoryData<HistorySpeakersList> {
 }
 
 export class EditorSpeakerList {
-    @prop list = new BaseArray<string>([]);
+    @prop list = new AtomArray<string>([]);
 
     constructor(public model:EditorModel) {
         this.model.history.listen(historySpeakerList, this.onHistory)

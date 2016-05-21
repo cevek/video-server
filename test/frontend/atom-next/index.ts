@@ -103,6 +103,7 @@ export class Atom {
     protected static activeSlave:Atom = null;
     protected static atomId = 0;
     protected static debugAtoms:{[id:string]:boolean} = null;
+    static forceUpdateValue:any = {};
 
     static debugAtom(name:string) {
         if (!Atom.debugAtoms) {
@@ -179,6 +180,10 @@ export class Atom {
 
     set(value:any) {
         this.checkForDestroy();
+        if (value === Atom.forceUpdateValue) {
+            Atom.scheduledTasks.addTask(TaskType.CHANGE, this);
+            return;
+        }
         if (this.value !== value) {
             this.value = value;
             Atom.scheduledTasks.addTask(TaskType.CHANGE, this);
