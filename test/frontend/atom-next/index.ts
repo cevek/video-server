@@ -3,6 +3,10 @@ function runMicroTask(callback:()=>void) {
     promise.then(callback);
 }
 
+interface HMap<T>{
+  [key: number]: T;
+}
+
 
 export enum AtomStatus {
     PROP = 1,
@@ -93,7 +97,9 @@ export class TaskList {
 export class Atom {
     protected id = ++Atom.atomId;
     protected slaves:Atom[];
+    protected slavesMap:HMap<number>;
     protected masters:Atom[];
+    protected mastersMap:HMap<number>;
     protected status:AtomStatus;
     protected field:string;
     protected value:any;

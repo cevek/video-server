@@ -177,14 +177,10 @@ export class EditorTextModel {
         });
     }
 
-    joinLine() {
+    _joinLine() {
         var sel = this.selection;
         const currentTextLine = sel.textLine;
         var origWords = currentTextLine.words.slice();
-
-        if (sel.linePos < 1) {
-            return null;
-        }
         var prevLinePos = sel.linePos - 1;
         var prevLine = this.lines[prevLinePos];
         var prevTextLine = prevLine.getTextLine(sel.lang);
@@ -193,9 +189,6 @@ export class EditorTextModel {
         var textLine = new EditorTextLine(sel.lang, prevTextLine.start, currentTextLine.start - prevTextLine.start + currentTextLine.dur, newWords);
         prevLine.setTextLine(sel.lang, textLine);
         sel.textLine.setWords(null);
-        if (sel.line.isEmpty()) {
-            this.lines.splice(sel.linePos, 1);
-        }
         var newWordPos = prevWords.length - (prevWords[0].isEmpty ? 1 : 0);
         this.selection.set(prevLinePos, sel.lang, newWordPos);
         return new HistoryText({
@@ -206,11 +199,20 @@ export class EditorTextModel {
         });
     }
 
+    joinLine(){
+        const undo = this._joinLine();
+        const sel = this.selection;
+        if (sel.line.isEmpty()) {
+            this.lines.splice(sel.linePos, 1);
+        }
+        return undo;
+    }
+
     joinLineWithMove() {
         var lang = this.selection.lang;
         var linePos = this.selection.linePos;
 
-        var undo = this.joinLine();
+        var undo = this._joinLine();
         if (undo) {
             for (var i = linePos + 1; i < this.lines.length; i++) {
                 this.lines[i - 1].setTextLine(lang, this.lines[i].getTextLine(lang));
@@ -256,7 +258,7 @@ export class EditorTextModel {
         }
         this.selection.setWord(this.selection.wordPos - 1);
         return true;
-    };
+    }
 
     right() {
         if (this.selection.wordPos >= this.selection.textLine.words.length - 1) {
@@ -264,7 +266,7 @@ export class EditorTextModel {
         }
         this.selection.setWord(this.selection.wordPos + 1);
         return true;
-    };
+    }
 
     setSpeaker(pos:number, speaker:string) {
         this.history.add(new HistoryTextSpeaker({
