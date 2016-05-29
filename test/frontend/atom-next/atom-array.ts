@@ -5,7 +5,7 @@ class KeyIndex<T> {
     constructor(protected key:string | number, protected source:ImmutableArray<T>) {}
 
     @prop get index() {
-        const index:{[value: string]: ImmutableArray<T>} = {};
+        const index:{[value:string]:ImmutableArray<T>} = {};
         for (var i = 0; i < this.source.length; i++) {
             const item = this.source.get(i);
             const value:string = (item as any)[this.key];
@@ -36,9 +36,72 @@ export class ImmutableArray<T> {
         this.items = items || [];
     }
 
-    protected index: {[key: string]: KeyIndex<T>}
+    protected index:{[key:string]:KeyIndex<T>}
 
-    getAllBy(key: string | number, value: string | number){
+    get first() {
+        return this.items[0];
+    }
+
+    get last() {
+        return this.items[this.items.length - 1];
+    }
+
+    get isEmpty() {
+        return this.items.length === 0;
+    }
+
+    get isNotEmpty() {
+        return this.items.length !== 0;
+    }
+
+    includes(value:T) {
+        return this.items.indexOf(value) > -1;
+    }
+
+    intersection(array:T[]) {
+        const items:T[] = [];
+        for (let i = 0; i < this.items.length; i++) {
+            var item = this.items[i];
+            for (let j = 0; j < array.length; j++) {
+                if (item === array[j]) {
+                    items.push(item);
+                }
+            }
+        }
+        return items;
+    }
+
+    unique() {
+        const items:T[] = [];
+        for (let i = 0; i < this.items.length; i++) {
+            const item = this.items[i];
+            let found = false;
+            for (let j = 0; j < this.items.length; j++) {
+                if (item === this.items[j]) {
+                    found = true;
+                }
+            }
+            if (!found) {
+                items.push(item);
+            }
+        }
+        return items;
+    }
+
+    firstWhere(cb:(item:T)=>boolean, skipIfNotFound?:boolean) {
+        for (var i = 0; i < this.items.length; i++) {
+            var item = this.items[i];
+            if (cb(item)) {
+                return item;
+            }
+        }
+        if (!skipIfNotFound) {
+            throw new Error('Item not found');
+        }
+        return null;
+    }
+
+    getAllBy(key:string | number, value:string | number) {
         if (!this.index) {
             this.index = {};
         }
@@ -50,7 +113,7 @@ export class ImmutableArray<T> {
         return valueIndex || ImmutableArray.emptyList as ImmutableArray<T>;
     }
 
-    getBy(key: string | number, value: string | number){
+    getBy(key:string | number, value:string | number) {
         return this.getAllBy(key, value).items[0];
     }
 
@@ -59,7 +122,7 @@ export class ImmutableArray<T> {
     }
 
     concat<U extends T[]>(...items:U[]):T[];
-    concat(...items:T[]): T[]
+    concat(...items:T[]):T[]
     concat() {
         return this.items.concat.apply(this.items, arguments);
     }
@@ -122,8 +185,8 @@ export class AtomArray<T> extends ImmutableArray<T> {
         this.items = Atom.forceUpdateValue;
     }
 
-    push(...items:T[]): number;
-    push(): number {
+    push(...items:T[]):number;
+    push():number {
         const result = this.items.push.apply(this.items, arguments);
         this.mutate();
         return result;
@@ -172,6 +235,24 @@ export class AtomArray<T> extends ImmutableArray<T> {
         this.mutate();
         return result;
     }
+
+    add(item:T) {
+        this.items.push(item);
+        this.mutate();
+    }
+
+    addAll(items:T[]) {
+        this.items.push.apply(this.items, items);
+        this.mutate();
+    }
+
+    clear() {
+        for (var i = 0, len = this.items.length; i < len; i++) {
+            this.items.pop();
+        }
+        this.mutate();
+    }
+
 }
 
 
