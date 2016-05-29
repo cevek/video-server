@@ -4,6 +4,9 @@
         "target": "es5",
         "noImplicitAny": true,
         "strictNullChecks": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "noImplicitReturns": true,
         "sourceMap": true
     },
     "exclude": [
