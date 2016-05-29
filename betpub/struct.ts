@@ -5,8 +5,24 @@ class AMap<T> {
 
     }
 
-    get(key:string | number):T | undefined {
+    get(key:string | number) {
         return this.map[key];
+    }
+
+    getOrThrow(key:string | number):T {
+        const val = this.map[key];
+        if (val == null) {
+            throw new Error('Not Found');
+        }
+        return val;
+    }
+
+    getOrCreate(key:string | number, factory:()=>T) {
+        let val = this.map[key];
+        if (val == null) {
+            val = this.map[key] = factory();
+        }
+        return val;
     }
 
     has(key:string | number):boolean {
@@ -18,6 +34,7 @@ class AMap<T> {
             this.map[key] = val;
             this.length++;
         }
+        return val;
     }
 
     remove(key:string | number) {
@@ -40,6 +57,61 @@ class AMap<T> {
 }
 
 
+type RT<J> = {id:number, fromJSON(json:J):void};
+type RJSON = {id:number};
+
+class RegistryFourArgs<T extends RT<J>, J extends RJSON, A, B, C> {
+    protected map = new AMap<T>();
+
+    constructor(protected factory:(json:J, arg1:any, arg2:any, arg3:any)=>T) {}
+
+    create(json:J, arg1?:any, arg2?:any, arg3?:any): T {
+        const val = this.map.get(json.id);
+        if (val) {
+            val.fromJSON(json);
+            return val;
+        }
+        return this.map.set(json.id, this.factory(json, arg1, arg2, arg3));
+    }
+
+    findOrThrow(id:number): T {
+        const val = this.map.get(id);
+        if (!val) {
+            throw new Error('Not Found');
+        }
+        return val;
+    }
+
+    find(id:number) {
+        return this.map.get(id);
+    }
+}
+
+class RegistryThreeArg<T extends RT<J>, J extends RJSON, A, B> extends RegistryFourArgs<T, J, A, B, {}> {
+    protected factory:(json:J, arg1:A, arg2:B)=>T;
+
+    create(json:J, arg1:A, arg2:B) {
+        return super.create(json, arg1, arg2);
+    }
+}
+
+class RegistryTwoArg<T extends RT<J>, J extends RJSON, A> extends RegistryFourArgs<T, J, A, {}, {}> {
+    protected factory:(json:J, arg1:A)=>T;
+
+    create(json:J, arg1:A) {
+        return super.create(json, arg1);
+    }
+}
+class Registry<T extends RT<J>, J extends RJSON> extends RegistryFourArgs<T, J, {}, {}, {}> {
+    protected factory:(json:J)=>T;
+
+    create(json:J) {
+        return super.create(json);
+    }
+}
+
+
+
 /*function unique<T>(arr:T[]):T[] {
  return null;
  }
@@ -55,63 +127,40 @@ class AMap<T> {
  */
 
 
-const dictionary = {
-    // leagues: [new League().fromJSON({id: 1, name: 'NBA', maxSalary: 10000, fantasyPositions: [{id: 1}, {id: 2}]})],
-    // fantasyPositions: [new FantasyPosition()],
-    // teams: [new EventTeam()],
-}
-
-class RegistryList<T extends {id:number}, JsonT extends {id:number}> {
-    items:T[] = [];
-
-
-    constructor(protected ctor:new (value:JsonT)=>T) {
-
-    }
-
-    createOrGet(value:JsonT) {
-        let val = this.items.filter(item => item.id == value.id).pop();
-        if (!val) {
-            val = new this.ctor(value);
-            this.items.push(val);
-        }
-        return val;
-    }
-
-    get(id:number) {
-        const val = this.items.filter(item => item.id == id).pop();
-        if (!val) {
-            throw new Error('Item not found: ' + id);
-        }
-        return val;
-    }
-
+function patch<T>(origArray:T[], newArray:T[]) {
+    origArray.length = 0;
+    origArray.push.apply(origArray, newArray);
 }
 
 
 interface FantasyEventRaw {
+    id:number;
     league:LeagueRaw;
     events:EEventRaw[];
     lineup:LineupRaw;
 }
 
 class FantasyEvent {
+    id:number;
     league:League;
-    events:EEvent[];
+    events:EEvent[] = [];
     liveMode = false;
     lineup:Lineup;
     selectedPos:FantasyPosition | null = null;
     selectedTeam:EventTeam | null = null;
 
-    constructor(json:FantasyEventRaw) {
+    private constructor(json:FantasyEventRaw) {
         this.fromJSON(json);
     }
 
     fromJSON(json:FantasyEventRaw) {
-        this.league = registry.leagues.createOrGet(json.league);
-        this.events = json.events.map(jevent => new EEvent(jevent));
-        this.lineup = new Lineup(json.lineup, this);
+        this.id = json.id;
+        this.league = League.registry.create(json.league);
+        patch(this.events, json.events.map(e => EEvent.registry.create(e)));
+        this.lineup = Lineup.registry.create(json.lineup, this);
     }
+
+    static registry = new Registry<FantasyEvent, FantasyEventRaw>(json => new FantasyEvent(json));
 
     get playersByPositionMap() {
         const map = new AMap<EventPlayer[]>();
@@ -151,16 +200,20 @@ class EEvent {
         return this.teamA.players.concat(this.teamB.players);
     }
 
-    constructor(json:EEventRaw) {
+    private constructor(json:EEventRaw) {
         this.fromJSON(json);
     }
 
     fromJSON(json:EEventRaw) {
         this.id = json.id;
-        this.teamA = new EventTeam(json.teamA, this);
-        this.teamB = new EventTeam(json.teamB, this);
+        this.teamA = EventTeam.registry.create(json.teamA, this);
+        this.teamB = EventTeam.registry.create(json.teamB, this);
     }
+
+    static registry = new Registry<EEvent, EEventRaw>(json => new EEvent(json));
+
 }
+
 
 interface LeagueRaw {
     id:number;
@@ -173,9 +226,9 @@ class League {
     id:number;
     name:string;
     maxSalary:number;
-    fantasyPositions:FantasyPosition[];
+    fantasyPositions:FantasyPosition[] = [];
 
-    constructor(json:LeagueRaw) {
+    private constructor(json:LeagueRaw) {
         this.fromJSON(json);
     }
 
@@ -183,30 +236,37 @@ class League {
         this.id = json.id;
         this.name = json.name;
         this.maxSalary = json.maxSalary;
-        this.fantasyPositions = json.fantasyPositions.map(fp => registry.fantasyPositions.createOrGet(fp));
+        patch(this.fantasyPositions, json.fantasyPositions.map(p => FantasyPosition.registry.create(p)));
     }
+
+    static registry = new Registry<League, LeagueRaw>(json => new League(json));
 }
 
 
 interface EventTeamRaw {
+    id:number;
     team:TeamRaw;
     players:EventPlayerRaw[];
 }
 
 class EventTeam {
+    id:number;
     event:EEvent;
     team:Team;
-    players:EventPlayer[];
+    players:EventPlayer[] = [];
 
-    constructor(json: EventTeamRaw, event:EEvent) {
+    private constructor(json:EventTeamRaw, event:EEvent) {
         this.event = event;
         this.fromJSON(json);
     }
 
     fromJSON(json:EventTeamRaw) {
-        this.team = registry.teams.createOrGet(json.team);
-        this.players = json.players.map(p => new EventPlayer().fromJSON(p, this.event));
+        this.id = json.id;
+        this.team = Team.registry.create(json.team);
+        patch(this.players, json.players.map(p => EventPlayer.registry.create(p, this.event)));
     }
+
+    static registry = new RegistryTwoArg<EventTeam, EventTeamRaw, EEvent>((json, event) => new EventTeam(json, event));
 }
 
 class TeamRaw {
@@ -216,40 +276,49 @@ class TeamRaw {
 class Team {
     id:number;
 
-    constructor(json:TeamRaw) {
+    private constructor(json:TeamRaw) {
         this.fromJSON(json);
     }
 
     fromJSON(json:TeamRaw) {
         this.id = json.id;
     }
+
+    static registry = new Registry<Team, TeamRaw>(json => new Team(json));
+
 }
 
 interface LineupRaw {
+    id:number;
     playerPositions:LineupPositionRaw[];
 }
 
 class Lineup {
+    id:number;
     fantasyEvent:FantasyEvent;
-    playerPositions:LineupPosition[];
+    playerPositions:LineupPosition[] = [];
 
-    constructor(json:LineupRaw, fantasyEvent:FantasyEvent) {
+    private constructor(json:LineupRaw, fantasyEvent:FantasyEvent) {
         this.fantasyEvent = fantasyEvent;
         this.fromJSON(json);
     }
 
     fromJSON(json:LineupRaw) {
-        this.playerPositions = json.playerPositions.map(pp => LineupPosition.fromJSON(pp));
+        this.id = json.id;
+        patch(this.playerPositions, json.playerPositions.map(p => LineupPosition.registry.create(p)));
         json.playerPositions.forEach(pp => {
             if (pp.playerId) {
                 const player = this.fantasyEvent.allPlayers.filter(player => player.player.id == pp.playerId).pop()!;
-                const position = registry.fantasyPositions.get(pp.positionId);
+                const position = FantasyPosition.registry.findOrThrow(pp.positionId);
                 if (!this.addPlayerToPosition(player, position)) {
                     throw new Error('Cannot add player');
                 }
             }
         });
     }
+
+    static registry = new RegistryTwoArg<Lineup, LineupRaw, FantasyEvent>((json, fantasyEvent) => new Lineup(json, fantasyEvent));
+
 
     canRestore(playerPosition:LineupPosition) {
         if (!playerPosition.player && playerPosition.serverPlayer && this.validate(playerPosition.serverPlayer)) {
@@ -346,13 +415,19 @@ class LineupPosition {
     serverPlayer:EventPlayer;
     position:FantasyPosition;
 
-    static fromJSON(json:LineupPositionRaw) {
-        const obj = new LineupPosition();
-        obj.id = json.id
-        obj.position = registry.fantasyPositions.get(json.positionId);
-        return obj;
+    private constructor(json:LineupPositionRaw) {
+        this.fromJSON(json);
     }
+
+    fromJSON(json:LineupPositionRaw) {
+        this.id = json.id
+        this.position = FantasyPosition.registry.findOrThrow(json.positionId);
+    }
+
+    static registry = new Registry<LineupPosition, LineupPositionRaw>(json => new LineupPosition(json));
 }
+
+
 
 interface FantasyPositionRaw {
     id:number;
@@ -363,17 +438,20 @@ interface FantasyPositionRaw {
 class FantasyPosition {
     id:number;
     name:string;
-    positions:PPosition[];
+    positions:PPosition[] = [];
 
-    constructor(json: FantasyPositionRaw){
+    private constructor(json:FantasyPositionRaw) {
         this.fromJSON(json);
     }
 
     fromJSON(json:FantasyPositionRaw) {
         this.id = json.id;
         this.name = json.name;
-        this.positions = json.positions.map(p => registry.positions.createOrGet(p));
+        patch(this.positions, json.positions.map(p => PPosition.registry.create(p)));
     }
+
+    static registry = new Registry<FantasyPosition, FantasyPositionRaw>(json => new FantasyPosition(json));
+
 }
 
 interface PPositionRaw {
@@ -384,7 +462,7 @@ class PPosition {
     id:number;
     name:string;
 
-    constructor(json: PPositionRaw){
+    private constructor(json:PPositionRaw) {
         this.fromJSON(json);
     }
 
@@ -392,30 +470,42 @@ class PPosition {
         this.id = json.id;
         this.name = json.name;
     }
+
+    static registry = new Registry<PPosition, PPositionRaw>(json => new PPosition(json));
 }
 
 
 interface EventPlayerRaw {
+    id:number;
     player:PlayerRaw;
     positionIds:number[];
     score:number;
     salary:number;
 }
+
+
+
 class EventPlayer {
+    id:number;
     event:EEvent;
     player:Player;
-    positions:PPosition[];
+    positions:PPosition[] = [];
     score:number;
     salary:number;
 
-    fromJSON(json:EventPlayerRaw, event:EEvent) {
+    private constructor(json:EventPlayerRaw, event:EEvent) {
         this.event = event;
-        this.player = registry.players.createOrGet(json.player);
-        this.positions = json.positionIds.map(id => registry.positions.get(id));
+        this.fromJSON(json);
+    }
+
+    fromJSON(json:EventPlayerRaw) {
+        this.player = Player.registry.create(json.player);
+        patch(this.positions, json.positionIds.map(id => PPosition.registry.findOrThrow(id)));
         this.score = json.score;
         this.salary = json.salary;
-        return this;
     }
+
+    static registry = new RegistryTwoArg<EventPlayer, EventPlayerRaw, EEvent>((json, event) => new EventPlayer(json, event))
 }
 
 interface PlayerRaw {
@@ -427,7 +517,7 @@ class Player {
     id:number;
     name:string;
 
-    constructor(json:PlayerRaw) {
+    private constructor(json:PlayerRaw) {
         this.fromJSON(json);
     }
 
@@ -435,11 +525,15 @@ class Player {
         this.id = json.id;
         this.name = json.name;
     }
+
+    static registry = new Registry<Player, PlayerRaw>(json => new Player(json));
 }
 
 
 const json:FantasyEventRaw = {
+    id: 1,
     lineup: {
+        id: 1,
         playerPositions: [
             {
                 id: 1,
@@ -502,11 +596,13 @@ const json:FantasyEventRaw = {
         {
             id: 1,
             teamA: {
+                id: 1,
                 team: {
                     id: 1,
                 },
                 players: [
                     {
+                        id: 1,
                         score: 1,
                         salary: 1000,
                         player: {
@@ -516,6 +612,7 @@ const json:FantasyEventRaw = {
                         positionIds: [1, 2]
                     },
                     {
+                        id: 2,
                         score: 2,
                         salary: 3000,
                         player: {
@@ -527,11 +624,13 @@ const json:FantasyEventRaw = {
                 ]
             },
             teamB: {
+                id: 2,
                 team: {
                     id: 2,
                 },
                 players: [
                     {
+                        id: 3,
                         score: 2,
                         salary: 2000,
                         player: {
@@ -541,6 +640,7 @@ const json:FantasyEventRaw = {
                         positionIds: [1, 2]
                     },
                     {
+                        id: 4,
                         score: 5,
                         salary: 15000,
                         player: {
@@ -556,17 +656,7 @@ const json:FantasyEventRaw = {
 };
 
 
-class Registry {
-    leagues = new RegistryList<League, LeagueRaw>(League);
-    fantasyPositions = new RegistryList<FantasyPosition, FantasyPositionRaw>(FantasyPosition);
-    positions = new RegistryList<PPosition, PPositionRaw>(PPosition);
-    teams = new RegistryList<Team, TeamRaw>(Team);
-    players = new RegistryList<Player, PlayerRaw>(Player);
-}
-const registry = new Registry();
-
-
-const fe = new FantasyEvent(json);
+const fe = FantasyEvent.registry.create(json);
 fe.selectedPos = null//fe.league.fantasyPositions[1];
 
 var lineup = fe.lineup;
