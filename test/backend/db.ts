@@ -1,20 +1,15 @@
 'use strict';
+import {IMySql, IPool} from "mysql";
+import {IConnection} from "mysql";
+var mysql: IMySql = require('mysql2');
 
-var mysql = require('mysql2');
-import {config} from './config';
-var pool = mysql.createPool({
-    database: config.db.name,
-    user: config.db.user,
-    password: config.db.password
-});
 type Params = {[key: string]: string | number} | (string | number)[];
-interface Connection {
-    query(q:string, params:Params, callback:(err:Error, values:any)=>void):void;
-}
 
-class DB {
+export class DB {
+    constructor(protected pool: IPool) {}
+
     async query<T>(query:string, params?:Params, trx?:Transaction):Promise<T> {
-        var connection = trx ? trx.connection : await db.getConnection();
+        var connection = trx ? trx.connection : await this.getConnection();
         var res = await (new Promise<T>((resolve, reject)=> {
             if (query) {
                 var q = connection.query(query, params, (err:Error, rows:T) => {
@@ -39,7 +34,6 @@ class DB {
     }
 
     insertSql(table:string, values:any[]) {
-
         var keysSet = new Set();
         for (var i = 0; i < values.length; i++) {
             for (var field in values[i]) {
@@ -59,6 +53,14 @@ class DB {
             k => `\`${k}\``).join(", ")}) VALUES (${arrValues.map(
             v => `${v.join(", ")}`).join("), (")});`;
     }
+    
+    updateSql(table: string, values: any, where: string) {
+        let setValues = '';
+        for (const key in values) {
+            setValues += `${key} = ${mysql.escape(values[key])}`;
+        }
+        return `UPDATE \`${table}\` SET ${setValues} WHERE ${where}`;
+    }
 
     whereSql(params:any) {
         if (params && typeof params == 'object') {
@@ -72,11 +74,11 @@ class DB {
     }
 
     async queryOne<T>(query:string, params?:any, trx?:Transaction) {
-        return (await db.query<T[]>(query, params, trx))[0];
+        return (await this.query<T[]>(query, params, trx))[0];
     }
 
     async queryAll<T>(query:string, params?:any, trx?:Transaction) {
-        return (await db.query<T[]>(query, params, trx)) || [];
+        return (await this.query<T[]>(query, params, trx)) || [];
     }
 
     async transaction(fn:(transaction:Transaction)=>Promise<any>) {
@@ -98,7 +100,7 @@ class DB {
 
     async getConnection():Promise<any> {
         return await (new Promise((resolve, reject)=> {
-            pool.getConnection((err:Error, connection:any) => {
+            this.pool.getConnection((err:Error, connection:any) => {
                 if (err) {
                     return reject(err);
                 }
@@ -108,15 +110,14 @@ class DB {
         }));
     }
 }
-export const db = new DB();
 
 export class Transaction {
-    public connection:Connection;
+    public connection:IConnection;
 
     constructor(public db:DB) {}
 
     async begin() {
-        this.connection = await db.getConnection();
+        this.connection = await this.db.getConnection();
         await this.db.query<void>('START TRANSACTION', null, this);
         return this;
     }
