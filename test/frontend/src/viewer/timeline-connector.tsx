@@ -1,15 +1,15 @@
 import * as React from "react";
 import {svgPathGenerator} from "../utils/svg-path-generator";
-import {ITextLine} from "../../../interfaces/text-line";
 import {AudioPlayer} from "../utils/audio-player";
 import {EditorHistory, EditorHistoryData} from "../utils/history";
 import {Line} from "../models/line";
-import {Lang} from "../../../interfaces/lang";
+import {Lang} from "../../../backend/interfaces/lang";
 import * as style from "./timeline-connector.css";
 import {autowatch} from "../../atom-next/autowatch";
 import {AudioSelectionData} from "../audio-selection-model";
 import {classes} from "../utils/cl";
 import {prop} from "../../atom-next/prop";
+import {ITextLines} from "../../../backend/interfaces/db-models";
 
 
 export class HistoryTimeline extends EditorHistoryData<HistoryTimeline> {
@@ -39,7 +39,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
         return time * 100 / this.props.resizeKoef;
     }
 
-    playTextLine(textLine:ITextLine) {
+    playTextLine(textLine:ITextLines) {
         const start = textLine.start / 100;
         const dur = textLine.dur / 100;
         this.props.player.play(start, dur);

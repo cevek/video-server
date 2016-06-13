@@ -1,4 +1,6 @@
 "use strict";
+///<reference path="../../backend/interfaces/db-models.ts"/>
+
 import "./font-awesome-4.6.1/css/font-awesome.css";
 import "./app.css";
 import * as ReactDOM from 'react-dom';

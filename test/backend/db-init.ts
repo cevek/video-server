@@ -11,7 +11,7 @@ var pool = mysql.createPool({
     password: config.db.password
 });
 
-const db = new DB(pool);
+export const db = new DB(pool);
 
 export const linesDAO = new LinesDAO(db);
 export const mediaFilesDAO = new MediaFilesDAO(db);

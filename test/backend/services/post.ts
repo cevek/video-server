@@ -1,22 +1,12 @@
 "use strict";
-import {Post} from "../../interfaces/post";
-
-import {db} from "../db";
-import {parseSubtitles} from "./subtitle";
-import {SubtitleSync} from "./subtitle";
+import {parseSubtitles, SubtitleSync} from "./subtitle";
 import {genId} from "../utils";
-import {textLineDAO} from "../models/text-line";
-import {linesDAO} from "../models/line";
-import {postDAO} from "../models/post";
 import {readFileSync} from "fs";
-import {getFileName} from "./file";
-import {ITextLine} from "../../interfaces/text-line";
-import {ILine} from "../../interfaces/line";
-import {uploadsDAO} from "../models/upload";
-import {mediaFilesDAO} from "../models/media-file";
-import {MediaType} from "../../interfaces/media-types";
+import {MediaType} from "../interfaces/media-types";
+import {mediaFilesDAO, db, linesDAO, postsDAO, textLinesDAO} from "../db-init";
+import {IPosts, ILines, ITextLines} from "../interfaces/db-models";
 
-export async function createPost(post:Post) {
+export async function createPost(post:IPosts) {
     //todo: need validate
     var enSub = '', ruSub = '';
 
@@ -30,11 +20,11 @@ export async function createPost(post:Post) {
     var mergeLines = subtitleSync.merge();
     await db.transaction(async (trx) => {
         post.id = genId();
-        var textLines:ITextLine[] = [];
-        var lines:ILine[] = [];
+        var textLines:ITextLines[] = [];
+        var lines:ILines[] = [];
         for (var i = 0; i < mergeLines.length; i++) {
             var mergeLine = mergeLines[i];
-            var line:ILine = {id: genId(), postId: post.id, seq: i};
+            var line:ILines = {id: genId(), en: null, ru: null, speaker: null, postId: post.id, seq: i};
             for (var j = 0; j < mergeLine.length; j++) {
                 var ln = mergeLine[j];
                 //todo: why may null
@@ -63,9 +53,14 @@ export async function createPost(post:Post) {
             var thumbs = await mediaFilesDAO.findOne({videoFile: post.video, type: MediaType.THUMBS});
             post.thumbs = thumbs.id;
         }
-        await postDAO.create(post, trx);
-        await textLineDAO.createBulk(textLines, trx);
+        await postsDAO.create(post, trx);
+        await textLinesDAO.createBulk(textLines, trx);
         await linesDAO.createBulk(lines, trx);
     });
+    return post;
+}
+
+
+export async function updatePost(post:IPosts) {
     return post;
 }

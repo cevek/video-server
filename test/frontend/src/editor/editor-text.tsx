@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as classNames from "classnames";
 import {EditorModel, EditorTextLine, EditorWord, EditorLine} from "./editor-model";
-import {Lang} from "../../../interfaces/lang";
+import {Lang} from "../../../backend/interfaces/lang";
 import {EditorKeyHandler} from "./editor-key-handler";
 import {Line} from "../models/line";
 import * as style from "./styles/editor-text.css";

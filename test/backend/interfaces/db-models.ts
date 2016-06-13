@@ -3,19 +3,21 @@ interface Field<T>{}
 
 export interface ILines {
     id: number
+    postId: number
     en: number
     ru: number
-    postId: number
+    speaker: string
     seq: number
 }
 export interface ILinesFields {
     id: Field<number>
+    postId: Field<number>
     en: Field<number>
     ru: Field<number>
-    postId: Field<number>
+    speaker: Field<string>
     seq: Field<number>
 }
-export type ILinesFieldNames = "id" | "en" | "ru" | "postId" | "seq"
+export type ILinesFieldNames = "id" | "postId" | "en" | "ru" | "speaker" | "seq"
 
 
 export interface IMediaFiles {

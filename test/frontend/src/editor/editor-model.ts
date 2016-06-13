@@ -1,12 +1,12 @@
-import {Lang} from "../../../interfaces/lang";
+import {Lang} from "../../../backend/interfaces/lang";
 import {PostModel} from "../models/post";
 import {EditorHistory, EditorHistoryData, EditorHistoryStringData} from "../utils/history";
 import {Line} from "../models/line";
-import {ITextLine} from "../../../interfaces/text-line";
 import {EditorTextModel} from "./editor-text-model";
 import {EditorSpeakerList} from "./editor-speakerlist-model";
 import {prop} from "../../atom-next/prop";
 import {AudioSelectionData} from "../audio-selection-model";
+import {ITextLines} from "../../../backend/interfaces/db-models";
 
 const historyTitle = 'title';
 const historyTags = 'tags';
@@ -97,7 +97,12 @@ export class EditorLine extends Line {
     }
 }
 
-export class EditorTextLine implements ITextLine {
+export class EditorTextLine implements ITextLines {
+    id:number;
+    text:string;
+    lineId:number;
+    postId:number;
+
     @prop words:EditorWord[];
     @prop lang:Lang;
     @prop start:number;

@@ -1,7 +1,7 @@
-import {ITextLine} from "../../../interfaces/text-line";
 import {prop} from "../../atom-next/prop";
+import {ITextLines} from "../../../backend/interfaces/db-models";
 export class Line {
-    @prop en: ITextLine;
-    @prop ru: ITextLine;
+    @prop en: ITextLines;
+    @prop ru: ITextLines;
     @prop speaker: string;
 }

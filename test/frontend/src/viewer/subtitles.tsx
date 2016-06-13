@@ -1,10 +1,10 @@
 import * as React from "react";
 import * as classNames from "classnames";
 import {PlayingStatus} from "sound-utils/Play";
-import {ITextLine} from "../../../interfaces/text-line";
 import {PostModel} from "../models/post";
 import {AudioPlayer} from "../utils/audio-player";
 import * as style from "./subtitles.css";
+import {ITextLines} from "../../../backend/interfaces/db-models";
 
 export class Subtitles extends React.Component<{postModel: PostModel; player: AudioPlayer; resizeKoef: number; renderLines: number[]}, {}> {
     duration:number = 0;
@@ -45,7 +45,7 @@ export class Subtitles extends React.Component<{postModel: PostModel; player: Au
     }
     playingLine = -1;
 
-    isSelected(textLine:ITextLine) {
+    isSelected(textLine:ITextLines) {
         const currentTime = this.props.player.currentTime;
         return ((textLine.start) / 100) <= currentTime && currentTime <= (textLine.start + textLine.dur) / 100
     }

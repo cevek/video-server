@@ -1,4 +1,4 @@
-import {MediaType} from "../interfaces/media-types";
+import {MediaType} from "./interfaces/media-types";
 export interface Stream {
     n: number;
     type: MediaType;

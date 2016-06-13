@@ -27,11 +27,11 @@ export class BaseModel<T> {
         return [];
     }
 
-    async findAll(params?:T | string, trx?:Transaction) {
+    async findAll(params?:any | string, trx?:Transaction) {
         return await this.db.queryAll<T>(`SELECT * FROM \`${this.table}\` ${this.db.whereSql(params)}`, {}, trx);
     }
 
-    async findOne(params?:T | string, trx?:Transaction) {
+    async findOne(params?:any | string, trx?:Transaction) {
         return await this.db.queryOne<T>(`SELECT * FROM \`${this.table}\` ${this.db.whereSql(params)}`, {}, trx);
     }
 }

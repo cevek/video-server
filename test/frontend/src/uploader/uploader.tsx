@@ -1,9 +1,9 @@
 import './upload.css';
 import * as React from 'react';
-import {TrackInfo} from '../../../interfaces/track-info';
-import {Post} from '../../../interfaces/post';
-import {MediaType} from '../../../interfaces/media-types';
+import {TrackInfo} from '../../../backend/interfaces/track-info';
+import {MediaType} from '../../../backend/interfaces/media-types';
 import {editorRoute} from "../routes";
+import {IPosts} from "../../../backend/interfaces/db-models";
 
 interface MediaResult {
     video: TrackInfo;
@@ -26,7 +26,7 @@ function getType(type:MediaType, mediaResult:MediaResult) {
 export class Upload extends React.Component<{params: any, resolved: any},{}> {
     res:MediaResult;
     postId:string;
-    form:Post = {title: 'Hello', video: null, enAudio: null, ruAudio: null, enSub: null, ruSub: null};
+    form:IPosts = {id: null, title: 'Hello', video: null, enAudio: null, ruAudio: null, enSub: null, ruSub: null, thumbs: null, createdAt: null};
     videoDone = (res:MediaResult)=> {
         this.res = res;
         this.form.video = res.video ? res.video.id : null;
@@ -64,19 +64,19 @@ export class Upload extends React.Component<{params: any, resolved: any},{}> {
                 <form onSubmit={this.onSubmit}>
                     <SelectMedia type={MediaType.AUDIO} label="En Audio"
                                  startTime={this._startTime} endTime={this._endTime}
-                                 onChange={val => this.form.enAudio = val}
+                                 onChange={val => this.form.enAudio = +val}
                                  items={this.filterLang(this.res.audio, 'eng')}/>
                     <SelectMedia type={MediaType.AUDIO} label="Ru Audio"
                                  startTime={this._startTime} endTime={this._endTime}
-                                 onChange={val => this.form.ruAudio = val}
+                                 onChange={val => this.form.ruAudio = +val}
                                  items={this.filterLang(this.res.audio, 'rus')}/>
                     <SelectMedia type={MediaType.SUBS} label="En Subs"
                                  startTime={this._startTime} endTime={this._endTime}
-                                 onChange={val => this.form.enSub = val}
+                                 onChange={val => this.form.enSub = +val}
                                  items={this.filterLang(this.res.subs, 'eng')}/>
                     <SelectMedia type={MediaType.SUBS} label="Ru Subs"
                                  startTime={this._startTime} endTime={this._endTime}
-                                 onChange={val => this.form.ruSub = val}
+                                 onChange={val => this.form.ruSub = +val}
                                  items={this.filterLang(this.res.subs, 'rus')}/>
                     <div>
                         <button>Create</button>
@@ -91,7 +91,7 @@ export class Upload extends React.Component<{params: any, resolved: any},{}> {
 }
 class SelectMedia extends React.Component<{
     type: MediaType;
-    onChange: (val:string)=>void;
+    onChange: (val:number)=>void;
     items: TrackInfo[];
     label: string;
     startTime: number;

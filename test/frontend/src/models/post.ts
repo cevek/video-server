@@ -1,4 +1,4 @@
-import {IGetPost} from "../../../interfaces/transport";
+import {IGetPost} from "../../../backend/interfaces/transport";
 import {Line} from "./line";
 import {prop} from "../../atom-next/prop";
 export class PostModel {

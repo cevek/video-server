@@ -1,21 +1,13 @@
 "use strict";
-import {uploadsDAO} from "./models/upload";
 var co = require('co');
 import {mkdirSync} from "fs";
-import {writeFileSync} from "fs";
-import {upload} from "./youtube/upload";
 import {config} from "./config";
-import {MediaInfo} from "./media-info";
-import {mediaInfo} from "./media-info";
-import {exec} from "./utils";
-import {spawn} from "./utils";
-import {db} from "./db";
-import {mediaFilesDAO} from "./models/media-file";
-import {Upload} from "../interfaces/upload";
-import {TrackInfo} from "../interfaces/track-info";
-import {genId} from "./utils";
-import {MediaFile} from "../interfaces/media-file";
-import {MediaType} from "../interfaces/media-types";
+import {MediaInfo, mediaInfo} from "./media-info";
+import {exec, spawn, genId} from "./utils";
+import {MediaType} from "./interfaces/media-types";
+import {db, uploadsDAO, mediaFilesDAO} from "./db-init";
+import {TrackInfo} from "./interfaces/track-info";
+import {IMediaFiles} from "./interfaces/db-models";
 
 //import {spawn} from 'child_process';
 
@@ -32,7 +24,7 @@ export class Session {
     folder:string;
     inputFile:string;
     track:MediaInfo;
-    streamsMeta:{id: string; url: string; file: string; tempFile: string}[] = [];
+    streamsMeta:{id: number; url: string; file: string; tempFile: string}[] = [];
     duration:number;
     startTime:number;
     shiftStartTime:number;
@@ -281,8 +273,8 @@ export class Session {
 
                 await db.transaction(async (trx) => {
                     this.stdout = this.stdout.replace(/^(demuxer|muxer).*?$\n/mg, '');
-                    await uploadsDAO.create({id: this.sid, info: this.stdout}, trx);
-                    var mediaFiles:MediaFile[] = this.track.streams.map((track, i) => {
+                    await uploadsDAO.create({id: this.sid, info: this.stdout, createdAt: new Date()}, trx);
+                    var mediaFiles:IMediaFiles[] = this.track.streams.map((track, i) => {
                         var str = this.streamsMeta[i];
                         return {
                             id: str.id,
@@ -295,6 +287,7 @@ export class Session {
                             url: str.url,
                             filename: str.file,
                             videoFile: videoId,
+                            createdAt: new Date()
                         }
                     });
                     if (this.isVideo) {
@@ -308,7 +301,8 @@ export class Session {
                             url: this.sid + '/thumbs.jpg',
                             info: null,
                             uploadId: this.sid,
-                            type: MediaType.THUMBS
+                            type: MediaType.THUMBS,
+                            createdAt: new Date()
                         });
                     }
                     await mediaFilesDAO.createBulk(mediaFiles, trx);

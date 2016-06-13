@@ -4,7 +4,7 @@ import {sessions} from "./session";
 
 const io = IO(7878);
 io.on('connection', socket => {
-    socket.on('start-upload', (data:any, callback:(sid:string)=>void) => {
+    socket.on('start-upload', (data:any, callback:(sid:number)=>void) => {
         const session = sessions.create(data, socket);
         if (session) {
             session.startFFmpeg();
@@ -12,7 +12,7 @@ io.on('connection', socket => {
             console.log("AFS");
         }
         else {
-            callback('');
+            callback(0);
         }
     });
 

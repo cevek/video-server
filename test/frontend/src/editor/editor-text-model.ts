@@ -1,4 +1,4 @@
-import {Lang} from "../../../interfaces/lang";
+import {Lang} from "../../../backend/interfaces/lang";
 import {EditorHistoryData, EditorHistory, EditorHistoryStringData} from "../utils/history";
 import {EditorSelection, EditorLine, EditorTextLine, EditorWord, EditorModel} from "./editor-model";
 import {prop} from "../../atom-next/prop";

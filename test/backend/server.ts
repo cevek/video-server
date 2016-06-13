@@ -1,14 +1,10 @@
-import {IGetPost} from "../interfaces/transport";
+import {IGetPost} from "./interfaces/transport";
 'use strict';
 import {toMap} from "./utils";
 import {config} from "./config";
-import {Post} from "../interfaces/post";
 import {createPost} from "./services/post";
-import {postDAO} from "./models/post";
-import {db} from './db';
-import {linesDAO} from "./models/line";
-import {textLineDAO} from "./models/text-line";
-import {mediaFilesDAO} from "./models/media-file";
+import {linesDAO, mediaFilesDAO, textLinesDAO, postsDAO} from "./db-init";
+import {IPosts} from "./interfaces/db-models";
 var fs = require('fs');
 var koa = require('koa');
 var serve = require('koa-static');
@@ -23,11 +19,11 @@ router.get('/', async () => {
 
 router.get('/v1/post/:id', async function () {
     var id = this.params.id;
-    var post = await postDAO.findById(id);
+    var post = await postsDAO.findById(id);
     if (post) {
         var lines = await linesDAO.findAll({postId: id});
         lines.sort((a, b) => a.seq < b.seq ? -1 : 1);
-        var textLines = await textLineDAO.findAll({postId: id});
+        var textLines = await textLinesDAO.findAll({postId: id});
         var mediaFiles = await mediaFilesDAO.findByIds([post.video, post.thumbs, post.enAudio, post.ruAudio, post.enSub, post.ruSub]);
         var data:IGetPost = {post, lines: lines, textLines: toMap(textLines), mediaFiles: toMap(mediaFiles)};
         this.body = {success: true, data};
@@ -51,7 +47,13 @@ router.get('/v1/file/:id', async function () {
 });
 
 router.post('/v1/post/', async function () {
-    var postData = <Post>this.request.body;
+    var postData = <IPosts>this.request.body;
+    var post = await createPost(postData);
+    this.body = {success: true, data: post.id};
+});
+
+router.put('/v1/post/', async function () {
+    var postData = <IPosts>this.request.body;
     var post = await createPost(postData);
     this.body = {success: true, data: post.id};
 });

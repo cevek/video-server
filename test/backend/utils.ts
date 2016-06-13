@@ -41,7 +41,7 @@ export async function spawn(exec:string, callback?:(output:string, cp?:ChildProc
 }
 
 export function genId() {
-    return Math.random().toString().substr(2, 6) + Math.random().toString().substr(2, 6) + Math.random().toString().substr(2, 6);
+    return +(Math.random().toString().substr(2, 6) + Math.random().toString().substr(2, 6) + Math.random().toString().substr(2, 6));
 }
 
 export function toMap<T>(items:T[], key?:string) {
