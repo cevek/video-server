@@ -28,15 +28,15 @@ export class Thumbs extends React.Component<{postModel:PostModel; model: EditorM
     }
 
     render() {
-        const data = this.props.postModel.data;
+        const postModel = this.props.postModel;
 
-        const video = data.mediaFiles[data.post.video];
-        const enAudio = data.mediaFiles[data.post.enAudio];
+        const video = postModel.mediaFiles.getOrThrow(postModel.post.video);
+        const enAudio = postModel.mediaFiles.getOrThrow(postModel.post.enAudio);
         const shiftVideoY = this.timeToY(video.shiftTime);
         const shiftAudioY = this.timeToY(enAudio.shiftTime);
         const durationY = this.timeToY(enAudio.duration);
 
-        const thumbImg = config.baseUrl + '/' + data.mediaFiles[data.post.thumbs].url;
+        const thumbImg = config.baseUrl + '/' + postModel.mediaFiles.getOrThrow(postModel.post.thumbs).url;
         const thumbWidth = 400;
         const thumbHeight = 200;
         const thumbsPerLine = 20;

@@ -43,7 +43,7 @@ export class Upload extends React.Component<{params: any, resolved: any},{}> {
             body: JSON.stringify(this.form)
         }).then(data => data.json()).then(data => {
             //this.postId = data.data;
-            editorRoute.goto({id: data.data})
+            editorRoute.goto({id: data.json})
             this.forceUpdate();
             console.log('Success');
         });

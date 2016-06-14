@@ -1,24 +1,31 @@
 import {IGetPost} from "../../../backend/interfaces/transport";
 import {Line} from "./line";
 import {prop} from "../../atom-next/prop";
+import {IPosts, IMediaFiles, ITextLines} from "../../../backend/interfaces/db-models";
+import {HashMap} from "../utils/hashmap";
 export class PostModel {
     @prop lines:Line[];
-    @prop data: IGetPost;
+    @prop post: IPosts;
+    
+    textLines: HashMap<ITextLines>
+    mediaFiles: HashMap<IMediaFiles>
 
-    constructor(data:IGetPost) {
-        this.data = data;
+
+    constructor(protected json:IGetPost) {
+        this.textLines = new HashMap(json.textLines);
+        this.mediaFiles = new HashMap(json.mediaFiles);
         this.lines = this.getLines();
     }
 
     private getLines() {
-        var data = this.data;
-        const shiftEnSubs = data.mediaFiles[data.post.enSub].shiftTime * 100;
-        const shiftRuSubs = data.mediaFiles[data.post.ruSub].shiftTime * 100;
-        const shiftEnAudio = data.mediaFiles[data.post.enAudio].shiftTime * 100;
-        const shiftRuAudio = data.mediaFiles[data.post.ruAudio].shiftTime * 100;
+        var data = this.json;
+        const shiftEnSubs = this.mediaFiles.getOrThrow(data.post.enSub).shiftTime * 100;
+        const shiftRuSubs = this.mediaFiles.getOrThrow(data.post.ruSub).shiftTime * 100;
+        const shiftEnAudio = this.mediaFiles.getOrThrow(data.post.enAudio).shiftTime * 100;
+        const shiftRuAudio = this.mediaFiles.getOrThrow(data.post.ruAudio).shiftTime * 100;
         return data.lines.map(line => {
-            const en = data.textLines[line.en];
-            const ru = data.textLines[line.ru];
+            const en = this.textLines.getOrThrow(line.en);
+            const ru = this.textLines.getOrThrow(line.ru);
             if (en) {
                 en.start -= shiftEnAudio - shiftEnSubs;
             }
@@ -35,7 +42,7 @@ export class PostModel {
 
     static fetch(id:number):Promise<PostModel> {
         return fetch('http://localhost:1335/v1/post/' + id).then(data => data.json()).then(data => {
-            return new PostModel(data.data);
+            return new PostModel(data.json);
         });
     }
 }

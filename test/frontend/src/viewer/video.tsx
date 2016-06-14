@@ -13,8 +13,8 @@ export class Video extends React.Component<{postModel: PostModel; resizeKoef: nu
     videoPlayer:any;
 
     componentDidMount() {
-        var data = this.props.postModel.data;
-        var videoId = data.mediaFiles[data.post.video].url.split('=').pop();
+        var postModel = this.props.postModel;
+        var videoId = postModel.mediaFiles.getOrThrow(postModel.post.video).url.split('=').pop();
         var div = document.createElement('div');
         div.id = Math.random().toString();
         this.videoWrapper.appendChild(div);
