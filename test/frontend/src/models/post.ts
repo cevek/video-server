@@ -12,6 +12,7 @@ export class PostModel {
 
 
     constructor(protected json:IGetPost) {
+        this.post = json.post;
         this.textLines = new HashMap(json.textLines);
         this.mediaFiles = new HashMap(json.mediaFiles);
         this.lines = this.getLines();
@@ -24,8 +25,8 @@ export class PostModel {
         const shiftEnAudio = this.mediaFiles.getOrThrow(data.post.enAudio).shiftTime * 100;
         const shiftRuAudio = this.mediaFiles.getOrThrow(data.post.ruAudio).shiftTime * 100;
         return data.lines.map(line => {
-            const en = this.textLines.getOrThrow(line.en);
-            const ru = this.textLines.getOrThrow(line.ru);
+            const en = this.textLines.get(line.en);
+            const ru = this.textLines.get(line.ru);
             if (en) {
                 en.start -= shiftEnAudio - shiftEnSubs;
             }
@@ -42,7 +43,7 @@ export class PostModel {
 
     static fetch(id:number):Promise<PostModel> {
         return fetch('http://localhost:1335/v1/post/' + id).then(data => data.json()).then(data => {
-            return new PostModel(data.json);
+            return new PostModel(data.data);
         });
     }
 }
