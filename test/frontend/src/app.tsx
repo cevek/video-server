@@ -11,9 +11,9 @@ import {Router} from "./Router";
 import {uploadRoute, postRoute, editorRoute, indexRoute} from "./routes";
 import {Viewer} from "./viewer/viewer";
 import {Upload} from "./uploader/uploader";
-import {Atom} from "../atom-next/index";
+import {atomBenchmark} from "../atom-next/benchmark";
 
-Atom;
+// atomBenchmark();
 
 ReactDOM.render(<Router pages={[
     {route: indexRoute, handler: Index},

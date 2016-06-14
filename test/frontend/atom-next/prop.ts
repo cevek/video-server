@@ -1,3 +1,6 @@
+import {Atom} from "./index";
+(window as any).AtomGlob = Atom;
+
 export function getAtomFieldName(prop:string) {
     return '_' + prop;
 }

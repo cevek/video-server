@@ -1,7 +1,4 @@
 const promise = (window as any).Promise.resolve();
-function runMicroTask(callback:()=>void) {
-    promise.then(callback);
-}
 
 interface HMap<T>{
   [key: number]: T;
@@ -65,11 +62,13 @@ export class TaskList {
     constructor(public taskRunner:()=>void) {
         this.queue = new Array(this.size);
     }
+    
+    static microTaskRunner = (callback: ()=>void)=>promise.then(callback);
 
     addTask(taskType:TaskType, atom:Atom, param?:any) {
         if (!this.asyncRunned) {
             this.asyncRunned = true;
-            runMicroTask(this.taskRunner);
+            TaskList.microTaskRunner(this.taskRunner);
         }
         const pos = this.pos % this.size;
         this.queue[pos] = taskType;
@@ -236,17 +235,6 @@ export class Atom {
         return atom;
     }
 
-    protected setSelfToActiveSlave(slave:Atom) {
-        this.checkForDestroy();
-        if (!slave.masters) {
-            slave.masters = [];
-        }
-        slave.masters[this.id] = this;
-        if (!this.slaves) {
-            this.slaves = [];
-        }
-        this.slaves[slave.id] = slave;
-    }
 
     protected checkForDestroy() {
         if (this.status == AtomStatus.DESTROYED) {
@@ -455,7 +443,6 @@ export class Atom {
 
 }
 
-(window as any).AtomGlob = Atom;
 (window as any).debugAtom = Atom.debugAtom;
 /*
  const a1 = new Atom().prop('a1', 1);
