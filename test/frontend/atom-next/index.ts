@@ -105,10 +105,17 @@ export class Atom {
     protected owner:any;
     protected counter:number;
     protected calcFn:()=>void;
+    creatorId: number;
     protected static activeSlave:Atom = null;
     protected static atomId = 0;
     protected static debugAtoms:{[id:string]:boolean} = null;
     static forceUpdateValue:any = {};
+
+    constructor() {
+        if (Atom.activeSlave) {
+            this.creatorId = Atom.activeSlave.id;
+        }
+    }
 
     static debugAtom(name:string) {
         if (!Atom.debugAtoms) {
@@ -158,7 +165,7 @@ export class Atom {
     get() {
         //this.checkForDestroy();
         var activeSlave = Atom.activeSlave;
-        if (activeSlave) {
+        if (activeSlave && this.creatorId !== activeSlave.id) {
             var activeSlaveMasters = activeSlave.masters;
             var len = activeSlaveMasters.length;
             var shared = Atom.shared;
@@ -442,6 +449,7 @@ export class Atom {
     }
 
 }
+Atom.prototype.creatorId = null;
 
 (window as any).debugAtom = Atom.debugAtom;
 /*
