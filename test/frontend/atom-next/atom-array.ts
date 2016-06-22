@@ -1,14 +1,14 @@
 import {Atom} from "./index";
 import {prop} from "./prop";
 
-class KeyIndex<T> {
-    constructor(protected key:string | number, protected source:ImmutableArray<T>) {}
+class ArrayIndex<T> {
+    constructor(protected key:ArrayIndexKey<T>, protected source:ImmutableArray<T>) {}
 
     @prop get index() {
         const index:{[value:string]:ImmutableArray<T>} = {};
         for (var i = 0; i < this.source.length; i++) {
             const item = this.source.get(i);
-            const value:string = (item as any)[this.key];
+            const value = this.key.predicate(item);
             let valueIndex = index[value];
             let items:T[];
             if (!valueIndex) {
@@ -23,6 +23,14 @@ class KeyIndex<T> {
     }
 }
 
+export class ArrayIndexKey<T> {
+    private static id = 0;
+    public id = ++ArrayIndexKey.id;
+
+    constructor(public predicate:(item:T)=>string | number) {}
+}
+
+
 export class ImmutableArray<T> {
     protected static emptyList = new ImmutableArray<{}>([]);
 
@@ -36,7 +44,7 @@ export class ImmutableArray<T> {
         this.items = items || [];
     }
 
-    protected index:{[key:string]:KeyIndex<T>}
+    protected index:{[key:string]:ArrayIndex<T>}
 
     get first() {
         return this.items[0];
@@ -101,20 +109,20 @@ export class ImmutableArray<T> {
         return null;
     }
 
-    getAllBy(key:string | number, value:string | number) {
+    getAllBy(indexKey:ArrayIndexKey<T>, value:string | number) {
         if (!this.index) {
             this.index = {};
         }
-        let keyIndex = this.index[key];
+        let keyIndex = this.index[indexKey.id];
         if (!keyIndex) {
-            keyIndex = this.index[key] = new KeyIndex(key, this);
+            keyIndex = this.index[indexKey.id] = new ArrayIndex(indexKey, this);
         }
         let valueIndex = keyIndex.index[value];
         return valueIndex || ImmutableArray.emptyList as ImmutableArray<T>;
     }
 
-    getBy(key:string | number, value:string | number) {
-        return this.getAllBy(key, value).items[0];
+    getBy(indexKey:ArrayIndexKey<T>, value:string | number) {
+        return this.getAllBy(indexKey, value).items[0];
     }
 
     get(index:number) {
@@ -143,23 +151,23 @@ export class ImmutableArray<T> {
         return this.items.lastIndexOf(searchElement, fromIndex);
     }
 
-    every(callbackfn:(value:T, index:number, array:T[]) => boolean, thisArg?:any):boolean {
+    every(callbackfn:(value:T, index:number, array:T[]) => boolean, thisArg?:{}):boolean {
         return this.items.every(callbackfn, thisArg);
     }
 
-    some(callbackfn:(value:T, index:number, array:T[]) => boolean, thisArg?:any):boolean {
+    some(callbackfn:(value:T, index:number, array:T[]) => boolean, thisArg?:{}):boolean {
         return this.items.some(callbackfn, thisArg);
     }
 
-    forEach(callbackfn:(value:T, index:number, array:T[]) => void, thisArg?:any):void {
+    forEach(callbackfn:(value:T, index:number, array:T[]) => void, thisArg?:{}):void {
         return this.items.forEach(callbackfn, thisArg);
     }
 
-    map<U>(callbackfn:(value:T, index:number, array:T[]) => U, thisArg?:any):U[] {
+    map<U>(callbackfn:(value:T, index:number, array:T[]) => U, thisArg?:{}):U[] {
         return this.items.map(callbackfn, thisArg);
     }
 
-    filter(callbackfn:(value:T, index:number, array:T[]) => boolean, thisArg?:any) {
+    filter(callbackfn:(value:T, index:number, array:T[]) => boolean, thisArg?:{}) {
         return this.items.filter(callbackfn, thisArg);
     }
 
