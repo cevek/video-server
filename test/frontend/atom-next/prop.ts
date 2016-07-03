@@ -40,12 +40,57 @@ export var prop:any = function (proto:any, prop:string, descriptor?:PropertyDesc
             }
             `);
         return {
+            enumerable: true,
             set: void 0,
             get: getterFn
         }
     }
     return {
+        enumerable: true,
         set: setFn,
         get: getFn
     }
 };
+/*
+const orig = Object.getOwnPropertyDescriptor;
+Object.getOwnPropertyDescriptor = function (obj:any, prop:string) {
+    var result = orig.apply(this, arguments);
+    if (obj && obj['_' + prop] instanceof Atom) {
+        return {
+            configurable: true,
+            enumerable: true,
+            value: obj['_' + prop].value
+        }
+    }
+    if (result.get && result.get.AtomGetter) {
+        delete result.get;
+        delete result.set;
+        result.value = null;
+    }
+    return result;
+}
+
+const ObjectKeys = Object.keys;
+Object.keys = function (obj:any) {
+    var result = ObjectKeys.apply(this, arguments);
+    for (var i = 0; i < result.length; i++) {
+        var prop = result[i];
+        if (prop[0] == '_' && prop instanceof Atom) {
+            result.splice(i, 1);
+            // result.push(prop.substr(1));
+        }
+    }
+    return [];
+}*/
+
+const ObjectGetOwnPropertyNames = Object.getOwnPropertyNames;
+Object.getOwnPropertyNames = function(obj){
+    var result = ObjectGetOwnPropertyNames.apply(this, arguments);
+    for (var i = 0; i < result.length; i++) {
+        var prop = result[i];
+        if (prop[0] == '_' && obj[prop] instanceof Atom) {
+            result.push(prop.substr(1));
+        }
+    }
+    return result;
+}
