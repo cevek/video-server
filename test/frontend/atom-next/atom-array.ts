@@ -40,8 +40,8 @@ export class ImmutableArray<T> {
         return this.items.length;
     }
 
-    constructor(items:T[]) {
-        this.items = items || [];
+    constructor(items:T[] = []) {
+        this.items = items;
     }
 
     protected index:{[key:string]:ArrayIndex<T>}
@@ -234,7 +234,6 @@ export class AtomArray<T> extends ImmutableArray<T> {
         const result = this.items.splice.apply(this.items, arguments);
         this.mutate();
         return result;
-
     }
 
     unshift(...items:T[]):number;
@@ -259,6 +258,15 @@ export class AtomArray<T> extends ImmutableArray<T> {
             this.items.pop();
         }
         this.mutate();
+    }
+
+    remove(item:T) {
+        const pos = this.items.indexOf(item);
+        if (pos > -1) {
+            this.splice(pos, 1);
+            return true;
+        }
+        return false;
     }
 
 }
