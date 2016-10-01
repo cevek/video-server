@@ -62,7 +62,7 @@ export class TaskList {
     constructor(public taskRunner:()=>void) {
         this.queue = new Array(this.size);
     }
-    
+
     static microTaskRunner = (callback: ()=>void)=>promise.then(callback);
 
     addTask(taskType:TaskType, atom:Atom, param?:any) {
@@ -112,9 +112,6 @@ export class Atom {
     static forceUpdateValue:any = {};
 
     constructor() {
-        if (Atom.activeSlave) {
-            this.creatorId = Atom.activeSlave.id;
-        }
     }
 
     static debugAtom(name:string) {
@@ -134,6 +131,7 @@ export class Atom {
         this.slaves = null;
         this.counter = 0;
         this.status = AtomStatus.PROP;
+        this.creatorId = Atom.activeSlave ? Atom.activeSlave.id : null;
         return this;
     }
 

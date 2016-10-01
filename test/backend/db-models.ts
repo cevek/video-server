@@ -1,25 +1,25 @@
 import {ITextLines, IPosts, IMediaFiles, ILines, IUploads, IUserTexts} from "./interfaces/db-models";
 import {BaseModel} from "./models/base";
 export class LinesDAO extends BaseModel<ILines> {
-    table = 'lines'
+    table = 'line'
 }
 
 export class MediaFilesDAO extends BaseModel<IMediaFiles> {
-    table = 'mediaFiles'
+    table = 'mediaFile'
 }
 
 export class PostsDAO extends BaseModel<IPosts> {
-    table = 'posts'
+    table = 'post'
 }
 
 export class TextLinesDAO extends BaseModel<ITextLines> {
-    table = 'textLines'
+    table = 'textLine'
 }
 
 export class UploadsDAO extends BaseModel<IUploads> {
-    table = 'uploads'
+    table = 'upload'
 }
 
 export class UserTextsDAO extends BaseModel<IUserTexts> {
-    table = 'userTexts'
+    table = 'userText'
 }
