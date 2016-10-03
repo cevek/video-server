@@ -6,7 +6,7 @@ export interface ILines {
     postId: number
     en: number
     ru: number
-    speaker: string
+    speaker: number
     seq: number
 }
 export interface ILinesFields {
@@ -14,10 +14,23 @@ export interface ILinesFields {
     postId: Field<number>
     en: Field<number>
     ru: Field<number>
-    speaker: Field<string>
+    speaker: Field<number>
     seq: Field<number>
 }
 export type ILinesFieldNames = "id" | "postId" | "en" | "ru" | "speaker" | "seq"
+
+export interface ISpeakers {
+    id: number
+    postId: number
+    name: string
+    photo: number
+}
+export interface ISpeakersFields {
+    id: Field<number>
+    postId: Field<number>
+    name: Field<string>
+    photo: Field<number>
+}
 
 
 export interface IMediaFiles {

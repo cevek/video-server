@@ -123,7 +123,7 @@ class SelectMedia extends React.Component<{
                     <input required
                            name={this.props.label}
                            checked={this.selected == item}
-                           value={item.id}
+                           value={item.id + ""}
                            onChange={()=>this.onChange(item)}
                            type="radio"/>
                     {`${item.title} (${item.lang})`}

@@ -30,6 +30,16 @@
     border-radius: 3px;
 }
 
+.speaker {
+    position: absolute;
+    margin: -5px 0 0 -65px;
+    width: 50px;
+    height: 50px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 5px;
+    background-size: cover;
+}
+
 .en {
 
 }
@@ -45,8 +55,22 @@
 
 .current_time {
     position: absolute;
-    left: calc(50% - 350px);
+    left: calc(50% - 380px);
     width: 20px;
     background: rgba(255, 255, 255, .3);
     top: 0;
+}
+
+.real_time {
+    position: absolute;
+    left: calc(50% - 420px);
+    opacity: .5;
+    width: 20px;
+}
+
+.speech_detector {
+    position: absolute;
+    left: calc(50% - 500px);
+    width: 30px;
+    background: yellow;
 }

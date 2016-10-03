@@ -1,7 +1,10 @@
-import {ITextLines, IPosts, IMediaFiles, ILines, IUploads, IUserTexts} from "./interfaces/db-models";
+import {ITextLines, IPosts, IMediaFiles, ILines, IUploads, IUserTexts, ISpeakers} from "./interfaces/db-models";
 import {BaseModel} from "./models/base";
 export class LinesDAO extends BaseModel<ILines> {
     table = 'line'
+}
+export class SpeakersDAO extends BaseModel<ISpeakers> {
+    table = 'speaker'
 }
 
 export class MediaFilesDAO extends BaseModel<IMediaFiles> {

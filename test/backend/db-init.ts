@@ -3,7 +3,7 @@ const mysql:IMySql = require('mysql2');
 
 import {config} from './config';
 import {DB} from "./db";
-import {LinesDAO, MediaFilesDAO, PostsDAO, TextLinesDAO, UploadsDAO, UserTextsDAO} from "./db-models";
+import {LinesDAO, MediaFilesDAO, PostsDAO, TextLinesDAO, UploadsDAO, UserTextsDAO, SpeakersDAO} from "./db-models";
 
 var pool = mysql.createPool({
     database: config.db.name,
@@ -14,6 +14,7 @@ var pool = mysql.createPool({
 export const db = new DB(pool);
 
 export const linesDAO = new LinesDAO(db);
+export const speakersDAO = new SpeakersDAO(db);
 export const mediaFilesDAO = new MediaFilesDAO(db);
 export const postsDAO = new PostsDAO(db);
 export const textLinesDAO = new TextLinesDAO(db);

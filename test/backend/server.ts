@@ -1,9 +1,9 @@
-import {IGetPost} from "./interfaces/transport";
 'use strict';
+import {IGetPost} from "./interfaces/transport";
 import {toMap} from "./utils";
 import {config} from "./config";
 import {createPost} from "./services/post";
-import {linesDAO, mediaFilesDAO, textLinesDAO, postsDAO} from "./db-init";
+import {linesDAO, mediaFilesDAO, textLinesDAO, postsDAO, speakersDAO} from "./db-init";
 import {IPosts} from "./interfaces/db-models";
 var fs = require('fs');
 var koa = require('koa');
@@ -13,7 +13,7 @@ var cors = require('koa-cors');
 var koaBody = require('koa-body');
 var app = koa();
 
-router.get('/', async () => {
+router.get('/', async() => {
     this.body = 'Hello World!';
 });
 
@@ -22,10 +22,17 @@ router.get('/v1/post/:id', async function () {
     var post = await postsDAO.findById(id);
     if (post) {
         var lines = await linesDAO.findAll({postId: id});
-        lines.sort((a, b) => a.seq < b.seq ? -1 : 1);
+        //lines.sort((a, b) => a.seq < b.seq ? -1 : 1);
+        const speakers = await speakersDAO.findAll('WHERE id IN (' + lines.map(l => l.speaker).join() + ')');
         var textLines = await textLinesDAO.findAll({postId: id});
-        var mediaFiles = await mediaFilesDAO.findByIds([post.video, post.thumbs, post.enAudio, post.ruAudio, post.enSub, post.ruSub]);
-        var data: IGetPost = {post, lines: lines, textLines: toMap(textLines), mediaFiles: toMap(mediaFiles)};
+        var mediaFiles = await mediaFilesDAO.findByIds([post.video, post.thumbs, post.enAudio, post.ruAudio, post.enSub, post.ruSub, ...speakers.map(s => s.photo)]);
+        var data: IGetPost = {
+            post,
+            lines: lines,
+            textLines: toMap(textLines),
+            mediaFiles: toMap(mediaFiles),
+            speakers: toMap(speakers)
+        };
         this.body = {success: true, data};
     }
     else {
@@ -65,7 +72,7 @@ app.use(router.routes());
 app.use(router.allowedMethods());
 app.listen(1335);
 
-app.on('error', function (err:Error) {
+app.on('error', function (err: Error) {
     console.error('App Error');
     console.error(err);
     console.error(err.stack);

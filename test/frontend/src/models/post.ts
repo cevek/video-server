@@ -20,12 +20,14 @@ export class PostModel {
 
     private getLines() {
         var data = this.json;
-/*
-            const shiftEnSubs = this.mediaFiles.getOrThrow(data.post.enSub).shiftTime * 100;
-            const shiftRuSubs = this.mediaFiles.getOrThrow(data.post.ruSub).shiftTime * 100;
-            const shiftEnAudio = this.mediaFiles.getOrThrow(data.post.enAudio).shiftTime * 100;
-            const shiftRuAudio = this.mediaFiles.getOrThrow(data.post.ruAudio).shiftTime * 100;
-*/
+
+
+        /*
+                    const shiftEnSubs = this.mediaFiles.getOrThrow(data.post.enSub).shiftTime * 100;
+                    const shiftRuSubs = this.mediaFiles.getOrThrow(data.post.ruSub).shiftTime * 100;
+                    const shiftEnAudio = this.mediaFiles.getOrThrow(data.post.enAudio).shiftTime * 100;
+                    const shiftRuAudio = this.mediaFiles.getOrThrow(data.post.ruAudio).shiftTime * 100;
+        */
         const newData = data.lines.map(line => {
             const en = this.textLines.get(line.en);
             const ru = this.textLines.get(line.ru);
@@ -40,7 +42,7 @@ export class PostModel {
             return {
                 en: en,
                 ru: ru,
-                speaker: line.speaker
+                speaker: data.speakers[line.speaker]
             }
         });
         newData.sort((a, b) => a.en.start < b.en.start ? -1 : 1);

@@ -10,7 +10,7 @@ export class FormField<T> {
 }
 
 export class Form extends React.Component<{onSubmit?:()=>void}, {}> {
-    onSubmit = (e:Event) => {
+    onSubmit = (e:React.FormEvent) => {
         if (this.props.onSubmit) {
             this.props.onSubmit();
         }
