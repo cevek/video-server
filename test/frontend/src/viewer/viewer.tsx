@@ -3,12 +3,12 @@ import {PostModel} from "./../models/post";
 import {Thumbs} from "./thumbs";
 import {Timeline} from "./timeline";
 import {TimelineConnector} from "./timeline-connector";
-import {LineAllocator} from "../utils/time-allocate";
+import {disposer} from "../utils/time-allocate";
 import {Subtitles} from "./subtitles";
 import {AudioPlayer} from "../utils/audio-player";
 import {config} from "../../../backend/config";
 import {EditorHistory} from "../utils/history";
-import  * as style from "./viewer.css";
+import * as style from "./viewer.css";
 
 export class Viewer extends React.Component<{params: any, resolved: PostModel}, {}> {
     audioPlayer = new AudioPlayer();
@@ -29,8 +29,8 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
         const lineH = 50;
         const resizeKoef = 4;
 
-        const positions = this.postModel.lines.map(line => (line.en.start + line.en.dur / 2) / resizeKoef);
-        const renderLines = new LineAllocator(positions, 50).allocateRenderLines();
+        const positions = this.postModel.lines.map(line => ({value: (line.en.start + line.en.dur / 2) / resizeKoef, height: 50}));
+        const renderLines = disposer(positions);
 
         return <div>
             <div className={style.toolbar}>

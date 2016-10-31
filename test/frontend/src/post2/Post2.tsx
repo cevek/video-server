@@ -4,7 +4,7 @@ import {PostModel} from "../models/post";
 import * as styles from "./Post2.css";
 import {prop} from "../../atom-next/prop";
 import {autowatch} from "../../atom-next/autowatch";
-import {LineAllocator} from "../utils/time-allocate";
+import {disposer} from "../utils/time-allocate";
 interface Post2Props {
     params: any;
     resolved: PostModel;
@@ -227,12 +227,16 @@ class VideoPlayerVM {
 
 
     playTime(time: number, forceNextSeek = false) {
-        this.video.element.currentTime = time;
         if (this.currentTime !== time && !forceNextSeek) {
             this.skipNextSeek = true;
         }
-        this.currentTime = time;
+        this.seek(time);
         this.play();
+    }
+
+    seek(time: number) {
+        this.video.element.currentTime = time;
+        this.currentTime = time;
     }
 
     play() {
@@ -252,6 +256,10 @@ class LineCalc {
 
     timeToPx(time: number) {
         return time * 100 / this.resizeKoef;
+    }
+
+    pxToTime(px: number) {
+        return px * this.resizeKoef / 100;
     }
 }
 
@@ -381,8 +389,8 @@ export class Post2_ extends React.Component<Post2Props, {}> {
 
     @prop get renderLines() {
         const post = this.props.resolved;
-        const positions = post.lines.map(line => (line.en.start + line.en.dur / 2) / this.resizeKoef);
-        return new LineAllocator(positions, 50).allocateRenderLines();
+        const positions = post.lines.map(line => ({value: (line.en.start + line.en.dur / 2) / this.resizeKoef, height: 50}));
+        return disposer(positions);
     }
 
     render() {
@@ -424,15 +432,9 @@ export class Post2 extends React.Component<Post2Props, {}> {
 
     overlay = new Ref<HTMLElement>(this);
     video = new Ref<HTMLVideoElement>(this);
-    speech: {start: number; dur: number}[];
 
     vm = new VideoPlayerVM(this.props.resolved.post.id, this.video);
     lineCalc = new LineCalc(4);
-
-    constructor(props: Post2Props) {
-        super(props)
-        this.speech = this.speechDetector();
-    }
 
     componentDidMount() {
         this.vm.init();
@@ -459,8 +461,8 @@ export class Post2 extends React.Component<Post2Props, {}> {
 
     @prop get renderLines() {
         const post = this.props.resolved;
-        const positions = post.lines.map(line => this.lineCalc.timeToPx(line.en.start / 100 + line.en.dur / 200));
-        return new LineAllocator(positions, 50).allocateRenderLines();
+        const positions = post.lines.map(line => ({value: this.lineCalc.timeToPx(line.en.start / 100 + line.en.dur / 200), height: 50}));
+        return disposer(positions);//new LineAllocator(positions, 50).allocateRenderLines();
     }
 
     onKeyPress = (event: KeyboardEvent) => {
@@ -481,127 +483,14 @@ export class Post2 extends React.Component<Post2Props, {}> {
         this.vm.playTime(post.lines[i].en.start / 100);
     }
 
-    onSpeechClick = (event: any) => {
-        const i = event.currentTarget.value;
-        this.vm.playTime(this.speech[i].start);
-    }
+    onScroll = () => {
+        if (this.vm.stopped) {
+            // const time = this.lineCalc.pxToTime(this.overlay.element.scrollTop + 300);
+            // console.log(time);
 
-    speechDetector() {
-        return `SPKR-INFO SpeechNonSpeech 1 <NA> <NA> <NA> unknown SIL <NA>
-SPEAKER SpeechNonSpeech 5 0.000 1.120 <NA> <NA> SIL <NA>
-SPKR-INFO SpeechNonSpeech 1 <NA> <NA> <NA> unknown SOUND <NA>
-SPEAKER SpeechNonSpeech 5 1.120 12.510 <NA> <NA> SOUND <NA>
-SPKR-INFO SpeechNonSpeech 1 <NA> <NA> <NA> unknown SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 13.630 0.750 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 14.380 1.080 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 15.460 0.780 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 16.240 5.550 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 21.790 0.770 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 22.560 13.690 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 36.250 0.910 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 37.160 1.010 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 38.170 8.010 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 46.180 5.940 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 52.120 0.830 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 52.950 3.320 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 56.270 1.010 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 57.280 2.800 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 60.080 0.810 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 60.890 1.330 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 62.220 0.930 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 63.150 4.720 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 67.870 1.250 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 69.120 1.880 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 71.000 0.760 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 71.760 5.240 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 77.000 1.670 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 78.670 2.020 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 80.690 1.230 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 81.920 5.530 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 87.450 0.310 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 87.760 2.510 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 90.270 0.300 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 90.570 1.230 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 91.800 0.640 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 92.440 1.230 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 93.670 0.820 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 94.490 1.540 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 96.030 0.390 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 96.420 1.100 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 97.520 0.300 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 97.820 0.750 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 98.570 0.560 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 99.130 1.620 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 100.750 0.300 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 101.050 0.880 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 101.930 0.950 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 102.880 1.290 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 104.170 1.610 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 105.780 0.490 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 106.270 1.020 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 107.290 0.320 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 107.610 5.480 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 113.090 0.300 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 113.390 1.130 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 114.520 0.370 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 114.890 0.760 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 115.650 0.750 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 116.400 2.050 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 118.450 0.420 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 118.870 2.130 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 121.000 0.750 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 121.750 0.770 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 122.520 1.350 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 123.870 0.750 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 124.620 0.480 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 125.100 0.750 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 125.850 0.300 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 126.150 1.190 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 127.340 1.200 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 128.540 0.990 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 129.530 1.100 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 130.630 1.450 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 132.080 0.750 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 132.830 0.810 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 133.640 0.300 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 133.940 3.800 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 137.740 0.300 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 138.040 2.220 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 140.260 1.250 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 141.510 0.790 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 142.300 0.620 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 142.920 1.000 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 143.920 0.300 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 144.220 1.700 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 145.920 0.400 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 146.320 0.750 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 147.070 0.400 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 147.470 1.420 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 148.890 0.330 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 149.220 0.750 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 149.970 1.020 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 150.990 1.490 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 152.480 0.600 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 153.080 0.920 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 154.000 0.470 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 154.470 1.030 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 155.500 0.470 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 155.970 1.340 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 157.310 2.330 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 159.640 0.760 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 160.400 0.310 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 160.710 1.230 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 161.940 1.120 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 163.060 0.850 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 163.910 18.240 <NA> <NA> SOUND <NA>
-SPEAKER SpeechNonSpeech 5 182.150 4.010 <NA> <NA> SIL <NA>
-SPEAKER SpeechNonSpeech 5 186.160 2.080 <NA> <NA> SPEECH <NA>
-SPEAKER SpeechNonSpeech 5 188.240 3.090 <NA> <NA> SIL <NA>
-`.split('\n').reduce((arr, line) => {
-            const r = line.split(' ');
-            if (r[7] == 'SPEECH' && r[3] !== '<NA>') arr.push({start: +r[3], dur: +r[4]});
-            return arr;
-        }, []);
+            // this.vm.skipNextSeek = true;
+            // this.vm.seek(time);
+        }
     }
 
     render() {
@@ -618,15 +507,8 @@ SPEAKER SpeechNonSpeech 5 188.240 3.090 <NA> <NA> SIL <NA>
                        className={styles.videoControl}
                        src={videoFile.url}
                        controls/>
-                <div ref={this.overlay.ref} className={styles.videoOverlay}>
+                <div ref={this.overlay.ref} onScroll={this.onScroll} className={styles.videoOverlay}>
                     <CurrentTime vm={this.vm} lineCalc={this.lineCalc}/>
-                    {this.speech.map((sp, i) =>
-                        <div
-                            onClick={this.onSpeechClick}
-                            className={styles.speechDetector}
-                            value={i + ''}
-                            style={{top: this.lineCalc.timeToPx(sp.start), height: this.lineCalc.timeToPx(sp.dur)}}/>
-                    )}
                     {post.lines.map((line, i) =>
                         <div>
                             <div
