@@ -5,7 +5,7 @@ import {Thumbs} from "../viewer/thumbs";
 import {Timeline} from "../viewer/timeline";
 import {TimelineConnector} from "../viewer/timeline-connector";
 import {AudioPlayer} from "../utils/audio-player";
-import {LineAllocator} from "../utils/time-allocate";
+import {disposer} from "../utils/time-allocate";
 import {EditorText} from "./editor-text";
 import {config} from "../../../backend/config";
 import * as style from "./styles/editor.css";
@@ -36,10 +36,10 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
         const postModel = this.model.postModel;
 
         // const positions = this.model.postModel.lines.map(line => (line.en.start + line.en.dur / 2) / this.model.resizeKoef);
-        const positions = this.model.lines.map(line => (line.en.start + line.en.dur / 2) / this.model.resizeKoef);
-        // console.log(positions, positions2);
+        const positions = this.model.lines.map(line => ({value: (line.en.start + line.en.dur / 2) / this.model.resizeKoef, height: 50});
+// console.log(positions, positions2);
 
-        const renderLines = new LineAllocator(positions, 50).allocateRenderLines();
+        const renderLines = disposer(positions);// new LineAllocator(positions, 50).allocateRenderLines();
 
 
         return <div className={style.editor}>
