@@ -3,8 +3,10 @@ import {Line} from "./line";
 import {prop} from "../../atom-next/prop";
 import {IPosts, IMediaFiles, ITextLines} from "../../../backend/interfaces/db-models";
 import {HashMap} from "../utils/hashmap";
+import {GroupList} from "../utils/group-maker";
 export class PostModel {
     @prop lines: Line[];
+    @prop groups: GroupList;
     @prop post: IPosts;
 
     textLines: HashMap<ITextLines>
@@ -46,6 +48,7 @@ export class PostModel {
             }
         });
         newData.sort((a, b) => a.en.start < b.en.start ? -1 : 1);
+        this.groups = GroupList.generateFromLines(newData, 500);
         return newData;
     }
 

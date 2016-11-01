@@ -4,7 +4,7 @@ import {PostModel} from "../models/post";
 import * as styles from "./Post2.css";
 import {prop} from "../../atom-next/prop";
 import {autowatch} from "../../atom-next/autowatch";
-import {disposer} from "../utils/time-allocate";
+import {disposerWithGroup} from "../utils/time-allocate";
 interface Post2Props {
     params: any;
     resolved: PostModel;
@@ -150,7 +150,7 @@ export class LocalStorageValue<T> {
     }
 
     protected _set(value: T) {
-        console.log("Save", this.name, this.value);
+        // console.log("Save", this.name, this.value);
         try {
             localStorage.setItem(this.name, JSON.stringify(value));
         } catch (e) {
@@ -171,7 +171,7 @@ export class LocalStorageValue<T> {
         } catch (e) {
             LocalStorageValue.catchError(e);
         }
-        console.log("Read", this.name, this.value);
+        // console.log("Read", this.name, this.value);
     }
 }
 
@@ -264,167 +264,6 @@ class LineCalc {
 }
 
 @autowatch
-export class Post2_ extends React.Component<Post2Props, {}> {
-    static load(params: any) {
-        return PostModel.fetch(params.id);
-    }
-
-    currentTime = 0;
-    @prop currentSelectedLine = -1;
-
-    captureTime = false;
-
-    video = new Ref<HTMLVideoElement>(this);
-    overlay = new Ref<HTMLElement>(this);
-    // linesRef: Ref<HTMLElement>[] = this.resolved.pos;
-
-    storageValue = new LocalStorageValue<any>('post_' + this.props.resolved.post.id);
-
-    componentDidMount() {
-        const storagePost = this.storageValue.get();
-        if (storagePost) {
-            this.video.element.currentTime = storagePost.currentTime;
-            console.log("Set CurrentTime", storagePost.currentTime);
-            this.currentTime = storagePost.currentTime;
-            // this.findClosestLineByTime(storagePost.currentTime);
-        }
-        this.scrollToView();
-    }
-
-    scrollToView() {
-        if (!this.skipNextScrollToView) {
-            this.overlay.element.scrollTop = this.currentTime * 100 / this.resizeKoef - 50;
-        }
-        this.skipNextScrollToView = false;
-    }
-
-
-    onPlay = () => {
-        this.captureTime = true;
-        this.updateCurrentTime();
-    }
-
-    updateCurrentTime = () => {
-        this.currentTime = this.video.element.currentTime;
-        this.updateCurrentSelectedLine();
-        if (this.captureTime) {
-            setTimeout(this.updateCurrentTime, 16);
-        }
-    }
-
-    updateCurrentSelectedLine() {
-        const post = this.props.resolved;
-        let currentTime = this.currentTime * 100;
-        for (let i = 0; i < post.lines.length; i++) {
-            const line = post.lines[i];
-            if (line.en.start <= currentTime && line.en.start + line.en.dur > currentTime) {
-                this.currentSelectedLine = i;
-                return;
-            }
-        }
-        this.currentSelectedLine = -1;
-    }
-
-    findClosestLineByTime(time: number) {
-        const post = this.props.resolved;
-        let minTime = Infinity;
-        for (let i = 0; i < post.lines.length; i++) {
-            const line = post.lines[i];
-            let diffTime = Math.abs(line.en.start + line.en.dur - this.currentTime);
-            if (diffTime > minTime) {
-                return i - 1;
-            }
-            minTime = diffTime;
-        }
-        return -1;
-    }
-
-    onStop = () => {
-        this.captureTime = false;
-        this.storageValue.set({
-            currentTime: this.currentTime
-        });
-        console.log("Save CurrentTime", this.currentTime);
-    }
-
-    onSeek = () => {
-        this.currentTime = this.video.element.currentTime;
-        this.storageValue.set({
-            currentTime: this.currentTime
-        });
-        this.scrollToView();
-        console.log("Save CurrentTime", this.currentTime);
-    }
-
-    onKeyPress = (event: KeyboardEvent) => {
-        const video = this.video.element;
-        console.log(event);
-
-        if (event.keyCode == 32) {
-            if (video.paused) {
-                video.play();
-                video.currentTime -= 5;
-                this.skipNextScrollToView = true;
-            } else {
-                video.pause();
-            }
-        }
-        event.preventDefault();
-    }
-
-    skipNextScrollToView = false;
-    onLineClick = (event: any) => {
-        const i = event.currentTarget.value;
-        const post = this.props.resolved;
-        this.playTime(post.lines[i].en.start / 100);
-        this.skipNextScrollToView = true;
-    }
-
-    playTime(time: number) {
-        this.video.element.currentTime = time;
-        this.video.element.play();
-    }
-
-    resizeKoef = 4;
-
-    @prop get renderLines() {
-        const post = this.props.resolved;
-        const positions = post.lines.map(line => ({value: (line.en.start + line.en.dur / 2) / this.resizeKoef, height: 50}));
-        return disposer(positions);
-    }
-
-    render() {
-        const post = this.props.resolved;
-        const videoFile = post.mediaFiles.get(post.post.video);
-        return (
-            <div>
-                <DocKey onKeyPress={this.onKeyPress}/>
-                <video ref={this.video.ref}
-                       onPlay={this.onPlay}
-                       onPause={this.onStop}
-                       onSeeked={this.onSeek}
-                       className={styles.videoControl}
-                       src={videoFile.url}
-                       controls/>
-                <div ref={this.overlay.ref} className={styles.videoOverlay}>
-                    {post.lines.map((line, i) =>
-                        <div style={{top: this.renderLines[i]}} value={i + ""} onClick={this.onLineClick}
-                             className={classNames(styles.line, {[styles.selected]: this.currentSelectedLine == i})}>
-                            <div className={styles.en}>
-                                {line.en.text}
-                            </div>
-                            <div className={styles.ru}>
-                                {line.ru.text}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
-    }
-}
-
-@autowatch
 export class Post2 extends React.Component<Post2Props, {}> {
     static load(params: any) {
         return PostModel.fetch(params.id);
@@ -461,8 +300,16 @@ export class Post2 extends React.Component<Post2Props, {}> {
 
     @prop get renderLines() {
         const post = this.props.resolved;
-        const positions = post.lines.map(line => ({value: this.lineCalc.timeToPx(line.en.start / 100 + line.en.dur / 200), height: 50}));
-        return disposer(positions);//new LineAllocator(positions, 50).allocateRenderLines();
+        const positions = post.lines.map(line => ({
+            top: this.lineCalc.timeToPx(line.en.start / 100),
+            bottom: this.lineCalc.timeToPx(line.en.start / 100 + line.en.dur / 100),
+            height: 50
+        }));
+        // console.log(JSON.stringify(positions));
+
+        const res = disposerWithGroup(post.groups.groups.slice(), positions);//new LineAllocator(positions, 50).allocateRenderLines();
+        // console.log(res);
+        return res;
     }
 
     onKeyPress = (event: KeyboardEvent) => {
@@ -494,27 +341,43 @@ export class Post2 extends React.Component<Post2Props, {}> {
     }
 
     render() {
-
         const post = this.props.resolved;
         const videoFile = post.mediaFiles.get(post.post.video);
         return (
             <div>
-                <DocKey onKeyPress={this.onKeyPress}/>
+                <DocKey onKeyPress={this.onKeyPress} />
                 <video ref={this.video.ref}
                        onPlay={this.vm.onPlay}
                        onPause={this.vm.onStop}
                        onSeeked={this.vm.onSeek}
                        className={styles.videoControl}
                        src={videoFile.url}
-                       controls/>
+                       controls />
                 <div ref={this.overlay.ref} onScroll={this.onScroll} className={styles.videoOverlay}>
-                    <CurrentTime vm={this.vm} lineCalc={this.lineCalc}/>
-                    {post.lines.map((line, i) =>
-                        <div>
+                    <CurrentTime vm={this.vm} lineCalc={this.lineCalc} />
+                    <div>
+                        {post.groups.groups.map((group, i) => {
+                            const top = this.renderLines[group.start].top;
+                            const height = this.renderLines[group.end].bottom - top;
+                            const splits = new Array(group.end - group.start).fill(0).map((v, j) =>
+                                <div onClick={()=>this.onSplitGroup(i, j)} className={styles.splitter}
+                                     style={{top: this.renderLines[j + group.start].bottom - top}} />
+                            );
+                            return (
+                                <div className={styles.group} style={{top: top, height: height}}>
+                                    {i > 0 && <div onClick={()=>this.joinGroup(i - 1)} className={styles.joinGroup} />}
+                                    {splits}
+                                </div>
+                            )
+                        })}
+                    </div>
+                    {post.lines.map((line, i) => {
+                        return <div>
                             <div
                                 className={styles.realTime}
-                                style={{top: this.lineCalc.timeToPx(line.en.start/100), height: this.lineCalc.timeToPx(line.en.dur/100), background: '#'+(i * 123757631).toString(16).substr(2,6) }}/>
-                            <div style={{top: this.renderLines[i]}}
+                                style={{top: this.lineCalc.timeToPx(line.en.start/100), height: this.lineCalc.timeToPx(line.en.dur/100), background: '#'+(i * 123757631).toString(16).substr(2,6) }} />
+
+                            <div style={{top: this.renderLines[i].top, height: this.renderLines[i].height}}
                                  data-start={line.en.start}
                                  value={i + ""}
                                  onClick={this.onLineClick}
@@ -534,10 +397,18 @@ export class Post2 extends React.Component<Post2Props, {}> {
                                 </div>
                             </div>
                         </div>
-                    )}
+                    })}
                 </div>
             </div>
         );
+    }
+
+    private onSplitGroup(groupPos: number, linePos: number) {
+        this.props.resolved.groups.split(groupPos, linePos);
+    }
+
+    private joinGroup(groupPos: number) {
+        this.props.resolved.groups.joinWithNext(groupPos);
     }
 }
 
@@ -552,7 +423,7 @@ class CurrentTime extends React.Component<CurrentTimeProps, {}> {
     render() {
         return (
             <div className={styles.currentTime}
-                 style={{height: this.props.lineCalc.timeToPx(this.props.vm.currentTime)}}/>
+                 style={{height: this.props.lineCalc.timeToPx(this.props.vm.currentTime)}} />
         )
     }
 }

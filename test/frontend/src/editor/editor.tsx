@@ -36,7 +36,7 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
         const postModel = this.model.postModel;
 
         // const positions = this.model.postModel.lines.map(line => (line.en.start + line.en.dur / 2) / this.model.resizeKoef);
-        const positions = this.model.lines.map(line => ({value: (line.en.start + line.en.dur / 2) / this.model.resizeKoef, height: 50});
+        const positions = this.model.lines.map(line => ({value: (line.en.start + line.en.dur / 2) / this.model.resizeKoef, height: 50}));
 // console.log(positions, positions2);
 
         const renderLines = disposer(positions);// new LineAllocator(positions, 50).allocateRenderLines();

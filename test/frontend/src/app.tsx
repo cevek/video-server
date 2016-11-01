@@ -12,7 +12,6 @@ import {uploadRoute, postRoute, editorRoute, indexRoute, post2Route} from "./rou
 import {Viewer} from "./viewer/viewer";
 import {Upload} from "./uploader/uploader";
 import {atomBenchmark} from "../atom-next/benchmark";
-import {Boom} from "../boom/boom";
 import {Post2} from "./post2/Post2";
 
 // atomBenchmark();
