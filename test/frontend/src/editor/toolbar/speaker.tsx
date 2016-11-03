@@ -1,8 +1,8 @@
 import * as React from "react";
 import {EditorModel} from "../editor-model";
 import  * as style from "./styles/speaker.css";
-import {prop} from "../../../atom-next/prop";
-import {autowatch} from "../../../atom-next/autowatch";
+import {prop} from "atom-next";
+import {autowatch} from "atom-next";
 import {Escape} from "../../escape";
 import {Form, TextInput, FormField} from "../../form";
 import * as i from "../../font-awesome-4.6.1/css/font-awesome.css";

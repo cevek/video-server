@@ -1,8 +1,8 @@
 import * as React from "react";
 import {AudioPlayer} from "../utils/audio-player";
 import * as style from "./audio-selection.css";
-import {autowatch} from "../../atom-next/autowatch";
-import {prop} from "../../atom-next/prop";
+import {autowatch} from "atom-next";
+import {prop} from "atom-next";
 import {AudioSelectionData} from "../audio-selection-model";
 
 @autowatch

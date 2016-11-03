@@ -1,7 +1,24 @@
-import {prop} from "../../atom-next/prop";
-import {ITextLines, ISpeakers} from "../../../backend/interfaces/db-models";
+import {prop} from "atom-next";
+import {TextLine} from "./TextLine";
+import {Speaker} from "./Speaker";
+import {Lang} from "./Lang";
 export class Line {
-    @prop en: ITextLines;
-    @prop ru: ITextLines;
-    @prop speaker: ISpeakers;
+    @prop en: TextLine;
+    @prop ru: TextLine;
+    @prop speaker: Speaker;
+
+    constructor(en: TextLine, ru: TextLine, speaker: Speaker) {
+        this.en = en;
+        this.ru = ru;
+        this.speaker = speaker;
+    }
+
+    getTextLine(lang: Lang): TextLine {
+        switch (lang) {
+            case Lang.EN:
+                return this.en;
+            case Lang.RU:
+                return this.ru;
+        }
+    }
 }

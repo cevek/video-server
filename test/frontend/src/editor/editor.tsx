@@ -1,19 +1,17 @@
 import * as React from "react";
 import {PostModel} from "./../models/post";
-import {EditorModel} from "./editor-model";
 import {Thumbs} from "../viewer/thumbs";
 import {Timeline} from "../viewer/timeline";
 import {TimelineConnector} from "../viewer/timeline-connector";
 import {AudioPlayer} from "../utils/audio-player";
 import {disposer} from "../utils/time-allocate";
 import {EditorText} from "./editor-text";
-import {config} from "../../../backend/config";
 import * as style from "./styles/editor.css";
 import {EditorToolbar} from "./toolbar/toolbar";
 import {EditorTitle} from "./editor-title";
 import {EditorTags} from "./editor-tags";
-import {prop} from "../../atom-next/prop";
-import {autowatch} from "../../atom-next/autowatch";
+import {prop} from "atom-next";
+import {autowatch} from "atom-next";
 
 
 @autowatch

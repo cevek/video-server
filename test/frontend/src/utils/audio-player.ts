@@ -1,7 +1,7 @@
 import {FFT} from "sound-utils/FFT";
 import {SoundLoader} from "sound-utils/SoundLoader";
 import {Play, PlayingStatus} from "sound-utils/Play";
-import {prop} from "../../atom-next/prop";
+import {prop} from "atom-next";
 
 var audioContext = new AudioContext();
 

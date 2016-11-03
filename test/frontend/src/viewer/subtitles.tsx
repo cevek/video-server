@@ -4,7 +4,7 @@ import {PlayingStatus} from "sound-utils/Play";
 import {PostModel} from "../models/post";
 import {AudioPlayer} from "../utils/audio-player";
 import * as style from "./subtitles.css";
-import {ITextLines} from "../../../backend/interfaces/db-models";
+import {ITextLines} from "../models/DBModels";
 
 export class Subtitles extends React.Component<{postModel: PostModel; player: AudioPlayer; resizeKoef: number; renderLines: number[]}, {}> {
     duration:number = 0;

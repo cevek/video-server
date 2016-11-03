@@ -4,14 +4,19 @@
     "target": "es5",
     "outDir": "built",
     "jsx": "react",
-    "noLib": true,
+    "lib": ["es6", "dom"],
     "noImplicitAny": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "skipDefaultLibCheck": true,
-    "skipLibCheck": true,
     "sourceMap": true
   },
+  "files": [
+    "src/app.tsx",
+    "src/declares.d.ts",
+    "typings/whatwg-fetch/whatwg-fetch.d.ts",
+    "typings/youtube-api.ts"
+  ],
   "exclude": [
     "node_modules"
   ]

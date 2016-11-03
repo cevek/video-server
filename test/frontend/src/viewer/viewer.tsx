@@ -6,7 +6,6 @@ import {TimelineConnector} from "./timeline-connector";
 import {disposer} from "../utils/time-allocate";
 import {Subtitles} from "./subtitles";
 import {AudioPlayer} from "../utils/audio-player";
-import {config} from "../../../backend/config";
 import {EditorHistory} from "../utils/history";
 import * as style from "./viewer.css";
 

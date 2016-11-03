@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {prop} from "../atom-next/prop";
+import {prop} from "atom-next";
 
 
 export class FormField<T> {
@@ -10,7 +10,7 @@ export class FormField<T> {
 }
 
 export class Form extends React.Component<{onSubmit?:()=>void}, {}> {
-    onSubmit = (e:React.FormEvent) => {
+    onSubmit = (e:React.FormEvent<{}>) => {
         if (this.props.onSubmit) {
             this.props.onSubmit();
         }

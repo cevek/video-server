@@ -1,10 +1,9 @@
 import * as React from "react";
-import {config} from "../../../backend/config";
 import {PostModel} from "../models/post";
 import * as style from "./thumbs.css";
 import {classes} from "../utils/cl";
 import {EditorModel} from "../editor/editor-model";
-import {autowatch} from "../../atom-next/autowatch";
+import {autowatch} from "atom-next";
 
 
 interface IThumb {

@@ -1,7 +1,7 @@
 import {Line} from "../models/Line";
-import {prop} from "../../atom-next/prop";
+import {prop} from "atom-next";
 import {assert} from "./assert";
-import {AtomArray} from "../../atom-next/atom-array";
+import {AtomArray} from "atom-next";
 
 export class Group {
     start: number;

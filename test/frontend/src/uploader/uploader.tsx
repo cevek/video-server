@@ -1,9 +1,9 @@
 import './upload.css';
 import * as React from 'react';
-import {TrackInfo} from '../../../backend/interfaces/track-info';
-import {MediaType} from '../../../backend/interfaces/media-types';
 import {editorRoute} from "../routes";
-import {IPosts} from "../../../backend/interfaces/db-models";
+import {TrackInfo} from "../models/TrackInfo";
+import {MediaType} from "../models/MediaTypes";
+import {IPosts} from "../models/DBModels";
 
 interface MediaResult {
     video: TrackInfo;

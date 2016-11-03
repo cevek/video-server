@@ -1,7 +1,7 @@
 import {EditorHistoryData} from "../utils/history";
 import {EditorModel} from "./editor-model";
-import {prop} from "../../atom-next/prop";
-import {AtomArray} from "../../atom-next/atom-array";
+import {prop} from "atom-next";
+import {AtomArray} from "atom-next";
 
 enum SpeakersListHistoryType{
     ADD = 1,
@@ -21,14 +21,14 @@ class HistorySpeakersList extends EditorHistoryData<HistorySpeakersList> {
 }
 
 export class EditorSpeakerList {
-    @prop list = new AtomArray<string>([]);
+    @prop list = new AtomArray<Speaker>([]);
 
     constructor(public model:EditorModel) {
         this.model.history.listen(historySpeakerList, this.onHistory)
     }
 
     onHistory = (data:HistorySpeakersList, isRedo:boolean) => {
-        if (data.subtype == SpeakersListHistoryType.ADD) {
+        /*if (data.subtype == SpeakersListHistoryType.ADD) {
             if (isRedo) {
                 this.list.push(data.speaker);
             }
@@ -54,55 +54,47 @@ export class EditorSpeakerList {
                 this.list.splice(data.pos, 0, data.oldVal);
                 this.restoreLineSpeakers(data.affectLines, data.oldVal);
             }
-        }
+        }*/
     }
 
     remove(pos:number) {
         const oldVal = this.list.get(pos);
-        this.model.history.add(new HistorySpeakersList({
+        /*this.model.history.add(new HistorySpeakersList({
             type: null,
             subtype: SpeakersListHistoryType.REMOVE,
             oldVal: this.list.get(pos),
             pos: pos,
             speaker: null,
             affectLines: this.removeLineSpeakers(oldVal)
-        }));
+        }));*/
         this.list.splice(pos, 1);
     }
 
-    save(pos:number, speaker:string) {
+    save(pos:number, speaker:Speaker) {
         const oldVal = this.list.get(pos);
         const isAdd = pos == this.list.length;
-        this.model.history.add(new HistorySpeakersList({
+        /*this.model.history.add(new HistorySpeakersList({
             type: null,
             subtype: isAdd ? SpeakersListHistoryType.ADD : SpeakersListHistoryType.CHANGE,
             oldVal: oldVal,
             pos: pos,
             speaker: speaker,
             affectLines: null,
-        }));
+        }));*/
         if (isAdd) {
             this.list.push(speaker);
         }
         else {
             this.list.set(pos, speaker);
-            this.renameLineSpeakers(oldVal, speaker);
+            //todo:
+            oldVal.name = speaker.name;
         }
     }
 
-    renameLineSpeakers(from:string, to:string) {
-        for (var i = 0; i < this.model.lines.length; i++) {
-            var line = this.model.lines[i];
-            if (line.speaker == from) {
-                line.speaker = to;
-            }
-        }
-    }
-
-    removeLineSpeakers(speaker:string) {
+    removeLineSpeakers(speaker:Speaker) {
         const affectLines:number[] = [];
-        for (var i = 0; i < this.model.lines.length; i++) {
-            var line = this.model.lines[i];
+        for (var i = 0; i < this.model.post.lines.length; i++) {
+            var line = this.model.post.lines[i];
             if (line.speaker == speaker) {
                 line.speaker = null;
                 affectLines.push(i);
@@ -111,9 +103,9 @@ export class EditorSpeakerList {
         return affectLines;
     }
 
-    restoreLineSpeakers(lines:number[], speaker:string) {
+    restoreLineSpeakers(lines:number[], speaker:Speaker) {
         for (var i = 0; i < lines.length; i++) {
-            var line = this.model.lines[lines[i]];
+            var line = this.model.post.lines[lines[i]];
             line.speaker = speaker;
         }
     }

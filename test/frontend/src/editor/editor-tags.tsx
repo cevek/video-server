@@ -1,7 +1,7 @@
 import * as React from "react";
 import {EditorModel} from "./editor-model";
 import * as style from "./styles/editor-tags.css";
-import {autowatch} from "../../atom-next/autowatch";
+import {autowatch} from "atom-next";
 import {TextInput} from "../form";
 
 @autowatch

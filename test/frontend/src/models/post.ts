@@ -1,17 +1,23 @@
-import {IGetPost} from "../../../backend/interfaces/transport";
 import {Line} from "./line";
-import {prop} from "../../atom-next/prop";
-import {IPosts, IMediaFiles, ITextLines} from "../../../backend/interfaces/db-models";
+import {prop} from "atom-next";
 import {HashMap} from "../utils/hashmap";
 import {GroupList} from "../utils/group-maker";
+import {TextLine} from "./TextLine";
+import {Speaker} from "./Speaker";
+import {AudioSelectionData} from "../audio-selection-model";
+import {IGetPost} from "./IGetPost";
+import {Lang} from "./Lang";
+import {IPosts, ITextLines, IMediaFiles} from "./db-models";
 export class PostModel {
     @prop lines: Line[];
     @prop groups: GroupList;
     @prop post: IPosts;
 
+    audioSelection = new AudioSelectionData();
+
+
     textLines: HashMap<ITextLines>
     mediaFiles: HashMap<IMediaFiles>
-
 
     constructor(protected json: IGetPost) {
         this.post = json.post;
@@ -21,31 +27,33 @@ export class PostModel {
     }
 
     private getLines() {
-        var data = this.json;
+        const data = this.json;
 
+        const enSubFile = this.mediaFiles.get(data.post.enSub);
+        const ruSubFile = this.mediaFiles.get(data.post.ruSub);
+        const enAudioFile = this.mediaFiles.get(data.post.enAudio);
+        const ruAudioFile = this.mediaFiles.get(data.post.ruAudio);
 
-        /*
-                    const shiftEnSubs = this.mediaFiles.getOrThrow(data.post.enSub).shiftTime * 100;
-                    const shiftRuSubs = this.mediaFiles.getOrThrow(data.post.ruSub).shiftTime * 100;
-                    const shiftEnAudio = this.mediaFiles.getOrThrow(data.post.enAudio).shiftTime * 100;
-                    const shiftRuAudio = this.mediaFiles.getOrThrow(data.post.ruAudio).shiftTime * 100;
-        */
+        const shiftEnSubs = enSubFile ? enSubFile.shiftTime * 100 : 0;
+        const shiftRuSubs = ruSubFile ? ruSubFile.shiftTime * 100 : 0;
+        const shiftEnAudio = enAudioFile ? enAudioFile.shiftTime * 100 : 0;
+        const shiftRuAudio = ruAudioFile ? ruAudioFile.shiftTime * 100 : 0;
+
         const newData = data.lines.map(line => {
-            const en = this.textLines.get(line.en);
-            const ru = this.textLines.get(line.ru);
-/*
-                if (en) {
-                    en.start -= shiftEnAudio - shiftEnSubs;
-                }
-                if (ru && shiftRuAudio) {
-                    ru.start -= shiftRuAudio - shiftRuSubs;
-                }
-*/
-            return {
-                en: en,
-                ru: ru,
-                speaker: data.speakers[line.speaker]
-            }
+            const enJSON = this.textLines.getOrThrow(line.en);
+            enJSON.start -= shiftEnAudio - shiftEnSubs;
+
+            const ruJSON = this.textLines.getOrThrow(line.en);
+            ruJSON.start -= shiftRuAudio - shiftRuSubs;
+
+            const en = new TextLine(Lang.EN, enJSON.start, enJSON.dur, enJSON.text);
+            const ru = new TextLine(Lang.RU, ruJSON.start, ruJSON.dur, ruJSON.text);
+
+            const speakerJSON = data.speakers[line.speaker];
+            const photoFile = this.mediaFiles.get(speakerJSON.photo);
+            const speaker = new Speaker(speakerJSON, photoFile && photoFile.url);
+
+            return new Line(en, ru, speaker);
         });
         newData.sort((a, b) => a.en.start < b.en.start ? -1 : 1);
         this.groups = GroupList.generateFromLines(newData, 500);
@@ -58,3 +66,4 @@ export class PostModel {
         });
     }
 }
+

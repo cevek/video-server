@@ -3,13 +3,13 @@ import {svgPathGenerator} from "../utils/svg-path-generator";
 import {AudioPlayer} from "../utils/audio-player";
 import {EditorHistory, EditorHistoryData} from "../utils/history";
 import {Line} from "../models/line";
-import {Lang} from "../../../backend/interfaces/lang";
 import * as style from "./timeline-connector.css";
-import {autowatch} from "../../atom-next/autowatch";
+import {autowatch} from "atom-next";
 import {AudioSelectionData} from "../audio-selection-model";
 import {classes} from "../utils/cl";
-import {prop} from "../../atom-next/prop";
-import {ITextLines} from "../../../backend/interfaces/db-models";
+import {prop} from "atom-next";
+import {Lang} from "../models/Lang";
+import {ITextLines} from "../models/DBModels";
 
 
 export class HistoryTimeline extends EditorHistoryData<HistoryTimeline> {
