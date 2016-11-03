@@ -158,7 +158,7 @@ class Uploader extends React.Component<{
     socket = io('http://localhost:7878');
     fileSelected = false;
     error = false;
-    interval:number;
+    interval:any;//todo: ts bug
 
     getFile() {
         var fileInput = this.refs['fileInput'] as HTMLInputElement;

@@ -1,4 +1,4 @@
-import {Line} from "./line";
+import {Line} from "./Line";
 import {prop} from "atom-next";
 import {HashMap} from "../utils/hashmap";
 import {GroupList} from "../utils/group-maker";
@@ -7,7 +7,7 @@ import {Speaker} from "./Speaker";
 import {AudioSelectionData} from "../audio-selection-model";
 import {IGetPost} from "./IGetPost";
 import {Lang} from "./Lang";
-import {IPosts, ITextLines, IMediaFiles} from "./db-models";
+import {IPosts, ITextLines, IMediaFiles} from "./DBModels";
 export class PostModel {
     @prop lines: Line[];
     @prop groups: GroupList;

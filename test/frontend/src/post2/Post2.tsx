@@ -6,7 +6,6 @@ import {prop} from "atom-next";
 import {autowatch} from "atom-next";
 import {Group} from "../utils/group-maker";
 import {Line} from "../models/Line";
-import {Lang} from "../../../backend/interfaces/lang";
 import {Post2Model} from "../models/Editor/PostViewModel";
 import {Ref} from "../lib/Ref";
 import {VideoPlayerVM} from "../models/Editor/VideoPlayerViewModel";
@@ -14,6 +13,7 @@ import {DocKey} from "../lib/DocKey";
 import {LineCalc} from "../models/Editor/LineCalc";
 import {EditorText} from "../editor/editor-text";
 import {EditorModel} from "../models/Editor/EditorModel";
+import {Lang} from "../models/Lang";
 
 interface Post2Props {
     params: any;

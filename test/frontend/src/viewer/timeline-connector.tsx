@@ -2,7 +2,7 @@ import * as React from "react";
 import {svgPathGenerator} from "../utils/svg-path-generator";
 import {AudioPlayer} from "../utils/audio-player";
 import {EditorHistory, EditorHistoryData} from "../utils/history";
-import {Line} from "../models/line";
+import {Line} from "../models/Line";
 import * as style from "./timeline-connector.css";
 import {autowatch} from "atom-next";
 import {AudioSelectionData} from "../audio-selection-model";

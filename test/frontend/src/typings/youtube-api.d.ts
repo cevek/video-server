@@ -50,7 +50,7 @@ interface YTPlayer {
 
 type quality = 'small' | 'medium' | 'large' | 'hd720' | 'hd1080' | 'highres';
 
-enum PlayerState{
+declare enum PlayerState{
     ENDED,
     PLAYING,
     PAUSED,

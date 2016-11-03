@@ -1,4 +1,4 @@
-import {IPosts, ILines, ITextLines, IMediaFiles, ISpeakers} from "./db-models";
+import {IPosts, ILines, ITextLines, IMediaFiles, ISpeakers} from "./DBModels";
 export interface IGetPost {
     post: IPosts;
     lines: ILines[];

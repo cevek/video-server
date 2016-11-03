@@ -1,4 +1,4 @@
-import {MediaType} from "./media-types";
+import {MediaType} from "./MediaTypes";
 export interface TrackInfo {
     title?: string;
     id?: number;

@@ -4,21 +4,20 @@ import {combineJS} from "packer/dist/plugins/combineJS";
 import {dest} from "packer/dist/plugins/dest";
 import {jsEntry} from "packer/dist/plugins/jsEntry";
 import {copy} from "packer/dist/plugins/copy";
-import {conditional} from "packer/dist/utils/conditional";
+import {combineCSS} from "packer/dist/plugins/combineCSS";
+import * as path from "path";
+Error.stackTraceLimit = Infinity;
 
-
-// const prodOnly = conditional(() => process.env.NODE_ENV == 'production');
-const prodOnly = conditional(() => true);
-new Packer({dest: 'dist', context: __dirname + '/../'}, promise => promise
+new Packer({dest: 'dist', context: __dirname + '/../src/'}, promise => promise
         .then(ts())
-        .then(jsEntry('src/index.js'))
+        .then(jsEntry('app.js'))
         // .then(hmr())
         // .then(copy('test/*.js'))
         // .then(jsEntry('test/r.js'))
-        .then(prodOnly(copy('index.html')))
+        .then(copy('index.html'))
         // .then(sass('index.scss'))
         .then(combineJS('bundle.js'))
-        // .then(combineCSS('style.css'))
+        .then(combineCSS('style.css'))
         .then(dest())
     /*
      .then(postcss())
@@ -31,6 +30,15 @@ new Packer({dest: 'dist', context: __dirname + '/../'}, promise => promise
 
 });
 
+import * as Koa from 'koa';
+
+// var koa = require('koa');
+var serve = require('koa-static');
+
+
+const app = new Koa();
+app.use(serve(__dirname + '/../src/dist/'));
+app.listen(3000);
 
 const unhandledRejections = new Map();
 process.on('unhandledRejection', (reason: any, p: any) => {
