@@ -4,12 +4,12 @@ import {AudioPlayer} from "../utils/audio-player";
 import {EditorHistory, EditorHistoryData} from "../utils/history";
 import {Line} from "../models/Line";
 import * as style from "./timeline-connector.css";
-import {autowatch} from "atom-next";
+import {autowatch, prop} from "atom-next";
 import {AudioSelectionData} from "../audio-selection-model";
 import {classes} from "../utils/cl";
-import {prop} from "atom-next";
 import {Lang} from "../models/Lang";
-import {ITextLines} from "../models/DBModels";
+import {TextLine} from "../models/TextLine";
+import {DisposerItem} from "../utils/time-allocate";
 
 
 export class HistoryTimeline extends EditorHistoryData<HistoryTimeline> {
@@ -27,8 +27,7 @@ interface TimelineConnectorProps {
     lines:Line[];
     player:AudioPlayer;
     resizeKoef:number;
-    lineH:number;
-    renderLines:number[];
+    renderLines:DisposerItem[];
     history:EditorHistory;
     audioSelectionModel: AudioSelectionData;
 }
@@ -39,7 +38,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
         return time * 100 / this.props.resizeKoef;
     }
 
-    playTextLine(textLine:ITextLines) {
+    playTextLine(textLine:TextLine) {
         const start = textLine.start / 100;
         const dur = textLine.dur / 100;
         this.props.player.play(start, dur);
@@ -120,8 +119,6 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
         const connectorWidth = 50;
         const svgWidth = connectorWidth;
         const svgHeight = this.timeToY(this.props.player.duration);
-        const lineH = this.props.lineH;
-        const halfLineH = lineH / 2;
         const resizeKoef = this.props.resizeKoef;
 
         return <svg className={style.timelineConnector} width={svgWidth} height={svgHeight}>
@@ -130,8 +127,8 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
                 if (textLine.start != null) {
                     const tl = textLine.start / resizeKoef;
                     const bl = (textLine.start + textLine.dur) / resizeKoef;
-                    const tr = pos - halfLineH;
-                    const br = pos + halfLineH;
+                    const tr = pos.top;
+                    const br = pos.bottom;
                     const color = 'hsla(' + (textLine.start) + ', 50%,60%, 1)';
                     return <g key={i} className={classes(style.resizing, i == this.activeLine)}>
                         <path onClick={()=>this.playTextLine(textLine)} fill={color}

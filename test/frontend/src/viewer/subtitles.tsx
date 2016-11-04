@@ -5,8 +5,10 @@ import {PostModel} from "../models/post";
 import {AudioPlayer} from "../utils/audio-player";
 import * as style from "./subtitles.css";
 import {ITextLines} from "../models/DBModels";
+import {TextLine} from "../models/TextLine";
+import {DisposerItem} from "../utils/time-allocate";
 
-export class Subtitles extends React.Component<{postModel: PostModel; player: AudioPlayer; resizeKoef: number; renderLines: number[]}, {}> {
+export class Subtitles extends React.Component<{postModel: PostModel; player: AudioPlayer; resizeKoef: number; renderLines: DisposerItem[]}, {}> {
     duration:number = 0;
    
     timeToY(time:number) {
@@ -45,7 +47,7 @@ export class Subtitles extends React.Component<{postModel: PostModel; player: Au
     }
     playingLine = -1;
 
-    isSelected(textLine:ITextLines) {
+    isSelected(textLine:TextLine) {
         const currentTime = this.props.player.currentTime;
         return ((textLine.start) / 100) <= currentTime && currentTime <= (textLine.start + textLine.dur) / 100
     }

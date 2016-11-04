@@ -1,5 +1,4 @@
 import * as React from "react";
-import {EditorModel} from "../editor-model";
 import  * as style from "./styles/speaker.css";
 import {prop} from "atom-next";
 import {autowatch} from "atom-next";
@@ -7,14 +6,16 @@ import {Escape} from "../../escape";
 import {Form, TextInput, FormField} from "../../form";
 import * as i from "../../font-awesome-4.6.1/css/font-awesome.css";
 import * as glob from "../styles/glob.css";
+import {Speaker} from "../../models/Speaker";
+import {EditorModel} from "../../models/Editor/EditorModel";
 
 @autowatch
-export class EditorToolbarSpeaker extends React.Component<{model:EditorModel; addMode?:boolean; speaker:string; pos:number;}, {}> {
+export class EditorToolbarSpeaker extends React.Component<{model:EditorModel; addMode?:boolean; speaker:Speaker; pos:number;}, {}> {
     @prop editMode = false;
 
     onRemove = () => {
         const pos = this.props.pos;
-        this.props.model.speakers.remove(pos)
+        this.props.model.post.speakers.remove(pos)
     }
 
     onEdit = () => {
@@ -24,14 +25,15 @@ export class EditorToolbarSpeaker extends React.Component<{model:EditorModel; ad
     onSave = () => {
         const pos = this.props.pos;
         this.editMode = false;
-        this.props.model.speakers.save(pos, this.values.text.value);
+        //todo:
+        // this.props.model.post.speakers.save(pos, this.values.text.value);
     }
 
     onCancel = () => {
         this.editMode = false;
     }
 
-    values = {text: new FormField('')};
+    values = {text: new FormField<string>('')};
 
     render() {
         const speaker = this.props.speaker;

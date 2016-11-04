@@ -72,7 +72,7 @@ export class AudioPlayer {
         this.player.stop();
     }
 
-    spectrogramData:Uint8ClampedArray[];
+    spectrogramData:Float32Array[];
     audioBuffer:AudioBuffer;
 
     loadSound(url:string) {
@@ -124,7 +124,7 @@ export class AudioPlayer {
     }
 
     private process(signal:Float32Array, fftSize:number) {
-        const data:Uint8ClampedArray[] = [];
+        const data:Float32Array[] = [];
         var fft = new FFT(fftSize, 0);
         for (var i = 0; i < signal.length - fftSize + 1; i += fftSize) {
             const bb = signal.subarray(i, i + fftSize);

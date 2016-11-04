@@ -1,18 +1,18 @@
 import * as React from "react";
-import {EditorModel} from "./editor-model";
 import * as style from "./styles/editor-title.css";
 import {autowatch} from "atom-next";
 import {TextInput} from "../form";
+import {EditorModel} from "../models/Editor/EditorModel";
 
 @autowatch
 export class EditorTitle extends React.Component<{model:EditorModel},{}> {
     onChange = (val: string) => {
-        this.props.model.setTitle(val);
+        this.props.model.post.setTitle(val);
     }
 
     render() {
         return <div className={style.editorTitle}>
-            <TextInput placeholder="Title..." onChange={this.onChange} value={this.props.model.title}/>
+            <TextInput placeholder="Title..." onChange={this.onChange} value={this.props.model.post.title}/>
         </div>
     }
 }

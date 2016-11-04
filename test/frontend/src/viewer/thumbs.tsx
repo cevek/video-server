@@ -2,8 +2,9 @@ import * as React from "react";
 import {PostModel} from "../models/post";
 import * as style from "./thumbs.css";
 import {classes} from "../utils/cl";
-import {EditorModel} from "../editor/editor-model";
 import {autowatch} from "atom-next";
+import {EditorModel} from "../models/Editor/EditorModel";
+import {config} from "../config";
 
 
 interface IThumb {
@@ -22,7 +23,7 @@ export class Thumbs extends React.Component<{postModel:PostModel; model: EditorM
     onClick(thumb: IThumb) {
         //todo: need rethink
         if (this.props.model) {
-            this.props.model.cover = thumb.k;
+            this.props.model.post.cover = thumb.k;
         }
     }
 
@@ -56,7 +57,7 @@ export class Thumbs extends React.Component<{postModel:PostModel; model: EditorM
         }
 
         const model = this.props.model;
-        const cover = model ? model.cover : -1;
+        const cover = model ? model.post.cover : -1;
 
 
         return <div className={style.thumbs}>

@@ -8,6 +8,7 @@ import {Subtitles} from "./subtitles";
 import {AudioPlayer} from "../utils/audio-player";
 import {EditorHistory} from "../utils/history";
 import * as style from "./viewer.css";
+import {config} from "../config";
 
 export class Viewer extends React.Component<{params: any, resolved: PostModel}, {}> {
     audioPlayer = new AudioPlayer();
@@ -28,7 +29,7 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
         const lineH = 50;
         const resizeKoef = 4;
 
-        const positions = this.postModel.lines.map(line => ({value: (line.en.start + line.en.dur / 2) / resizeKoef, height: 50}));
+        const positions = this.postModel.lines.map(line => ({top: (line.en.start) / resizeKoef, bottom: (line.en.start + line.en.dur) / resizeKoef, height: 50}));
         const renderLines = disposer(positions);
 
         return <div>
@@ -39,7 +40,8 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
             {this.audioPlayer.soundLoaded ?
                 <div>
                     <Timeline audioSelectionModel={null} resizeKoef={resizeKoef} player={this.audioPlayer}/>
-                    <TimelineConnector lines={this.postModel.lines} lineH={lineH} resizeKoef={resizeKoef}
+                    <TimelineConnector lines={this.postModel.lines}
+                                       resizeKoef={resizeKoef}
                                        player={this.audioPlayer}
                                        audioSelectionModel={null}
                                        history={this.history}

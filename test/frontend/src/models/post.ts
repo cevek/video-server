@@ -4,7 +4,6 @@ import {HashMap} from "../utils/hashmap";
 import {GroupList} from "../utils/group-maker";
 import {TextLine} from "./TextLine";
 import {Speaker} from "./Speaker";
-import {AudioSelectionData} from "../audio-selection-model";
 import {IGetPost} from "./IGetPost";
 import {Lang} from "./Lang";
 import {IPosts, ITextLines, IMediaFiles} from "./DBModels";
@@ -12,8 +11,6 @@ export class PostModel {
     @prop lines: Line[];
     @prop groups: GroupList;
     @prop post: IPosts;
-
-    audioSelection = new AudioSelectionData();
 
 
     textLines: HashMap<ITextLines>

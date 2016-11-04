@@ -1,13 +1,13 @@
 import * as React from "react";
-import {EditorModel} from "./../editor-model";
 import {EditorToolbarSpeakers} from "./speakers";
 import * as style from "./styles/toolbar.css";
 import {autowatch} from "atom-next";
+import {EditorModel} from "../../models/Editor/EditorModel";
 
 @autowatch
 export class EditorToolbar extends React.Component<{model: EditorModel;}, {}> {
     onSave = () => {
-        return this.props.model.save();
+        return this.props.model.post.save();
     }
 
     onUndo = () => {

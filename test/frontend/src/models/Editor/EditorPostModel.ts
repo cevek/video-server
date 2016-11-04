@@ -6,6 +6,7 @@ import {EditorHistoryStringData} from "../../utils/history";
 import {EditorSpeakerList} from "../../editor/editor-speakerlist-model";
 import {Lang} from "../Lang";
 import {IGetPost} from "../IGetPost";
+import {IMediaFiles} from "../DBModels";
 
 export class EditorPostModel extends PostModel {
 
@@ -20,6 +21,8 @@ export class EditorPostModel extends PostModel {
     @prop title = '';
     @prop tags = '';
     @prop speakers: EditorSpeakerList;
+    cover: number;
+    enAudio: number;
 
     constructor(json: IGetPost) {
         super(json);

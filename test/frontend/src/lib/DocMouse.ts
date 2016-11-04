@@ -1,3 +1,5 @@
+import * as React from 'react';
+
 import {DocEvents} from "./DocEvents";
 export interface DocMouseProps {
     onClick?: (event: MouseEvent) => void;

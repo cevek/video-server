@@ -12,12 +12,6 @@
     "skipLibCheck": true,
     "sourceMap": true
   },
-  "files": [
-    "src/app.tsx",
-    "src/declares.d.ts",
-    "src/typings/whatwg-fetch/whatwg-fetch.d.ts",
-    "src/typings/youtube-api.d.ts"
-  ],
   "exclude": [
     "node_modules"
   ]

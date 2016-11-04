@@ -4,10 +4,13 @@ import {disposerWithGroup} from "../../utils/time-allocate";
 import {VideoPlayerVM} from "./VideoPlayerViewModel";
 import {LineCalc} from "./LineCalc";
 import {Ref} from "../../lib/Ref";
+import {AudioSelectionData} from "../../audio-selection-model";
 export class Post2Model {
     post: PostModel;
     videoPlayer: VideoPlayerVM;
     lineCalc = new LineCalc(4);
+    audioSelection = new AudioSelectionData();
+
 
     constructor(post: PostModel) {
         this.post = post;
