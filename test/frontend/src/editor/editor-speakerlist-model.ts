@@ -25,7 +25,8 @@ export class EditorSpeakerList {
     @prop list = new AtomArray<Speaker>([]);
 
     constructor(public model:EditorModel) {
-        this.model.history.listen(historySpeakerList, this.onHistory)
+        //todo
+        // this.model.history.listen(historySpeakerList, this.onHistory)
     }
 
     onHistory = (data:HistorySpeakersList, isRedo:boolean) => {

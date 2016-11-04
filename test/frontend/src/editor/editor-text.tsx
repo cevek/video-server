@@ -47,10 +47,12 @@ class Speakers extends React.Component<{model: EditorModel; linePos: number;},{}
     render() {
         const line = this.props.model.post.lines[this.props.linePos];
         return <div className={style.speakers}>
+{/*
             {this.props.model.post.speakers.list.map(speaker =>
                 <div key={speaker.id} className={classNames(style.speaker, {[style.selected]: speaker == line.speaker})}
                      onClick={()=>this.setSpeaker(this.props.linePos, speaker)}>{speaker}</div>
             )}
+*/}
         </div>
 
     }
@@ -102,6 +104,7 @@ class TextLine extends React.Component<{model: EditorModel; line: EditorLine; li
         const linePos = this.props.linePos;
         const lang = this.props.lang;
         const textLine = lang == Lang.RU ? line.ru : line.en; // todo
+
 
 
         return  <div className={`${style.textline} ${style.ru}`}

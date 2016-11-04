@@ -1,7 +1,7 @@
 "use strict";
 import "./font-awesome-4.6.1/css/font-awesome.css";
 import "./app.css";
-import * as ReactDOM from 'react-dom';
+import * as ReactDOM  from 'react-dom';
 import * as React from 'react';
 import {Index} from "./index/index";
 import {Router} from "./Router";

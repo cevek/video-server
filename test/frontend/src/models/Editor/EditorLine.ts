@@ -1,12 +1,11 @@
 import {EditorTextLine} from "./EditorTextLine";
-import {prop} from "atom-next";
 import {Line} from "../Line";
 import {Speaker} from "../Speaker";
 import {TextLine} from "../TextLine";
 import {Lang} from "../Lang";
 export class EditorLine extends Line {
-    @prop en: EditorTextLine = null;
-    @prop ru: EditorTextLine = null;
+    en: EditorTextLine;
+    ru: EditorTextLine;
 
     constructor(en: TextLine, ru: TextLine, speaker: Speaker) {
         super(

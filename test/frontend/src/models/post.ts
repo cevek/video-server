@@ -40,14 +40,14 @@ export class PostModel {
             const enJSON = this.textLines.getOrThrow(line.en);
             enJSON.start -= shiftEnAudio - shiftEnSubs;
 
-            const ruJSON = this.textLines.getOrThrow(line.en);
+            const ruJSON = this.textLines.getOrThrow(line.ru);
             ruJSON.start -= shiftRuAudio - shiftRuSubs;
 
             const en = new TextLine(Lang.EN, enJSON.start, enJSON.dur, enJSON.text);
             const ru = new TextLine(Lang.RU, ruJSON.start, ruJSON.dur, ruJSON.text);
 
             const speakerJSON = data.speakers[line.speaker];
-            const photoFile = this.mediaFiles.get(speakerJSON.photo);
+            const photoFile = speakerJSON && this.mediaFiles.get(speakerJSON.photo);
             const speaker = new Speaker(speakerJSON, photoFile && photoFile.url);
 
             return new Line(en, ru, speaker);

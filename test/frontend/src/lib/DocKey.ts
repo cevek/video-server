@@ -1,4 +1,4 @@
-import * as React from 'react';
+import * as React from "react";
 import {DocEvents} from "./DocEvents";
 export interface DocKeyProps {
     onKeyUp?: (event: KeyboardEvent) => void;
@@ -18,5 +18,9 @@ export class DocKey extends React.Component<DocKeyProps, {}> {
 
     componentWillUnmount() {
         this.docEvents.unmount();
+    }
+
+    render(): React.ReactElement<{}> {
+        return null;
     }
 }

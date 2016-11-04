@@ -22,7 +22,7 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
     @prop audioPlayer = new AudioPlayer();
 
     static load(params:any) {
-        return PostModel.fetch(params.id).then(data => new EditorModel(data));
+        return EditorModel.fetch(params.id);
     }
 
     componentDidMount() {

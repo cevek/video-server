@@ -9,9 +9,8 @@ import {IGetPost} from "../IGetPost";
 import {IMediaFiles} from "../DBModels";
 
 export class EditorPostModel extends PostModel {
-
     @prop postModel: PostModel;
-    @prop lines: EditorLine[] = [];
+    @prop lines: EditorLine[];
     /*
      @prop history = new EditorHistory()
      .listen(historyTitle, this.historySetTitle)
@@ -64,5 +63,12 @@ export class EditorPostModel extends PostModel {
 
     save() {
 
+    }
+
+    //todo:
+    static fetch(id: number): Promise<EditorPostModel> {
+        return fetch('http://localhost:1335/v1/post/' + id).then(data => data.json()).then(data => {
+            return new EditorPostModel(data.data);
+        });
     }
 }

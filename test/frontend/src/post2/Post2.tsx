@@ -2,7 +2,6 @@ import * as React from "react";
 import * as classNames from "classnames";
 import {PostModel} from "../models/post";
 import * as styles from "./Post2.css";
-import {prop} from "atom-next";
 import {autowatch} from "atom-next";
 import {Group} from "../utils/group-maker";
 import {Line} from "../models/Line";
@@ -23,7 +22,7 @@ interface Post2Props {
 @autowatch
 export class Post2 extends React.Component<Post2Props, {}> {
     static load(params: any) {
-        return PostModel.fetch(params.id).then(post => new EditorModel(post));
+        return EditorModel.fetch(params.id)
     }
 
     model = this.props.resolved;
@@ -40,12 +39,12 @@ export class Post2 extends React.Component<Post2Props, {}> {
                     <CurrentTime vm={model.videoPlayer} lineCalc={model.lineCalc} />
 
                     {model.post.groups.groups.map((group, i) =>
-                        <GroupView model={model} group={group} groupPos={i} />)}
+                        <GroupView key={i} model={model} group={group} groupPos={i} />)}
 
-                    <EditorText model={this.model}/>
+                    <EditorText model={this.model} />
 
                     {model.post.lines.map((line, i) =>
-                        <LineView model={model} line={line} lineN={i} />)}
+                        <LineView key={i} model={model} line={line} lineN={i} />)}
                 </div>
             </div>
         );
@@ -84,7 +83,7 @@ export class LineView extends React.Component<LineViewProps, {}> {
 
                     <div className={styles.speaker}
                          title={line.speaker.name}
-                         style={{backgroundImage: 'url('+model.post.mediaFiles.get(line.speaker.photo).url+ ')' }}>
+                         style={{backgroundImage: 'url('+line.speaker.photo+ ')' }}>
                     </div>
 
                     {/*<TextLine lang={Lang.EN} line={line} linePos={lineN} model={model}/>*/}
@@ -170,7 +169,8 @@ export class GroupView extends React.Component<GroupViewProps, {}> {
                 {groupPos > 0 ?
                     <div onClick={this.onJoinGroup} className={styles.joinGroup} /> : null}
                 {lines.map((v, linePos) =>
-                    <div className={styles.splitter}
+                    <div key={linePos}
+                         className={styles.splitter}
                          onClick={()=>this.onSplitGroup(linePos)}
                          style={{top: model.renderLines[linePos + group.start].bottom - top}} />
                 )}

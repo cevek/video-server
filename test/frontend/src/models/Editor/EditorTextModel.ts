@@ -47,14 +47,14 @@ export class EditorTextModel {
         this.editorModel = editorModel;
         this.lines = editorModel.post.lines;
         this.selection = new EditorSelection(this.editorModel.post.lines);
-        this.history = this.editorModel.history
+        /*this.history = this.editorModel.history
             .listen(historySpeaker, this.historySetSpeaker)
             .listen(historyTextLine, this.historySetTextLine)
 
             .listen(historySplit, this.historySplit)
             .listen(historySplitMove, this.historySplitMove)
             .listen(historyJoin, this.historyJoin)
-            .listen(historyJoinMove, this.historyJoinMove)
+            .listen(historyJoinMove, this.historyJoinMove)*/
     }
 
     historySetTextLine = (data:HistoryTextWords, isRedo:boolean) => {

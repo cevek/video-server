@@ -78,6 +78,9 @@ export function disposer(values: GG[]): DisposerItem[] {
 
 
 export function disposerWithGroup(groups: {start: number; end: number}[], values: GG[]) {
+    if (values.length == 0) {
+        return [];
+    }
     const groupValues: GG[] = [];
     for (let i = 0; i < groups.length; i++) {
         const group = groups[i];

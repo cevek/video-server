@@ -41,4 +41,8 @@ export class Post2Model {
         }
         return -1;
     }
+
+    static fetch(id: number) {
+        return PostModel.fetch(id).then(post => new Post2Model(post));
+    }
 }
