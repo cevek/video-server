@@ -23,7 +23,8 @@ router.get('/v1/post/:id', async function () {
     if (post) {
         var lines = await linesDAO.findAll({postId: id});
         //lines.sort((a, b) => a.seq < b.seq ? -1 : 1);
-        const speakers = await speakersDAO.findAll('WHERE id IN (' + lines.map(l => l.speaker).join() + ')');
+        const speakersIds = lines.map(l => l.speaker).filter(sp => sp);
+        const speakers = speakersIds.length ? (await speakersDAO.findAll('WHERE id IN (' + speakersIds.join() + ')')) : [];
         var textLines = await textLinesDAO.findAll({postId: id});
         var mediaFiles = await mediaFilesDAO.findByIds([post.video, post.thumbs, post.enAudio, post.ruAudio, post.enSub, post.ruSub, ...speakers.map(s => s.photo)]);
         var data: IGetPost = {
