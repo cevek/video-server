@@ -3,7 +3,7 @@
     top: 0;
 }
 
-.editor-text .line {
+.editor-text__line {
     border: 1px solid silver;
     border-radius: 0 10px 10px 0;
     border-left: 0;
@@ -15,55 +15,50 @@
     margin-top: -25px;
 }
 
-.editor-text .line .textline {
-    padding: 1px 15px;
-}
-
-.editor-text .line .en {
+.editor-text__en {
     font-size: 16px;
     padding-top: 10px;
 }
 
-.editor-text .line .ru {
+.editor-text__ru {
     font-size: 13px;
     padding-bottom: 5px;
 }
 
-.editor-text .line .textline span {
+.editor-text__textline {
+    padding: 1px 15px;
+    white-space: nowrap;
+}
+
+.editor-text__textline>span {
     cursor: default;
     padding: 4px 3px;
     margin: 0 -1px;
 }
 
-.editor-text .line .textline span.selected {
+.editor-text__selected-word {
     background: lightskyblue;
 }
 
-.editor-text .speakers {
+.editor-text__speakers {
     height: 20px;
     margin-top: -15px;
 }
 
-.textline-editbutton {
+.editor-text__editbutton {
     position: absolute;
     right: -20px;
-    color: rgba(0,0,0,.3);
+    color: rgba(0, 0, 0, .3);
 }
-
-.textline{
-    white-space: nowrap;
-}
-
-.textline-editbutton:hover{
+.editor-text__editbutton:hover {
     color: black;
 }
 
-.textline-edit .speaker-text{
+.editor-text__speaker-text {
     width: calc(100% - 50px);
 }
 
-
-.editor-text .speaker {
+.editor-text__speaker {
     display: inline-block;
     font-size: 10px;
     padding: 2px 3px;
@@ -73,19 +68,19 @@
     cursor: pointer;
 }
 
-.editor-text .speaker:first-child {
+.editor-text__speaker:first-child {
     border-radius: 3px 0 0 3px;
 }
 
-.editor-text .speaker:last-child {
+.editor-text__speaker:last-child {
     border-radius: 0 3px 3px 0;
 }
 
-.editor-text .speaker:first-child:last-child {
+.editor-text__speaker:first-child:last-child {
     border-radius: 3px;
 }
 
-.editor-text .speaker.selected {
+.editor-text__selected-speaker {
     background: silver;
     color: white;
 }

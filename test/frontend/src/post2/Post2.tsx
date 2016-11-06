@@ -1,7 +1,5 @@
 import * as React from "react";
 import * as classNames from "classnames";
-import {PostModel} from "../models/post";
-import * as styles from "./Post2.css";
 import {autowatch} from "atom-next";
 import {Group} from "../utils/group-maker";
 import {Line} from "../models/Line";
@@ -13,6 +11,7 @@ import {LineCalc} from "../models/Editor/LineCalc";
 import {EditorText} from "../editor/editor-text";
 import {EditorModel} from "../models/Editor/EditorModel";
 import {Lang} from "../models/Lang";
+import './Post2.css';
 
 interface Post2Props {
     params: any;
@@ -35,7 +34,7 @@ export class Post2 extends React.Component<Post2Props, {}> {
             <div>
                 <VideoView videoModel={model.videoPlayer} url={videoFile.url} />
 
-                <div ref={this.overlay.onRender} className={styles.videoOverlay}>
+                <div ref={this.overlay.onRender} className="post__video_overlay">
                     <CurrentTime vm={model.videoPlayer} lineCalc={model.lineCalc} />
 
                     {model.post.groups.groups.map((group, i) =>
@@ -73,15 +72,15 @@ export class LineView extends React.Component<LineViewProps, {}> {
         const realTimeBgColor = '#' + ('00000' + (426356753 * lineN).toString(16)).slice(-6);
         return (
             <div>
-                <div className={styles.realTime}
+                <div className="post__real_time"
                      style={{top: realTimeTop, height: realTimeHeight, background: realTimeBgColor }} />
 
                 <div style={{top, height}}
                      data-start={line.en.start}
                      onClick={this.onLineClick}
-                     className={classNames(styles.line, model.currentSelectedLine == lineN && styles.selected)}>
+                     className={classNames('post__line', model.currentSelectedLine == lineN && 'post__selected')}>
 
-                    <div className={styles.speaker}
+                    <div className="post__speaker"
                          title={line.speaker.name}
                          style={{backgroundImage: 'url('+line.speaker.photo+ ')' }}>
                     </div>
@@ -129,7 +128,7 @@ export class VideoView extends React.Component<VideoViewProps, {}> {
                        onPlay={videoModel.onPlay}
                        onPause={videoModel.onStop}
                        onSeeked={videoModel.onSeek}
-                       className={styles.videoControl}
+                       className="post__video_control"
                        src={url}
                        controls />
             </div>
@@ -165,17 +164,17 @@ export class GroupView extends React.Component<GroupViewProps, {}> {
         const height = model.renderLines[group.end].bottom - top;
         const lines = new Array(group.end - group.start).fill(0);
         return (
-            <div className={styles.group} style={{top: top, height: height}}>
+            <div className="post__group" style={{top: top, height: height}}>
                 {groupPos > 0 ?
-                    <div onClick={this.onJoinGroup} className={styles.joinGroup} /> : null}
+                    <div onClick={this.onJoinGroup} className="post__join-group" /> : null}
                 {lines.map((v, linePos) =>
                     <div key={linePos}
-                         className={styles.splitter}
+                         className="post__splitter"
                          onClick={()=>this.onSplitGroup(linePos)}
                          style={{top: model.renderLines[linePos + group.start].bottom - top}} />
                 )}
             </div>
-        );
+         );
     }
 }
 
@@ -189,7 +188,7 @@ interface CurrentTimeProps {
 class CurrentTime extends React.Component<CurrentTimeProps, {}> {
     render() {
         return (
-            <div className={styles.currentTime}
+            <div className="post__current_time"
                  style={{height: this.props.lineCalc.timeToPx(this.props.vm.currentTime)}} />
         )
     }

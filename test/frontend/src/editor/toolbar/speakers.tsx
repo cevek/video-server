@@ -1,6 +1,6 @@
 import * as React from "react";
 import {EditorToolbarSpeaker} from "./speaker";
-import * as style from "./styles/speakers.css";
+import "./styles/speakers.css";
 import {autowatch} from "atom-next";
 import {EditorModel} from "../../models/Editor/EditorModel";
 
@@ -8,7 +8,7 @@ import {EditorModel} from "../../models/Editor/EditorModel";
 export class EditorToolbarSpeakers extends React.Component<{model: EditorModel}, {}> {
     render() {
         var model = this.props.model;
-        return <div className={style.speakers}>
+        return <div className="speakers">
             <h3>Speakers</h3>
             {model.post.speakers.list.map((speaker, pos) =>
                 <EditorToolbarSpeaker key={speaker.id} model={model} speaker={speaker} pos={pos}/>

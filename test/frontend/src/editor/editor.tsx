@@ -6,7 +6,7 @@ import {TimelineConnector} from "../viewer/timeline-connector";
 import {AudioPlayer} from "../utils/audio-player";
 import {disposer} from "../utils/time-allocate";
 import {EditorText} from "./editor-text";
-import * as style from "./styles/editor.css";
+import "./styles/editor.css";
 import {EditorToolbar} from "./toolbar/toolbar";
 import {EditorTitle} from "./editor-title";
 import {EditorTags} from "./editor-tags";
@@ -42,8 +42,8 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
         const renderLines = disposer(positions);// new LineAllocator(positions, 50).allocateRenderLines();
 
 
-        return <div className={style.editor}>
-            <div className={style.editorMain}>
+        return <div className="editor">
+            <div className="editor__main">
                 <EditorTitle model={this.model}/>
                 <EditorTags model={this.model}/>
                 <EditorText model={this.model}/>

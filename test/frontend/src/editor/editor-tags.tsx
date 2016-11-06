@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as style from "./styles/editor-tags.css";
+import "./styles/editor-tags.css";
 import {autowatch} from "atom-next";
 import {TextInput} from "../form";
 import {EditorModel} from "../models/Editor/EditorModel";
@@ -11,7 +11,7 @@ export class EditorTags extends React.Component<{model: EditorModel},{}> {
     }
 
     render() {
-        return <div className={style.editorTags}>
+        return <div className="editor-tags">
             <TextInput placeholder="Tags..." name="title" required onChange={this.onChange} value={this.props.model.post.tags}/>
         </div>
     }

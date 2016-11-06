@@ -1,9 +1,6 @@
 import * as React from "react";
 import * as classNames from "classnames";
 import {EditorKeyHandler} from "./editor-key-handler";
-import * as style from "./styles/editor-text.css";
-import * as i from "../font-awesome-4.6.1/css/font-awesome.css";
-import * as glob from "./styles/glob.css";
 import {prop} from "atom-next";
 import {autowatch} from "atom-next";
 import {Escape} from "../escape";
@@ -14,6 +11,7 @@ import {EditorTextLine} from "../models/Editor/EditorTextLine";
 import {EditorWord} from "../models/Editor/EditorWord";
 import {Speaker} from "../models/Speaker";
 import {Lang} from "../models/Lang";
+import './styles/editor-text.css';
 
 export interface EditorTextProps {
     model: EditorModel
@@ -24,11 +22,11 @@ export class EditorText extends React.Component<EditorTextProps, {}> {
     @prop model = this.props.model;
 
     render() {
-        return <div className={style.editorText}>
+        return <div className="editor-text">
             <EditorKeyHandler model={this.model} />
 
             {this.model.post.lines.map((line, linePos) =>
-                <div className={style.line} key={linePos} style={{top: this.model.renderLines[linePos].top}}>
+                <div className="editor-text__line" key={linePos} style={{top: this.model.renderLines[linePos].top}}>
                     <Speakers model={this.model} linePos={linePos} />
                     <TextLine model={this.model} line={line} linePos={linePos} lang={Lang.EN} />
                     <TextLine model={this.model} line={line} linePos={linePos} lang={Lang.RU} />
@@ -46,7 +44,7 @@ class Speakers extends React.Component<{model: EditorModel; linePos: number;},{}
 
     render() {
         const line = this.props.model.post.lines[this.props.linePos];
-        return <div className={style.speakers}>
+        return <div className="editor-text__speakers">
 {/*
             {this.props.model.post.speakers.list.map(speaker =>
                 <div key={speaker.id} className={classNames(style.speaker, {[style.selected]: speaker == line.speaker})}
@@ -61,7 +59,7 @@ class Speakers extends React.Component<{model: EditorModel; linePos: number;},{}
 @autowatch
 class TextLine extends React.Component<{model: EditorModel; line: EditorLine; linePos: number; lang: Lang;},{}> {
     spanClassName(textLine: EditorTextLine, word: EditorWord) {
-        return classNames({[style.selected]: this.props.model.textModel.selection.word == word && this.props.model.textModel.selection.textLine == textLine});
+        return classNames(this.props.model.textModel.selection.word == word && this.props.model.textModel.selection.textLine == textLine && 'editor-text__selected-word');
     }
 
     setWordNode(word: EditorWord, node: HTMLElement) {
@@ -107,17 +105,17 @@ class TextLine extends React.Component<{model: EditorModel; line: EditorLine; li
 
 
 
-        return  <div className={`${style.textline} ${style.ru}`}
+        return  <div className="editor-text__textline"
                      onClick={this.onTextLineClick}>
             <Escape onEscape={this.onCancel} />
-            <i className={`${i.fa} ${i.faPencilSquareO} ${style.textlineEditbutton}`} onClick={this.onEdit} />
+            <i className="fa fa-pencil-square-o editor-text__editbutton" onClick={this.onEdit} />
             {this.editMode ?
-                <div className={style.textlineEdit}>
+                <div className="editor-text__editbutton">
                     <Form onSubmit={this.onSave}>
-                        <TextInput className={style.speakerText} name="text" required />
-                        <button className={glob.iconButton}><i className={`${i.fa} ${i.faFloppyO}`} /></button>
-                        <button className={glob.iconButton} type="button" onClick={this.onCancel}><i
-                            className={`${i.fa} ${i.faBan}`} /></button>
+                        <TextInput className="editor-text__speaker-text" name="text" required />
+                        <button className="icon-button"><i className="fa fa-floppy-o" /></button>
+                        <button className="icon-button" type="button" onClick={this.onCancel}><i
+                            className="fa fa-ban" /></button>
                     </Form>
                 </div>
                 :

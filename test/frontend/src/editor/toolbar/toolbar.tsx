@@ -1,6 +1,6 @@
 import * as React from "react";
 import {EditorToolbarSpeakers} from "./speakers";
-import * as style from "./styles/toolbar.css";
+import "./styles/toolbar.css";
 import {autowatch} from "atom-next";
 import {EditorModel} from "../../models/Editor/EditorModel";
 
@@ -19,7 +19,7 @@ export class EditorToolbar extends React.Component<{model: EditorModel;}, {}> {
     }
 
     render() {
-        return <div className={style.editorToolbar}>
+        return <div className="editor-toolbar">
             <button onClick={this.onSave}>Save</button>
             <div>
                 <button onClick={this.onUndo}>Undo</button>
