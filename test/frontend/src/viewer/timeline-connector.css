@@ -1,18 +1,18 @@
-svg.timeline-connector {
+.timeline-connector {
     position: absolute;
-    left: 440px;
+    left: 50px;
     top: 0;
 }
 
-svg.timeline-connector g:hover path, svg.timeline-connector g.resizing path {
+.timeline-connector > g:hover path, .timeline-connector > g.timeline-connector__resizing > path {
     fill: red;
 }
 
-svg.timeline-connector g:hover rect {
+.timeline-connector > g:hover > rect {
     z-index: 100;
 }
 
-svg.timeline-connector rect {
+.timeline-connector > g > rect {
     x: 0;
     width: 20px;
     height: 20px;
@@ -21,15 +21,14 @@ svg.timeline-connector rect {
 }
 
 
-svg.timeline-connector .top {
+.timeline-connector__top {
     cursor: ns-resize;
 }
 
-svg.timeline-connector .bottom {
+.timeline-connector__bottom {
     cursor: ns-resize;
 }
 
-body.resizing{
+.timeline-connector__resizing {
     cursor: ns-resize;
 }
-

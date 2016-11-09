@@ -80,7 +80,7 @@
 
 .post__group {
     position: absolute;
-    left: 90px;
+    left: 100px;
     width: 10px;
     background: rgba(255, 0, 255, .3);
     top: 0;
@@ -88,9 +88,10 @@
 
 .post__splitter {
     position: absolute;
-    left: 10px;
+    left: 0px;
     width: 10px;
     height: 15px;
+    margin-top: -7px;
     background: rgba(0, 255, 255, .3);
     top: 0;
     cursor: pointer;
@@ -98,10 +99,14 @@
 
 .post__join-group {
     position: absolute;
-    top: -20px;
+    top: -15px;
     width: 10px;
-    height: 20px;
+    height: 15px;
     background: blue;
     left: 0;
     cursor: pointer;
+}
+
+.post__groups {
+
 }

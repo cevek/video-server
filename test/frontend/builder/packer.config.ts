@@ -4,6 +4,7 @@ import {combineJS} from "packer/dist/plugins/combineJS";
 import {dest} from "packer/dist/plugins/dest";
 import {jsEntry} from "packer/dist/plugins/jsEntry";
 import {copy} from "packer/dist/plugins/copy";
+import {sass} from "packer/dist/plugins/sass";
 import {combineCSS} from "packer/dist/plugins/combineCSS";
 import * as path from "path";
 Error.stackTraceLimit = Infinity;
@@ -17,6 +18,7 @@ new Packer({dest: 'dist', context: __dirname + '/../src/'}, promise => promise
         .then(copy('index.html'))
         // .then(sass('index.scss'))
         .then(combineJS('bundle.js'))
+        .then(sass(''))
         .then(combineCSS('style.css'))
         .then(dest())
     /*

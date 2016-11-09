@@ -11,7 +11,7 @@ import {EditorTextLine} from "../models/Editor/EditorTextLine";
 import {EditorWord} from "../models/Editor/EditorWord";
 import {Speaker} from "../models/Speaker";
 import {Lang} from "../models/Lang";
-import './styles/editor-text.css';
+import './styles/editor-text.scss';
 
 export interface EditorTextProps {
     model: EditorModel
@@ -28,6 +28,10 @@ export class EditorText extends React.Component<EditorTextProps, {}> {
             {this.model.post.lines.map((line, linePos) =>
                 <div className="editor-text__line" key={linePos} style={{top: this.model.renderLines[linePos].top}}>
                     <Speakers model={this.model} linePos={linePos} />
+                    <div className="editor-text__speaker_photo"
+                         title={line.speaker.name}
+                         style={{backgroundImage: 'url('+line.speaker.photo+ ')' }}>
+                    </div>
                     <TextLine model={this.model} line={line} linePos={linePos} lang={Lang.EN} />
                     <TextLine model={this.model} line={line} linePos={linePos} lang={Lang.RU} />
                 </div>
@@ -86,7 +90,7 @@ class TextLine extends React.Component<{model: EditorModel; line: EditorLine; li
         const line = this.props.line;
         const lang = this.props.lang;
         this.values.text.value = line.getTextLine(lang).getText();
-    }
+    };
 
     onSave = () => {
         this.editMode = false;
@@ -103,9 +107,7 @@ class TextLine extends React.Component<{model: EditorModel; line: EditorLine; li
         const lang = this.props.lang;
         const textLine = lang == Lang.RU ? line.ru : line.en; // todo
 
-
-
-        return  <div className="editor-text__textline"
+        return  <div className={`editor-text__textline ${lang == Lang.EN ? 'editor-text__en' : 'editor-text__ru'}`}
                      onClick={this.onTextLineClick}>
             <Escape onEscape={this.onCancel} />
             <i className="fa fa-pencil-square-o editor-text__editbutton" onClick={this.onEdit} />

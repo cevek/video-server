@@ -1,15 +1,13 @@
 import * as React from "react";
 import {svgPathGenerator} from "../utils/svg-path-generator";
-import {AudioPlayer} from "../utils/audio-player";
-import {EditorHistory, EditorHistoryData} from "../utils/history";
-import {Line} from "../models/Line";
-import * as style from "./timeline-connector.css";
+import {EditorHistoryData} from "../utils/history";
 import {autowatch, prop} from "atom-next";
-import {AudioSelectionData} from "../audio-selection-model";
 import {classes} from "../utils/cl";
 import {Lang} from "../models/Lang";
 import {TextLine} from "../models/TextLine";
-import {DisposerItem} from "../utils/time-allocate";
+import {EditorModel} from "../models/Editor/EditorModel";
+import './timeline-connector.css'
+
 
 
 export class HistoryTimeline extends EditorHistoryData<HistoryTimeline> {
@@ -24,26 +22,18 @@ export class HistoryTimeline extends EditorHistoryData<HistoryTimeline> {
 
 
 interface TimelineConnectorProps {
-    lines:Line[];
-    player:AudioPlayer;
-    resizeKoef:number;
-    renderLines:DisposerItem[];
-    history:EditorHistory;
-    audioSelectionModel: AudioSelectionData;
+    model: EditorModel;
 }
 
 @autowatch
 export class TimelineConnector extends React.Component<TimelineConnectorProps, {}> {
-    timeToY(time:number) {
-        return time * 100 / this.props.resizeKoef;
-    }
-
+    model = this.props.model;
     playTextLine(textLine:TextLine) {
         const start = textLine.start / 100;
         const dur = textLine.dur / 100;
-        this.props.player.play(start, dur);
-        this.props.audioSelectionModel.start = start;
-        this.props.audioSelectionModel.end = start + dur;
+        this.model.player.play(start, dur);
+        this.model.audioSelection.start = start;
+        this.model.audioSelection.end = start + dur;
     }
 
     @prop activeLine = -1;
@@ -55,31 +45,31 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
     moveResizeKoef = 1 / 2;
 
     onMouseDown(e:MouseEvent, lineN:number, isTop:boolean) {
-        const textLine = this.props.lines[lineN].en;
+        const textLine = this.model.post.lines[lineN].en;
         this.activeIsTop = isTop;
         this.activeLine = lineN;
         this.activeLineStart = textLine.start;
         this.activeLineDur = textLine.dur;
         this.y = e.pageY;
         e.preventDefault();
-        document.body.classList.add(style.resizing);
+        document.body.classList.add('body__resizing');
     }
 
     historyListen = (data:HistoryTimeline, isRedo:boolean) => {
-        const textLine = this.props.lines[data.lineN].en;
+        const textLine = this.model.post.lines[data.lineN].en;
         textLine.start = isRedo ? data.newStart : data.oldStart;
         textLine.dur = isRedo ? data.newDur : data.oldDur;
         this.forceUpdate();
-    }
+    };
 
     componentDidMount() {
-        this.props.history.listen(HistoryTimeline.type, this.historyListen);
+        // this.props.history.listen(HistoryTimeline.type, this.historyListen);
         document.addEventListener("mousemove", e => {
             if (this.activeLine > -1) {
-                const textLine = this.props.lines[this.activeLine].en;
+                const textLine = this.model.post.lines[this.activeLine].en;
                 // console.log((this.y - e.offsetY));
-                let diff = (this.y - e.pageY) * this.props.resizeKoef * this.moveResizeKoef;
-                const minH = 20 * this.props.resizeKoef;
+                let diff = this.model.lineCalc.pxToTime(this.y - e.pageY) * this.moveResizeKoef;
+                const minH = this.model.lineCalc.pxToTime(20);
                 if (this.activeIsTop) {
                     if (this.activeLineStart - diff < 0) {
                         diff = this.activeLineStart;
@@ -93,14 +83,14 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
                     textLine.dur = this.activeLineDur - diff > minH ? this.activeLineDur - diff : minH;
                 }
             }
-        })
+        });
         document.addEventListener("mouseup", e => {
             if (this.activeLine > -1) {
-                const textLine = this.props.lines[this.activeLine].en;
+                const textLine = this.model.post.lines[this.activeLine].en;
                 this.playTextLine(textLine);
-                document.body.classList.remove(style.resizing);
+                document.body.classList.remove('body--resizing');
                 if (this.activeLineStart != textLine.start || this.activeLineDur != textLine.dur) {
-                    this.props.history.add(new HistoryTimeline({
+                    /*this.props.history.add(new HistoryTimeline({
                         lineN: this.activeLine,
                         lang: Lang.EN,
                         type: HistoryTimeline.type,
@@ -108,7 +98,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
                         oldDur: this.activeLineDur,
                         newStart: textLine.start,
                         newDur: textLine.dur,
-                    }));
+                    }));*/
                 }
                 this.activeLine = -1;
             }
@@ -118,23 +108,24 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
     render() {
         const connectorWidth = 50;
         const svgWidth = connectorWidth;
-        const svgHeight = this.timeToY(this.props.player.duration);
-        const resizeKoef = this.props.resizeKoef;
+        //todo:
+        const last = this.model.renderLines[this.model.renderLines.length - 1];
+        const svgHeight = Math.max(last.realBottom, last.bottom);//this.model.lineCalc.timeToPx(this.model.videoPlayer.duration);
 
-        return <svg className={style.timelineConnector} width={svgWidth} height={svgHeight}>
-            {this.props.renderLines.map((pos, i) => {
-                const textLine = this.props.lines[i].en;
+        return <svg className="timeline-connector" width={svgWidth} height={svgHeight}>
+            {this.model.renderLines.map((pos, i) => {
+                const textLine = this.model.post.lines[i].en;
                 if (textLine.start != null) {
-                    const tl = textLine.start / resizeKoef;
-                    const bl = (textLine.start + textLine.dur) / resizeKoef;
+                    const tl = pos.realTop;
+                    const bl = pos.realBottom;
                     const tr = pos.top;
                     const br = pos.bottom;
                     const color = 'hsla(' + (textLine.start) + ', 50%,60%, 1)';
-                    return <g key={i} className={classes(style.resizing, i == this.activeLine)}>
+                    return <g key={i} className={classes("timeline-connector__resizing", i == this.activeLine)}>
                         <path onClick={()=>this.playTextLine(textLine)} fill={color}
                               d={svgPathGenerator(tl, bl, tr, br, connectorWidth)}/>
-                        <rect onMouseDown={(e:any)=>this.onMouseDown(e, i, true)} className={style.top} y={tl}/>
-                        <rect onMouseDown={(e:any)=>this.onMouseDown(e, i, false)} className={style.bottom} y={bl-20}/>
+                        <rect onMouseDown={(e:any)=>this.onMouseDown(e, i, true)} className="timeline-connector__top" y={tl}/>
+                        <rect onMouseDown={(e:any)=>this.onMouseDown(e, i, false)} className="timeline-connector__bottom" y={bl-20}/>
                     </g>
                 }
                 return null;

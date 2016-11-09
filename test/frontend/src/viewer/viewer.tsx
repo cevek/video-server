@@ -9,11 +9,13 @@ import {AudioPlayer} from "../utils/audio-player";
 import {EditorHistory} from "../utils/history";
 import * as style from "./viewer.css";
 import {config} from "../config";
+import {EditorModel} from "../models/Editor/EditorModel";
 
 export class Viewer extends React.Component<{params: any, resolved: PostModel}, {}> {
     audioPlayer = new AudioPlayer();
     history = new EditorHistory();
     postModel = this.props.resolved;
+    model: EditorModel;// todo
 
     static load(params:any) {
         return PostModel.fetch(params.id);
@@ -39,13 +41,8 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
             </div>
             {this.audioPlayer.soundLoaded ?
                 <div>
-                    <Timeline audioSelectionModel={null} resizeKoef={resizeKoef} player={this.audioPlayer}/>
-                    <TimelineConnector lines={this.postModel.lines}
-                                       resizeKoef={resizeKoef}
-                                       player={this.audioPlayer}
-                                       audioSelectionModel={null}
-                                       history={this.history}
-                                       renderLines={renderLines}/>
+                    <Timeline model={this.model}/>
+                    <TimelineConnector model={this.model}/>
                 </div> : null
             }
             <Thumbs postModel={this.postModel} model={null} resizeKoef={resizeKoef}/>

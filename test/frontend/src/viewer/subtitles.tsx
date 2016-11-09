@@ -1,10 +1,9 @@
 import * as React from "react";
 import * as classNames from "classnames";
-import {PlayingStatus} from "sound-utils/Play";
+import {PlayingStatus} from "sound-utils/dist/Play";
 import {PostModel} from "../models/post";
 import {AudioPlayer} from "../utils/audio-player";
 import * as style from "./subtitles.css";
-import {ITextLines} from "../models/DBModels";
 import {TextLine} from "../models/TextLine";
 import {DisposerItem} from "../utils/time-allocate";
 

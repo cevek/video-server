@@ -5,12 +5,13 @@ import {VideoPlayerVM} from "./VideoPlayerViewModel";
 import {LineCalc} from "./LineCalc";
 import {Ref} from "../../lib/Ref";
 import {AudioSelectionData} from "../../audio-selection-model";
+import {AudioPlayer} from "../../utils/audio-player";
 export class Post2Model {
     post: PostModel;
     videoPlayer: VideoPlayerVM;
-    lineCalc = new LineCalc(4);
+    lineCalc = new LineCalc(5);
     audioSelection = new AudioSelectionData();
-
+    player = new AudioPlayer();
 
     constructor(post: PostModel) {
         this.post = post;

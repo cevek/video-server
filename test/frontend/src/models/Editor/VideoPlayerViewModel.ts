@@ -8,6 +8,9 @@ export class VideoPlayerVM {
     storageValue = new LocalStorageValue<number>('post_videotime_' + this.postId);
     private updateCounter = 0;
     skipNextSeek = false;
+    @prop get duration() {
+        return this.video.element.duration;
+    }
 
     constructor(public postId: number, public video: Ref<HTMLVideoElement>) {
 
@@ -18,7 +21,7 @@ export class VideoPlayerVM {
         this.stopped = true;
         this.storageValue.set(this.currentTime);
         this.stopped = true;
-    }
+    };
 
     onSeek = () => {
         this.currentTime = this.video.element.currentTime;
@@ -27,7 +30,7 @@ export class VideoPlayerVM {
             this.lastSeekTime = this.currentTime;
         }
         this.skipNextSeek = false;
-    }
+    };
 
     updateCurrentTime = () => {
         this.currentTime = this.video.element.currentTime;
@@ -37,7 +40,7 @@ export class VideoPlayerVM {
         if (!this.stopped) {
             setTimeout(this.updateCurrentTime, 16);
         }
-    }
+    };
 
     init() {
         const savedCurrentTime = this.storageValue.get();
@@ -49,8 +52,7 @@ export class VideoPlayerVM {
     onPlay = () => {
         this.stopped = false;
         this.updateCurrentTime();
-    }
-
+    };
 
     playTime(time: number, forceNextSeek = false) {
         if (this.currentTime !== time && !forceNextSeek) {

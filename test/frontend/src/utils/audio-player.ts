@@ -1,6 +1,6 @@
-import {FFT} from "sound-utils/FFT";
-import {SoundLoader} from "sound-utils/SoundLoader";
-import {Play, PlayingStatus} from "sound-utils/Play";
+import {FFT} from "sound-utils/dist/FFT";
+import {SoundLoader} from "sound-utils/dist/SoundLoader";
+import {Play, PlayingStatus} from "sound-utils/dist/Play";
 import {prop} from "atom-next";
 
 var audioContext = new AudioContext();
@@ -55,7 +55,7 @@ export class AudioPlayer {
         if (this.state == PlayingStatus.PLAYING) {
             setTimeout(this.onInterval);
         }
-    }
+    };
 
     protected interval:number;
 
@@ -95,6 +95,10 @@ export class AudioPlayer {
 
     applySpectrogramToCanvas(canvas:HTMLCanvasElement) {
         const data = this.spectrogramData;
+        if (!data) {
+            console.error('No spectrogram data');
+            return;
+        }
         const ctx = canvas.getContext('2d');
         var timeLen = data.length;
         var valsLen = data[0].length;

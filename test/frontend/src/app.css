@@ -6,3 +6,6 @@ body {
     font-family: Verdana, serif;
 }
 
+.body--resizing {
+    cursor: ns-resize;
+}

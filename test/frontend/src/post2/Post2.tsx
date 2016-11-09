@@ -12,6 +12,8 @@ import {EditorText} from "../editor/editor-text";
 import {EditorModel} from "../models/Editor/EditorModel";
 import {Lang} from "../models/Lang";
 import './Post2.css';
+import {Timeline} from "../viewer/timeline";
+import {TimelineConnector} from "../viewer/timeline-connector";
 
 interface Post2Props {
     params: any;
@@ -32,18 +34,23 @@ export class Post2 extends React.Component<Post2Props, {}> {
         const videoFile = model.post.mediaFiles.get(model.post.post.video);
         return (
             <div>
-                <VideoView videoModel={model.videoPlayer} url={videoFile.url} />
+                <VideoView videoModel={model.videoPlayer} url={videoFile.url}/>
 
                 <div ref={this.overlay.onRender} className="post__video_overlay">
-                    <CurrentTime vm={model.videoPlayer} lineCalc={model.lineCalc} />
+                    <CurrentTime vm={model.videoPlayer} lineCalc={model.lineCalc}/>
 
-                    {model.post.groups.groups.map((group, i) =>
-                        <GroupView key={i} model={model} group={group} groupPos={i} />)}
+                    <EditorText model={this.model}/>
+                    <TimelineConnector model={this.model}/>
+                    <Timeline model={this.model}/>
 
-                    <EditorText model={this.model} />
-
+                    <div className="post__groups">
+                        {model.post.groups.groups.map((group, i) =>
+                            <GroupView key={i} model={model} group={group} groupPos={i}/>)}
+                    </div>
+{/*
                     {model.post.lines.map((line, i) =>
-                        <LineView key={i} model={model} line={line} lineN={i} />)}
+                        <LineView key={i} model={model} line={line} lineN={i}/>)}
+*/}
                 </div>
             </div>
         );
@@ -73,7 +80,7 @@ export class LineView extends React.Component<LineViewProps, {}> {
         return (
             <div>
                 <div className="post__real_time"
-                     style={{top: realTimeTop, height: realTimeHeight, background: realTimeBgColor }} />
+                     style={{top: realTimeTop, height: realTimeHeight, background: realTimeBgColor }}/>
 
                 <div style={{top, height}}
                      data-start={line.en.start}
@@ -123,14 +130,14 @@ export class VideoView extends React.Component<VideoViewProps, {}> {
         const {videoModel, url} = this.props;
         return (
             <div>
-                <DocKey onKeyPress={this.onKeyPress} />
+                <DocKey onKeyPress={this.onKeyPress}/>
                 <video ref={videoModel.video.onRender}
                        onPlay={videoModel.onPlay}
                        onPause={videoModel.onStop}
                        onSeeked={videoModel.onSeek}
                        className="post__video_control"
                        src={url}
-                       controls />
+                       controls/>
             </div>
         );
     }
@@ -166,15 +173,15 @@ export class GroupView extends React.Component<GroupViewProps, {}> {
         return (
             <div className="post__group" style={{top: top, height: height}}>
                 {groupPos > 0 ?
-                    <div onClick={this.onJoinGroup} className="post__join-group" /> : null}
+                    <div onClick={this.onJoinGroup} className="post__join-group"/> : null}
                 {lines.map((v, linePos) =>
                     <div key={linePos}
                          className="post__splitter"
                          onClick={()=>this.onSplitGroup(linePos)}
-                         style={{top: model.renderLines[linePos + group.start].bottom - top}} />
+                         style={{top: model.renderLines[linePos + group.start].bottom - top}}/>
                 )}
             </div>
-         );
+        );
     }
 }
 
@@ -189,7 +196,7 @@ class CurrentTime extends React.Component<CurrentTimeProps, {}> {
     render() {
         return (
             <div className="post__current_time"
-                 style={{height: this.props.lineCalc.timeToPx(this.props.vm.currentTime)}} />
+                 style={{height: this.props.lineCalc.timeToPx(this.props.vm.currentTime)}}/>
         )
     }
 }

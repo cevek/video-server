@@ -1,18 +1,16 @@
 .editor-text {
     position: absolute;
     top: 0;
+    color: white;
 }
 
 .editor-text__line {
-    border: 1px solid silver;
     border-radius: 0 10px 10px 0;
     border-left: 0;
     width: 650px;
-    background: #eee;
-    text-align: center;
     position: absolute;
     height: 50px;
-    margin-top: -25px;
+    left: 120px;
 }
 
 .editor-text__en {
@@ -23,11 +21,13 @@
 .editor-text__ru {
     font-size: 13px;
     padding-bottom: 5px;
+    color: silver;
 }
 
 .editor-text__textline {
     padding: 1px 15px;
     white-space: nowrap;
+    margin-left: 50px;
 }
 
 .editor-text__textline>span {
@@ -68,6 +68,17 @@
     cursor: pointer;
 }
 
+
+.editor-text__speaker_photo {
+    position: absolute;
+    margin: 0 0 0 0;
+    width: 50px;
+    height: 50px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 5px;
+    background-size: cover;
+}
+
 .editor-text__speaker:first-child {
     border-radius: 3px 0 0 3px;
 }
@@ -84,5 +95,6 @@
     background: silver;
     color: white;
 }
+
 
 

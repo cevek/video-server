@@ -50,13 +50,8 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
             </div>
             {this.audioPlayer.soundLoaded ?
                 <div>
-                    <Timeline resizeKoef={this.model.lineCalc.resizeKoef} audioSelectionModel={this.model.audioSelection} player={this.audioPlayer}/>
-                    <TimelineConnector lines={this.model.post.lines}
-                                       resizeKoef={this.model.lineCalc.resizeKoef}
-                                       player={this.audioPlayer}
-                                       audioSelectionModel={this.model.audioSelection}
-                                       history={this.model.history}
-                                       renderLines={renderLines}/>
+                    <Timeline model={this.model}/>
+                    <TimelineConnector model={this.model}/>
                 </div> : null
             }
             <Thumbs postModel={postModel} model={this.model} resizeKoef={this.model.lineCalc.resizeKoef}/>
