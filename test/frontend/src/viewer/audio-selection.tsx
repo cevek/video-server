@@ -1,8 +1,7 @@
 import * as React from "react";
 import {AudioPlayer} from "../utils/audio-player";
-import * as style from "./audio-selection.css";
+import "./audio-selection.scss";
 import {autowatch} from "atom-next";
-import {prop} from "atom-next";
 import {AudioSelectionData} from "../audio-selection-model";
 
 @autowatch
@@ -92,11 +91,11 @@ export class AudioSelection extends React.Component<{audioSelectionModel: AudioS
         const audioSelection = this.props.audioSelectionModel;
         const durationY = this.timeToPx(this.props.player.duration);
         const currentTimePx = this.timeToPx(this.props.player.currentTime);
-        return <div className={style.audioSelectionWrapper} ref="root" style={{height: this.timeToPx(this.props.player.duration)}}>
-            <div className={style.audioSelection} ref="audioSelection"
+        return <div className="audio-selection__wrapper" ref="root" style={{height: this.timeToPx(this.props.player.duration)}}>
+            <div className="audio-selection" ref="audioSelection"
                  style={{top: this.timeToPx(audioSelection.start), height: this.timeToPx(audioSelection.end - audioSelection.start)}}></div>
-            <img className={style.spectrogram} ref="spectrogram" style={{height: durationY}}/>
-            <div className={style.currentTime} style={{transform: `translateY(${currentTimePx}px)`}} ref="currentTime"></div>
+            <img className="audio-selection__spectrogram" ref="spectrogram" style={{height: durationY}}/>
+            <div className="audio-selection__current-time" style={{transform: `translateY(${currentTimePx}px)`}} ref="currentTime"></div>
         </div>
     }
 }

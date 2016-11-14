@@ -6,7 +6,7 @@ import {TimelineConnector} from "../viewer/timeline-connector";
 import {AudioPlayer} from "../utils/audio-player";
 import {disposer} from "../utils/time-allocate";
 import {EditorText} from "./editor-text";
-import "./styles/editor.css";
+import "./styles/editor.scss";
 import {EditorToolbar} from "./toolbar/toolbar";
 import {EditorTitle} from "./editor-title";
 import {EditorTags} from "./editor-tags";

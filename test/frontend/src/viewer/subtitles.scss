@@ -1,9 +1,9 @@
-.viewer .subtitles {
+.subtitles {
     position: absolute;
     top: 0;
 }
 
-.viewer .line {
+.subtitles__line {
     padding: 5px 10px;
     position: absolute;
     height: 50px;
@@ -11,19 +11,19 @@
     left: 500px;
 }
 
-.viewer .selected {
+.subtitles__selected {
     background: yellow;
 }
 
 
-.viewer .playing{
+.subtitles__playing{
     background: yellow;
 }
 
-.en{
+.subtitles__en{
 
 }
 
-.ru{
+.subtitles__ru{
 
 }

@@ -1,5 +1,5 @@
 import * as React from "react";
-import  "./styles/speaker.css";
+import  "./styles/speaker.scss";
 import {prop} from "atom-next";
 import {autowatch} from "atom-next";
 import {Escape} from "../../escape";

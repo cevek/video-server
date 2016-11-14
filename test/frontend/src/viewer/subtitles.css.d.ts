@@ -1,7 +1,0 @@
-export let viewer:''
-export let subtitles:''
-export let line:''
-export let selected:''
-export let playing:''
-export let en:''
-export let ru:''

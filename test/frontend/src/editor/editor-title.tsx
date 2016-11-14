@@ -1,5 +1,5 @@
 import * as React from "react";
-import "./styles/editor-title.css";
+import "./styles/editor-title.scss";
 import {autowatch} from "atom-next";
 import {TextInput} from "../form";
 import {EditorModel} from "../models/Editor/EditorModel";

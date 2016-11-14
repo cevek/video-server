@@ -1,9 +1,9 @@
-import './upload.css';
 import * as React from 'react';
 import {editorRoute} from "../routes";
 import {TrackInfo} from "../models/TrackInfo";
 import {MediaType} from "../models/MediaTypes";
 import {IPosts} from "../models/DBModels";
+import FastPromise from "fast-promise";
 
 interface MediaResult {
     video: TrackInfo;
@@ -185,7 +185,8 @@ class Uploader extends React.Component<{
         this.interval = setInterval(()=>this.forceUpdate(), 600);
         this.forceUpdate();
 
-        return new Promise((resolve, reject) => {
+        return new FastPromise((resolve, reject) => {
+
             var file = this.getFile();
             var info = {
                 startTime: this.startTime,

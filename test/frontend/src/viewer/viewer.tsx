@@ -7,7 +7,7 @@ import {disposer} from "../utils/time-allocate";
 import {Subtitles} from "./subtitles";
 import {AudioPlayer} from "../utils/audio-player";
 import {EditorHistory} from "../utils/history";
-import * as style from "./viewer.css";
+import "./viewer.scss";
 import {config} from "../config";
 import {EditorModel} from "../models/Editor/EditorModel";
 
@@ -35,7 +35,7 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
         const renderLines = disposer(positions);
 
         return <div>
-            <div className={style.toolbar}>
+            <div className="toolbar">
                 <button onClick={()=>this.history.undo()}>Undo</button>
                 <button onClick={()=>this.history.redo()}>Redo</button>
             </div>

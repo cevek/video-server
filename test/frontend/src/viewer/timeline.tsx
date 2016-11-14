@@ -1,7 +1,7 @@
 import * as React from "react";
 import {AudioSelection} from "./audio-selection";
 import {EditorModel} from "../models/Editor/EditorModel";
-import './timeline.css'
+import './timeline.scss'
 
 export class Timeline extends React.Component<{model: EditorModel}, {}> {
     render() {

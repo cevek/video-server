@@ -3,7 +3,7 @@ import * as classNames from "classnames";
 import {PlayingStatus} from "sound-utils/dist/Play";
 import {PostModel} from "../models/post";
 import {AudioPlayer} from "../utils/audio-player";
-import * as style from "./subtitles.css";
+import "./subtitles.scss";
 import {TextLine} from "../models/TextLine";
 import {DisposerItem} from "../utils/time-allocate";
 
@@ -55,16 +55,16 @@ export class Subtitles extends React.Component<{postModel: PostModel; player: Au
 
     render() {
         const durationY = this.timeToY(this.duration);
-        return <div className={style.subtitles}>
+        return <div className="subtitles">
             {this.props.postModel.lines.map((line, i) =>
                 <div
-                    className={classNames(style.line, {[style.playing]: this.playingLine == i, [style.selected]: this.isSelected(line.en)})}
+                    className={classNames('subtitles__line', {['subtitles__playing']: this.playingLine == i, ['subtitles__selected']: this.isSelected(line.en)})}
                     onMouseDown={()=>this.showRuTextLine(i)}
                     onMouseUp={()=>this.hideRuTextLine(i)}
                     style={{top: this.props.renderLines[i]}}>
-                    <div className={style.en}>{line.en ? line.en.text : ''}</div>
+                    <div className="subtitles__en">{line.en ? line.en.text : ''}</div>
                     {this.openedRuTextLines[i] ?
-                        <div className={style.ru}>{line.ru ? line.ru.text : ''}</div> : null}
+                        <div className="subtitles__ru">{line.ru ? line.ru.text : ''}</div> : null}
                 </div>)}
         </div>
     }

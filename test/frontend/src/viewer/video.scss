@@ -6,7 +6,7 @@
     margin: 80px 0;
 }
 
-.video .overlay, .video .cover {
+.video__overlay, .video__cover {
     position: absolute;
     left: 0;
     top: 0;
@@ -15,10 +15,10 @@
     background: transparent;
 }
 
-.video .cover {
+.video__cover {
     background: skyblue;
 }
 
-.controls{
+.video__controls{
 
 }

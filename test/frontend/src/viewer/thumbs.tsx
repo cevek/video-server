@@ -1,6 +1,6 @@
 import * as React from "react";
 import {PostModel} from "../models/post";
-import * as style from "./thumbs.css";
+import "./thumbs.scss";
 import {classes} from "../utils/cl";
 import {autowatch} from "atom-next";
 import {EditorModel} from "../models/Editor/EditorModel";
@@ -60,9 +60,9 @@ export class Thumbs extends React.Component<{postModel:PostModel; model: EditorM
         const cover = model ? model.post.cover : -1;
 
 
-        return <div className={style.thumbs}>
+        return <div className="thumbs">
             {thumbsItems.map((thumb, i) =>
-                <div className={classes(style.thumb, true, style.selected, cover == thumb.k)} key={i}
+                <div className={classes('thumbs__thumb', true, 'thumbs__selected', cover == thumb.k)} key={i}
                      style={{top: thumb.top, background: `url(${thumbImg}) ${-thumb.imgLeft}px ${-thumb.imgTop}px`}}
                      onClick={()=>this.onClick(thumb)}>
                 </div>)}

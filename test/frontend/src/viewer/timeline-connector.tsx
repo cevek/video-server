@@ -6,7 +6,7 @@ import {classes} from "../utils/cl";
 import {Lang} from "../models/Lang";
 import {TextLine} from "../models/TextLine";
 import {EditorModel} from "../models/Editor/EditorModel";
-import './timeline-connector.css'
+import './timeline-connector.scss'
 
 
 

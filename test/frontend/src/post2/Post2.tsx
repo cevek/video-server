@@ -11,7 +11,7 @@ import {LineCalc} from "../models/Editor/LineCalc";
 import {EditorText} from "../editor/editor-text";
 import {EditorModel} from "../models/Editor/EditorModel";
 import {Lang} from "../models/Lang";
-import './Post2.css';
+import './Post2.scss';
 import {Timeline} from "../viewer/timeline";
 import {TimelineConnector} from "../viewer/timeline-connector";
 
