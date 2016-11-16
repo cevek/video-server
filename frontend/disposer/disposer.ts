@@ -1,5 +1,3 @@
-var exports = {exports: {}};
-
 export class DisposerItem {
     pos: number;
     bottomSpace = 0;
