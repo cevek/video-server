@@ -10,6 +10,7 @@ export class EditorTextLine extends TextLine {
     @prop lang: Lang;
     @prop start: number;
     @prop dur: number;
+    @prop selected = false;
 
     getWord(i: number) {
         return this.words[i];

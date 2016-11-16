@@ -2,7 +2,6 @@ import * as React from "react";
 import * as classNames from "classnames";
 import {autowatch} from "atom-next";
 import {Group} from "../utils/group-maker";
-import {Line} from "../models/Line";
 import {Post2Model} from "../models/Editor/PostViewModel";
 import {Ref} from "../lib/Ref";
 import {VideoPlayerVM} from "../models/Editor/VideoPlayerViewModel";
@@ -10,8 +9,7 @@ import {DocKey} from "../lib/DocKey";
 import {LineCalc} from "../models/Editor/LineCalc";
 import {EditorText} from "../editor/editor-text";
 import {EditorModel} from "../models/Editor/EditorModel";
-import {Lang} from "../models/Lang";
-import './Post2.scss';
+import "./Post2.scss";
 import {Timeline} from "../viewer/timeline";
 import {TimelineConnector} from "../viewer/timeline-connector";
 
@@ -60,7 +58,6 @@ export class Post2 extends React.Component<Post2Props, {}> {
 
 interface LineViewProps {
     model: Post2Model;
-    line: Line;
     lineN: number;
 }
 
@@ -68,14 +65,17 @@ interface LineViewProps {
 export class LineView extends React.Component<LineViewProps, {}> {
     onLineClick = () => {
         const {model, lineN} = this.props;
-        model.videoPlayer.playTime(model.post.lines[lineN].en.start / 100);
+        model.videoPlayer.playTime(model.post.enLines.get(lineN).start / 100);
     }
 
     render() {
-        const {model, line, lineN} = this.props;
+        const {model, lineN} = this.props;
+        const en = model.post.enLines.get(lineN);
+        const ru = model.post.ruLines.get(lineN);
+        const speaker = model.post.speakerLines.get(lineN);
         const {top, height} = model.renderLines[lineN];
-        const realTimeTop = model.lineCalc.timeToPx(line.en.start / 100);
-        const realTimeHeight = model.lineCalc.timeToPx(line.en.dur / 100);
+        const realTimeTop = model.lineCalc.timeToPx(en.start / 100);
+        const realTimeHeight = model.lineCalc.timeToPx(en.dur / 100);
         const realTimeBgColor = '#' + ('00000' + (426356753 * lineN).toString(16)).slice(-6);
         return (
             <div>
@@ -83,13 +83,13 @@ export class LineView extends React.Component<LineViewProps, {}> {
                      style={{top: realTimeTop, height: realTimeHeight, background: realTimeBgColor }}/>
 
                 <div style={{top, height}}
-                     data-start={line.en.start}
+                     data-start={en.start}
                      onClick={this.onLineClick}
                      className={classNames('post__line', model.currentSelectedLine == lineN && 'post__selected')}>
 
                     <div className="post__speaker"
-                         title={line.speaker.name}
-                         style={{backgroundImage: 'url('+line.speaker.photo+ ')' }}>
+                         title={speaker.name}
+                         style={{backgroundImage: 'url('+speaker.photo+ ')' }}>
                     </div>
 
                     {/*<TextLine lang={Lang.EN} line={line} linePos={lineN} model={model}/>*/}
@@ -200,12 +200,4 @@ class CurrentTime extends React.Component<CurrentTimeProps, {}> {
         )
     }
 }
-
-interface TextLineProps {
-    model: Post2Model;
-    line: Line;
-    linePos: number;
-    lang: Lang;
-}
-
 

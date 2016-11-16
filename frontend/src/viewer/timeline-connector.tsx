@@ -45,7 +45,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
     moveResizeKoef = 1 / 2;
 
     onMouseDown(e:MouseEvent, lineN:number, isTop:boolean) {
-        const textLine = this.model.post.lines[lineN].en;
+        const textLine = this.model.post.enLines.get(lineN);
         this.activeIsTop = isTop;
         this.activeLine = lineN;
         this.activeLineStart = textLine.start;
@@ -56,7 +56,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
     }
 
     historyListen = (data:HistoryTimeline, isRedo:boolean) => {
-        const textLine = this.model.post.lines[data.lineN].en;
+        const textLine = this.model.post.enLines.get(data.lineN);
         textLine.start = isRedo ? data.newStart : data.oldStart;
         textLine.dur = isRedo ? data.newDur : data.oldDur;
         this.forceUpdate();
@@ -66,7 +66,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
         // this.props.history.listen(HistoryTimeline.type, this.historyListen);
         document.addEventListener("mousemove", e => {
             if (this.activeLine > -1) {
-                const textLine = this.model.post.lines[this.activeLine].en;
+                const textLine = this.model.post.enLines.get(this.activeLine);
                 // console.log((this.y - e.offsetY));
                 let diff = this.model.lineCalc.pxToTime(this.y - e.pageY) * this.moveResizeKoef;
                 const minH = this.model.lineCalc.pxToTime(20);
@@ -86,7 +86,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
         });
         document.addEventListener("mouseup", e => {
             if (this.activeLine > -1) {
-                const textLine = this.model.post.lines[this.activeLine].en;
+                const textLine = this.model.post.enLines.get(this.activeLine);
                 this.playTextLine(textLine);
                 document.body.classList.remove('body--resizing');
                 if (this.activeLineStart != textLine.start || this.activeLineDur != textLine.dur) {
@@ -114,7 +114,7 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
 
         return <svg className="timeline-connector" width={svgWidth} height={svgHeight}>
             {this.model.renderLines.map((pos, i) => {
-                const textLine = this.model.post.lines[i].en;
+                const textLine = this.model.post.enLines.get(i);
                 if (textLine.start != null) {
                     const tl = pos.realTop;
                     const bl = pos.realBottom;

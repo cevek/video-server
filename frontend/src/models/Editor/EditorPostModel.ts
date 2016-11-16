@@ -1,16 +1,16 @@
 import {PostModel} from "../post";
-import {EditorLine} from "./EditorLine";
 import {EditorTextLine} from "./EditorTextLine";
-import {prop} from "atom-next";
+import {prop, AtomArray} from "atom-next";
 import {EditorHistoryStringData} from "../../utils/history";
 import {EditorSpeakerList} from "../../editor/editor-speakerlist-model";
 import {Lang} from "../Lang";
 import {IGetPost} from "../IGetPost";
-import {IMediaFiles} from "../DBModels";
 
 export class EditorPostModel extends PostModel {
     @prop postModel: PostModel;
-    @prop lines: EditorLine[];
+    @prop enLines: AtomArray<EditorTextLine>;
+    @prop ruLines: AtomArray<EditorTextLine>;
+    // @prop lines: EditorLine[];
     /*
      @prop history = new EditorHistory()
      .listen(historyTitle, this.historySetTitle)
@@ -25,13 +25,8 @@ export class EditorPostModel extends PostModel {
 
     constructor(json: IGetPost) {
         super(json);
-
-        this.lines = this.lines.map(line =>
-            new EditorLine(
-                new EditorTextLine(Lang.EN, line.en.start, line.en.dur, line.en.text),
-                new EditorTextLine(Lang.RU, line.ru.start, line.ru.dur, line.ru.text),
-                line.speaker
-            ))
+        this.enLines = new AtomArray(this.enLines.map(en => new EditorTextLine(Lang.EN, en.start, en.dur, en.text)));
+        this.ruLines = new AtomArray(this.ruLines.map(ru => new EditorTextLine(Lang.RU, ru.start, ru.dur, ru.text)));
     }
 
 

@@ -20,17 +20,19 @@ export class EditorKeyHandler extends React.Component<{model: EditorModel;},{}>{
         const model = this.props.model;
 
         var handled = false;
-        if (!model.textModel.selection.line || !model.textModel.selection.textLine) {
-            model.textModel.selection.set(0, 0, 0);
+        if (!model.textModel.selection.textLine) {
+            model.textModel.selection.set(0, model.post.enLines.first, 0);
         }
 
         var keyCode = e.keyCode;
         var isCtrl = e.metaKey || e.ctrlKey;
         if (keyCode == KeyCodes.ENTER) {
             if (e.shiftKey) {
-                // model.history.add(model.textModel.splitIntoNewLine());
+                model.textModel.splitIntoNewLine();
+                // model.history.add();
             }
             else {
+                model.textModel.splitWithMove();
                 // model.history.add(model.textModel.splitWithMove());
             }
             handled = true;
@@ -38,9 +40,11 @@ export class EditorKeyHandler extends React.Component<{model: EditorModel;},{}>{
 
         if (keyCode == KeyCodes.BACKSPACE) {
             if (e.shiftKey) {
+                model.textModel.joinLine();
                 // model.history.add(model.textModel.joinLine());
             }
             else {
+                model.textModel.joinLineWithMove();
                 // model.history.add(model.textModel.joinLineWithMove());
             }
             handled = true;

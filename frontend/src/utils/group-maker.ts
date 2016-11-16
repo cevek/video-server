@@ -1,7 +1,5 @@
-import {Line} from "../models/Line";
-import {prop} from "atom-next";
+import {prop, AtomArray} from "atom-next";
 import {assert} from "./assert";
-import {AtomArray} from "atom-next";
 
 export class Group {
     start: number;
@@ -32,7 +30,7 @@ export class GroupList {
 
     }
 
-    static generateFromLines(lines: Line[], splitDuration: number) {
+    static generateFromLines(lines: number[], splitDuration: number) {
         if (lines.length == 0) {
             return new GroupList();
         }
@@ -44,7 +42,7 @@ export class GroupList {
             let prevLine = lines[0];
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i];
-                if (line.en.start - prevLine.en.start > splitDuration) {
+                if (line - prevLine > splitDuration) {
                     group.end = i - 1;
                     group = new Group();
                     groups.push(group);

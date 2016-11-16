@@ -95,10 +95,10 @@ export class EditorSpeakerList {
 
     removeLineSpeakers(speaker:Speaker) {
         const affectLines:number[] = [];
-        for (var i = 0; i < this.model.post.lines.length; i++) {
-            var line = this.model.post.lines[i];
-            if (line.speaker == speaker) {
-                line.speaker = null;
+        for (var i = 0; i < this.model.post.speakerLines.length; i++) {
+            var lspeaker = this.model.post.speakerLines.get(i);
+            if (lspeaker == speaker) {
+                this.model.post.speakerLines.set(i, null);
                 affectLines.push(i);
             }
         }
@@ -107,8 +107,7 @@ export class EditorSpeakerList {
 
     restoreLineSpeakers(lines:number[], speaker:Speaker) {
         for (var i = 0; i < lines.length; i++) {
-            var line = this.model.post.lines[lines[i]];
-            line.speaker = speaker;
+            this.model.post.speakerLines.set(lines[i], speaker);
         }
     }
 

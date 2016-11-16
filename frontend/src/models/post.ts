@@ -1,5 +1,4 @@
-import {Line} from "./Line";
-import {prop} from "atom-next";
+import {prop, AtomArray} from "atom-next";
 import {HashMap} from "../utils/hashmap";
 import {GroupList} from "../utils/group-maker";
 import {TextLine} from "./TextLine";
@@ -8,10 +7,13 @@ import {IGetPost} from "./IGetPost";
 import {Lang} from "./Lang";
 import {IPosts, ITextLines, IMediaFiles} from "./DBModels";
 export class PostModel {
-    @prop lines: Line[];
+    // @prop lines: Line[];
     @prop groups: GroupList;
     @prop post: IPosts;
 
+    enLines = new AtomArray<TextLine>();
+    ruLines = new AtomArray<TextLine>();
+    speakerLines = new AtomArray<Speaker>();
 
     textLines: HashMap<ITextLines>
     mediaFiles: HashMap<IMediaFiles>
@@ -20,7 +22,7 @@ export class PostModel {
         this.post = json.post;
         this.textLines = new HashMap(json.textLines);
         this.mediaFiles = new HashMap(json.mediaFiles);
-        this.lines = this.getLines();
+        this.getLines();
     }
 
     private getLines() {
@@ -36,7 +38,12 @@ export class PostModel {
         const shiftEnAudio = enAudioFile ? enAudioFile.shiftTime * 100 : 0;
         const shiftRuAudio = ruAudioFile ? ruAudioFile.shiftTime * 100 : 0;
 
-        const newData = data.lines.map(line => {
+        const lines = data.lines.sort((a, b) => {
+            const en1 = this.textLines.getOrThrow(a.en);
+            const en2 = this.textLines.getOrThrow(b.en);
+            return en1.start < en2.start ? -1 : 1;
+        });
+        lines.forEach(line => {
             const enJSON = this.textLines.getOrThrow(line.en);
             enJSON.start -= shiftEnAudio - shiftEnSubs;
 
@@ -50,11 +57,11 @@ export class PostModel {
             const photoFile = speakerJSON && this.mediaFiles.get(speakerJSON.photo);
             const speaker = new Speaker(speakerJSON, photoFile && photoFile.url);
 
-            return new Line(en, ru, speaker);
+            this.enLines.push(en);
+            this.ruLines.push(ru);
+            this.speakerLines.push(speaker);
         });
-        newData.sort((a, b) => a.en.start < b.en.start ? -1 : 1);
-        this.groups = GroupList.generateFromLines(newData, 500);
-        return newData;
+        this.groups = GroupList.generateFromLines(this.enLines.map(line => line.start), 500);
     }
 
     static fetch(id: number): Promise<PostModel> {

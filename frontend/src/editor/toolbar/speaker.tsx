@@ -1,14 +1,13 @@
 import * as React from "react";
-import  "./styles/speaker.scss";
-import {prop} from "atom-next";
-import {autowatch} from "atom-next";
-import {Escape} from "../../escape";
+import "./styles/speaker.scss";
+import {prop, autowatch} from "atom-next";
 import {Form, TextInput, FormField} from "../../form";
 import {Speaker} from "../../models/Speaker";
 import {EditorModel} from "../../models/Editor/EditorModel";
+import {DocKey} from "../../lib/DocKey";
 
 @autowatch
-export class EditorToolbarSpeaker extends React.Component<{model:EditorModel; addMode?:boolean; speaker:Speaker; pos:number;}, {}> {
+export class EditorToolbarSpeaker extends React.Component<{model: EditorModel; addMode?: boolean; speaker: Speaker; pos: number;}, {}> {
     @prop editMode = false;
 
     onRemove = () => {
@@ -27,16 +26,23 @@ export class EditorToolbarSpeaker extends React.Component<{model:EditorModel; ad
         // this.props.model.post.speakers.save(pos, this.values.text.value);
     }
 
+
+    values = {text: new FormField<string>('')};
+    onKeyDown = (e: KeyboardEvent) => {
+        if (e.keyCode == 27) {
+            this.onCancel();
+        }
+    }
+
     onCancel = () => {
         this.editMode = false;
     }
 
-    values = {text: new FormField<string>('')};
-
     render() {
         const speaker = this.props.speaker;
+
         return <div className="speaker">
-            <Escape onEscape={this.onCancel}/>
+            <DocKey onKeyDown={this.onKeyDown}/>
             {this.editMode ?
                 <div>
                     <Form onSubmit={this.onSave}>

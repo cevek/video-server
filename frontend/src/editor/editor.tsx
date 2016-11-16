@@ -1,5 +1,4 @@
 import * as React from "react";
-import {PostModel} from "./../models/post";
 import {Thumbs} from "../viewer/thumbs";
 import {Timeline} from "../viewer/timeline";
 import {TimelineConnector} from "../viewer/timeline-connector";
@@ -10,8 +9,7 @@ import "./styles/editor.scss";
 import {EditorToolbar} from "./toolbar/toolbar";
 import {EditorTitle} from "./editor-title";
 import {EditorTags} from "./editor-tags";
-import {prop} from "atom-next";
-import {autowatch} from "atom-next";
+import {prop, autowatch} from "atom-next";
 import {EditorModel} from "../models/Editor/EditorModel";
 import {config} from "../config";
 
@@ -36,7 +34,7 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
         const postModel = this.model.post;
 
         // const positions = this.model.postModel.lines.map(line => (line.en.start + line.en.dur / 2) / this.model.resizeKoef);
-        const positions = this.model.post.lines.map(line => ({top: (line.en.start) / this.model.lineCalc.resizeKoef,bottom: (line.en.start + line.en.dur) / this.model.lineCalc.resizeKoef, height: 50}));
+        const positions = this.model.post.enLines.map(en => ({top: (en.start) / this.model.lineCalc.resizeKoef,bottom: (en.start + en.dur) / this.model.lineCalc.resizeKoef, height: 50}));
 // console.log(positions, positions2);
 
         const renderLines = disposer(positions);// new LineAllocator(positions, 50).allocateRenderLines();

@@ -1,6 +1,5 @@
 import {EditorHistoryData, EditorHistory} from "../../utils/history";
 import {prop} from "atom-next";
-import {EditorLine} from "./EditorLine";
 import {EditorSelection} from "./EditorTextSelection";
 import {EditorWord} from "./EditorWord";
 import {EditorTextLine} from "./EditorTextLine";
@@ -39,14 +38,14 @@ class HistoryTextWords extends EditorHistoryData<HistoryTextWords> {
 
 export class EditorTextModel {
     @prop editorModel:EditorModel
-    @prop lines:EditorLine[];
+    // @prop lines:EditorLine[];
     @prop selection:EditorSelection;
     @prop history:EditorHistory;
 
     constructor(editorModel:EditorModel) {
         this.editorModel = editorModel;
-        this.lines = editorModel.post.lines;
-        this.selection = new EditorSelection(this.editorModel.post.lines);
+        // this.lines = editorModel.post.lines;
+        this.selection = new EditorSelection(this.editorModel);
         /*this.history = this.editorModel.history
             .listen(historySpeaker, this.historySetSpeaker)
             .listen(historyTextLine, this.historySetTextLine)
@@ -56,7 +55,7 @@ export class EditorTextModel {
             .listen(historyJoin, this.historyJoin)
             .listen(historyJoinMove, this.historyJoinMove)*/
     }
-
+/*
     historySetTextLine = (data:HistoryTextWords, isRedo:boolean) => {
         this.lines[data.linePos].getTextLine(data.lang).setText(isRedo ? data.newValue : data.oldValue);
     }
@@ -88,7 +87,7 @@ export class EditorTextModel {
         this.selection.set(data.linePos, data.lang, data.wordPos);
         this.joinLineWithMove();
         //todo: redo
-    }
+    }*/
 
     findClosestNextWord(currWord:EditorWord, nextTextLine:EditorTextLine) {
         const currRect = currWord.span.getBoundingClientRect();
@@ -101,7 +100,7 @@ export class EditorTextModel {
     }
 
     splitWithMove() {
-        const sel = this.selection;
+       /* const sel = this.selection;
         const currentTextLine = sel.textLine;
         const halfDur = currentTextLine.dur / 2;
         const origWords = currentTextLine.words.slice();
@@ -126,7 +125,7 @@ export class EditorTextModel {
         selTextLine.start = currentTextLine.start + halfDur;
         selTextLine.dur = halfDur;
 
-        this.selection.set(nextLinePos, sel.lang, 0);
+        this.selection.set(nextLinePos, sel.lang, 0);*/
 
 
         /* return new EditorHistoryTimeline({
@@ -149,16 +148,16 @@ export class EditorTextModel {
          newDur: selTextLine.dur
          });*/
 
-        return new HistoryText({
+        /*return new HistoryText({
             type: historySplitMove,
             lang: sel.lang,
             linePos: nextLinePos,
             wordPos: 0
-        });
+        });*/
     }
 
     splitIntoNewLine() {
-        const sel = this.selection;
+        /*const sel = this.selection;
         const origWords = sel.textLine.words.slice();
         const currentTextLine = sel.textLine;
 
@@ -180,11 +179,11 @@ export class EditorTextModel {
             lang: sel.lang,
             linePos: nextLinePos,
             wordPos: 0
-        });
+        });*/
     }
 
     _joinLine() {
-        const sel = this.selection;
+        /*const sel = this.selection;
         const currentTextLine = sel.textLine;
         const origWords = currentTextLine.words.slice();
         const prevLinePos = sel.linePos - 1;
@@ -202,20 +201,20 @@ export class EditorTextModel {
             lang: sel.lang,
             linePos: prevLinePos,
             wordPos: newWordPos
-        });
+        });*/
     }
 
     joinLine(){
         const undo = this._joinLine();
         const sel = this.selection;
-        if (sel.line.isEmpty()) {
-            this.lines.splice(sel.linePos, 1);
-        }
+        // if (sel.line.isEmpty()) {
+        //     this.lines.splice(sel.linePos, 1);
+        // }
         return undo;
     }
 
     joinLineWithMove() {
-        const lang = this.selection.lang;
+        /*const lang = this.selection.lang;
         const linePos = this.selection.linePos;
 
         const undo = this._joinLine();
@@ -230,7 +229,7 @@ export class EditorTextModel {
             }
             undo.type = historyJoinMove;
             return undo;
-        }
+        }*/
     }
 
     up() {
@@ -247,7 +246,7 @@ export class EditorTextModel {
 
     down() {
         if (this.selection.lang == Lang.RU) {
-            if (this.selection.linePos >= this.lines.length - 1) {
+            if (this.selection.linePos >= this.editorModel.post.enLines.length - 1) {
                 return false;
             }
             this.selection.setLine(this.selection.linePos + 1);
@@ -286,7 +285,7 @@ export class EditorTextModel {
     }
 
     setWords(pos:number, lang:Lang, text:string) {
-        const textLine = this.lines[pos].getTextLine(lang);
+        const textLine = lang == Lang.EN ? this.editorModel.post.enLines.get(pos) : this.editorModel.post.ruLines.get(pos);
         this.history.add(new HistoryTextWords({
             type: null,
             linePos: pos,

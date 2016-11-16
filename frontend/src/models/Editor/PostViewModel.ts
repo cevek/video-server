@@ -19,9 +19,9 @@ export class Post2Model {
     }
 
     @prop get renderLines() {
-        const positions = this.post.lines.map(line => ({
-            top: this.lineCalc.timeToPx(line.en.start / 100),
-            bottom: this.lineCalc.timeToPx(line.en.start / 100 + line.en.dur / 100),
+        const positions = this.post.enLines.map(en => ({
+            top: this.lineCalc.timeToPx(en.start / 100),
+            bottom: this.lineCalc.timeToPx(en.start / 100 + en.dur / 100),
             height: 50
         }));
         console.log('render lines');
@@ -34,9 +34,9 @@ export class Post2Model {
 
     @prop get currentSelectedLine() {
         let currentTime = this.videoPlayer.currentTime * 100;
-        for (let i = 0; i < this.post.lines.length; i++) {
-            const line = this.post.lines[i];
-            if (line.en.start <= currentTime && line.en.start + line.en.dur > currentTime) {
+        for (let i = 0; i < this.post.enLines.length; i++) {
+            const en = this.post.enLines.get(i);
+            if (en.start <= currentTime && en.start + en.dur > currentTime) {
                 return i;
             }
         }

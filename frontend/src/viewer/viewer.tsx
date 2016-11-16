@@ -31,7 +31,7 @@ export class Viewer extends React.Component<{params: any, resolved: PostModel}, 
         const lineH = 50;
         const resizeKoef = 4;
 
-        const positions = this.postModel.lines.map(line => ({top: (line.en.start) / resizeKoef, bottom: (line.en.start + line.en.dur) / resizeKoef, height: 50}));
+        const positions = this.postModel.enLines.map(en => ({top: (en.start) / resizeKoef, bottom: (en.start + en.dur) / resizeKoef, height: 50}));
         const renderLines = disposer(positions);
 
         return <div>

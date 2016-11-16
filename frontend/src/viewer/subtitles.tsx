@@ -30,9 +30,9 @@ export class Subtitles extends React.Component<{postModel: PostModel; player: Au
         setInterval(()=> {
             let playingLine = -1;
             if (this.props.player.state == PlayingStatus.PLAYING) {
-                for (var i = 0; i < this.props.postModel.lines.length; i++) {
-                    var line = this.props.postModel.lines[i];
-                    if (this.isSelected(line.en)){
+                for (var i = 0; i < this.props.postModel.enLines.length; i++) {
+                    var en = this.props.postModel.enLines.get(i);
+                    if (this.isSelected(en)){
                         playingLine = i;
                         break;
                     }
@@ -56,16 +56,18 @@ export class Subtitles extends React.Component<{postModel: PostModel; player: Au
     render() {
         const durationY = this.timeToY(this.duration);
         return <div className="subtitles">
-            {this.props.postModel.lines.map((line, i) =>
-                <div
-                    className={classNames('subtitles__line', {['subtitles__playing']: this.playingLine == i, ['subtitles__selected']: this.isSelected(line.en)})}
+            {this.props.postModel.enLines.map((en, i) => {
+                const ru = this.props.postModel.ruLines.get(i);
+                return <div
+                    className={classNames('subtitles__line', {['subtitles__playing']: this.playingLine == i, ['subtitles__selected']: this.isSelected(en)})}
                     onMouseDown={()=>this.showRuTextLine(i)}
                     onMouseUp={()=>this.hideRuTextLine(i)}
                     style={{top: this.props.renderLines[i]}}>
-                    <div className="subtitles__en">{line.en ? line.en.text : ''}</div>
+                    <div className="subtitles__en">{en ? en.text : ''}</div>
                     {this.openedRuTextLines[i] ?
-                        <div className="subtitles__ru">{line.ru ? line.ru.text : ''}</div> : null}
-                </div>)}
+                        <div className="subtitles__ru">{ru ? ru.text : ''}</div> : null}
+                </div>;
+            })}
         </div>
     }
 }
