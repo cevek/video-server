@@ -10,35 +10,17 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "babel-fast-react": "^1.0.0",
-    "classnames": "^2.2.0",
-    "css-loader": "^0.22.0",
-    "extract-text-webpack-plugin": "^0.9.1",
-    "fast-react": "^1.0.4",
-    "fast-react-loader": "^1.0.0",
-    "file-loader": "^0.8.5",
-    "sound-utils": "^1.0.1",
-    "style-loader": "^0.13.0",
-    "ts-loader": "^0.7.2",
-    "url-loader": "^0.5.7",
-    "typescript": "^2.0.0",
-    "webbuilder": "^1.0.2",
     "@types/classnames": "0.0.31",
-    "@types/koa": "^2.0.33",
     "@types/react": "^0.14.44",
     "@types/react-dom": "^0.14.18",
     "@types/socket.io-client": "^1.4.27",
     "atom-next": "^1.0.0",
-    "koa": "^2.0.0",
-    "koa-static": "^2.0.0",
-    "node-sass": "^3.11.2",
-    "packer": "^1.0.0",
+    "classnames": "^2.2.0",
+    "fast-promise": "^1.0.1",
+    "fast-react": "^1.0.4",
+    "fast-react-loader": "^1.0.0",
     "react": "^15.3.2",
     "react-dom": "^15.3.2",
-    "react-hot-loader": "^1.3.0"
-  },
-  "devDependencies": {
-    "fast-promise": "^1.0.1",
-    "webbuilder": "^1.0.2"
+    "sound-utils": "^1.0.1"
   }
 }
