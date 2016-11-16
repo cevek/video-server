@@ -1,5 +1,5 @@
 import * as React from "react";
-import {PostModel} from "../models/post";
+import {PostModel} from "../models/PostModel";
 import "./thumbs.scss";
 import {classes} from "../utils/cl";
 import {autowatch} from "atom-next";

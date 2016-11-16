@@ -1,6 +1,6 @@
 import "./video.scss";
 import * as React from "react";
-import {PostModel} from "../models/post";
+import {PostModel} from "../models/PostModel";
 
 export class Video extends React.Component<{postModel: PostModel; resizeKoef: number;}, {}> {
     currentTime:number = 0;

@@ -1,5 +1,5 @@
 import * as React from "react";
-import {AudioSelection} from "./audio-selection";
+import {AudioSelection} from "./AudioSelection";
 import {EditorModel} from "../models/Editor/EditorModel";
 import './timeline.scss'
 

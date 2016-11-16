@@ -1,4 +1,4 @@
-import {EditorHistoryData} from "../utils/history";
+import {EditorHistoryData} from "../utils/History";
 import {prop} from "atom-next";
 import {AtomArray} from "atom-next";
 import {Speaker} from "../models/Speaker";

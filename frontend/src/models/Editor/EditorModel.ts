@@ -1,9 +1,9 @@
-import {Post2Model} from "./PostViewModel";
-import {EditorSelection} from "./EditorTextSelection";
+import {PostViewModel} from "./PostViewModel";
+import {EditorSelection} from "./EditorSelection";
 import {prop} from "atom-next";
 import {EditorPostModel} from "./EditorPostModel";
 import {EditorTextModel} from "./EditorTextModel";
-export class EditorModel extends Post2Model {
+export class EditorModel extends PostViewModel {
     @prop selection: EditorSelection;
     post: EditorPostModel;
     // history: EditorHistory;

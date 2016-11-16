@@ -1,5 +1,5 @@
 import * as React from "react";
-import {EditorToolbarSpeakers} from "./speakers";
+import {EditorToolbarSpeakers} from "./Speakers";
 import "./styles/toolbar.scss";
 import {autowatch} from "atom-next";
 import {EditorModel} from "../../models/Editor/EditorModel";

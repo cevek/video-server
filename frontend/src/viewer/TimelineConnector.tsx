@@ -1,6 +1,6 @@
 import * as React from "react";
-import {svgPathGenerator} from "../utils/svg-path-generator";
-import {EditorHistoryData} from "../utils/history";
+import {svgPathGenerator} from "../utils/SvgPathGenerator";
+import {EditorHistoryData} from "../utils/History";
 import {autowatch, prop} from "atom-next";
 import {classes} from "../utils/cl";
 import {Lang} from "../models/Lang";

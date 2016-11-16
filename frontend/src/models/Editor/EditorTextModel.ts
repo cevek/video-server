@@ -1,6 +1,6 @@
-import {EditorHistoryData, EditorHistory} from "../../utils/history";
+import {EditorHistoryData, EditorHistory} from "../../utils/History";
 import {prop} from "atom-next";
-import {EditorSelection} from "./EditorTextSelection";
+import {EditorSelection} from "./EditorSelection";
 import {EditorWord} from "./EditorWord";
 import {EditorTextLine} from "./EditorTextLine";
 import {EditorModel} from "./EditorModel";

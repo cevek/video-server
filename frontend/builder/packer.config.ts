@@ -15,6 +15,6 @@ export default new Packer(config, promise => promise
     .then(sass())
     .then(copy('index.html'))
     .then(copy('font-awesome-4.6.1/fonts/*.woff', filename => filename.replace('font-awesome-4.6.1/', '')))
-    .then(combineJS('app.js', 'bundle.js'))
+    .then(combineJS('App.js', 'bundle.js'))
     .then(combineCSS('style.css'))
 );

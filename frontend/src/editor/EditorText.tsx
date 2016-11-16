@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as classNames from "classnames";
-import {EditorKeyHandler} from "./editor-key-handler";
+import {EditorKeyHandler} from "./EditorKeyHandler";
 import {prop, autowatch} from "atom-next";
 import {Form, TextInput, FormField} from "../form";
 import {EditorModel} from "../models/Editor/EditorModel";

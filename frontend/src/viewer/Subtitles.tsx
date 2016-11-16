@@ -1,11 +1,11 @@
 import * as React from "react";
 import * as classNames from "classnames";
 import {PlayingStatus} from "sound-utils/dist/Play";
-import {PostModel} from "../models/post";
-import {AudioPlayer} from "../utils/audio-player";
+import {PostModel} from "../models/PostModel";
+import {AudioPlayer} from "../utils/AudioPlayer";
 import "./subtitles.scss";
 import {TextLine} from "../models/TextLine";
-import {DisposerItem} from "../utils/time-allocate";
+import {DisposerItem} from "../utils/TimeAllocate";
 
 export class Subtitles extends React.Component<{postModel: PostModel; player: AudioPlayer; resizeKoef: number; renderLines: DisposerItem[]}, {}> {
     duration:number = 0;

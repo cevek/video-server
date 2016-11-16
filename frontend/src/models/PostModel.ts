@@ -1,6 +1,6 @@
 import {prop, AtomArray} from "atom-next";
-import {HashMap} from "../utils/hashmap";
-import {GroupList} from "../utils/group-maker";
+import {HashMap} from "../utils/Hashmap";
+import {GroupList} from "../utils/GroupMaker";
 import {TextLine} from "./TextLine";
 import {Speaker} from "./Speaker";
 import {IGetPost} from "./IGetPost";

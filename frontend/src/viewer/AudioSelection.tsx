@@ -1,8 +1,8 @@
 import * as React from "react";
-import {AudioPlayer} from "../utils/audio-player";
+import {AudioPlayer} from "../utils/AudioPlayer";
 import "./audio-selection.scss";
 import {autowatch} from "atom-next";
-import {AudioSelectionData} from "../audio-selection-model";
+import {AudioSelectionData} from "../AudioSelectionModel";
 
 @autowatch
 export class AudioSelection extends React.Component<{audioSelectionModel: AudioSelectionData; pxPerSec: number; player: AudioPlayer},{}> {

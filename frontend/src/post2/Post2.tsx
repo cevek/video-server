@@ -1,17 +1,17 @@
 import * as React from "react";
 import * as classNames from "classnames";
 import {autowatch} from "atom-next";
-import {Group} from "../utils/group-maker";
-import {Post2Model} from "../models/Editor/PostViewModel";
+import {Group} from "../utils/GroupMaker";
+import {PostViewModel} from "../models/Editor/PostViewModel";
 import {Ref} from "../lib/Ref";
-import {VideoPlayerVM} from "../models/Editor/VideoPlayerViewModel";
+import {VideoPlayerVM} from "../models/Editor/VideoPlayerVM";
 import {DocKey} from "../lib/DocKey";
 import {LineCalc} from "../models/Editor/LineCalc";
-import {EditorText} from "../editor/editor-text";
+import {EditorText} from "../editor/EditorText";
 import {EditorModel} from "../models/Editor/EditorModel";
 import "./Post2.scss";
-import {Timeline} from "../viewer/timeline";
-import {TimelineConnector} from "../viewer/timeline-connector";
+import {Timeline} from "../viewer/Timeline";
+import {TimelineConnector} from "../viewer/TimelineConnector";
 
 interface Post2Props {
     params: any;
@@ -57,7 +57,7 @@ export class Post2 extends React.Component<Post2Props, {}> {
 
 
 interface LineViewProps {
-    model: Post2Model;
+    model: PostViewModel;
     lineN: number;
 }
 
@@ -144,7 +144,7 @@ export class VideoView extends React.Component<VideoViewProps, {}> {
 }
 
 interface GroupViewProps {
-    model: Post2Model;
+    model: PostViewModel;
     group: Group;
     groupPos: number;
 }

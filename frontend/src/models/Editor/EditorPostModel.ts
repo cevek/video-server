@@ -1,8 +1,8 @@
-import {PostModel} from "../post";
+import {PostModel} from "../PostModel";
 import {EditorTextLine} from "./EditorTextLine";
 import {prop, AtomArray} from "atom-next";
-import {EditorHistoryStringData} from "../../utils/history";
-import {EditorSpeakerList} from "../../editor/editor-speakerlist-model";
+import {EditorHistoryStringData} from "../../utils/History";
+import {EditorSpeakerList} from "../../editor/EditorSpeakerlistModel";
 import {Lang} from "../Lang";
 import {IGetPost} from "../IGetPost";
 

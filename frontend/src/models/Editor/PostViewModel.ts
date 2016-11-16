@@ -1,12 +1,12 @@
-import {PostModel} from "../post";
+import {PostModel} from "../PostModel";
 import {prop} from "atom-next";
-import {disposerWithGroup} from "../../utils/time-allocate";
-import {VideoPlayerVM} from "./VideoPlayerViewModel";
+import {disposerWithGroup} from "../../utils/TimeAllocate";
+import {VideoPlayerVM} from "./VideoPlayerVM";
 import {LineCalc} from "./LineCalc";
 import {Ref} from "../../lib/Ref";
-import {AudioSelectionData} from "../../audio-selection-model";
-import {AudioPlayer} from "../../utils/audio-player";
-export class Post2Model {
+import {AudioSelectionData} from "../../AudioSelectionModel";
+import {AudioPlayer} from "../../utils/AudioPlayer";
+export class PostViewModel {
     post: PostModel;
     videoPlayer: VideoPlayerVM;
     lineCalc = new LineCalc(5);
@@ -44,6 +44,6 @@ export class Post2Model {
     }
 
     static fetch(id: number) {
-        return PostModel.fetch(id).then(post => new Post2Model(post));
+        return PostModel.fetch(id).then(post => new PostViewModel(post));
     }
 }
