@@ -7,7 +7,7 @@ import {EditorTextModel} from "./EditorTextModel";
 export class EditorModel extends Post2Model {
     @prop selection: EditorSelection;
     post: EditorPostModel;
-    history: EditorHistory;
+    // history: EditorHistory;
     textModel: EditorTextModel;
 
     constructor(post: EditorPostModel) {

@@ -26,7 +26,7 @@ export class Editor extends React.Component<{params: any, resolved: EditorModel}
     }
 
     componentDidMount() {
-        (window as any).editorHistory = this.model.history;
+        // (window as any).editorHistory = this.model.history;
         const enAudio = this.model.post.mediaFiles.getOrThrow(this.model.post.enAudio);
         const url = config.baseUrl + '/' + enAudio.url;
         this.audioPlayer.loadSound(url);

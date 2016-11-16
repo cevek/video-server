@@ -11,11 +11,11 @@ export class EditorToolbar extends React.Component<{model: EditorModel;}, {}> {
     }
 
     onUndo = () => {
-        this.props.model.history.undo();
+        // this.props.model.history.undo();
     }
 
     onRedo = () => {
-        this.props.model.history.redo();
+        // this.props.model.history.redo();
     }
 
     render() {
