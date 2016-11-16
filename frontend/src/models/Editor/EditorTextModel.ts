@@ -16,80 +16,81 @@ const historySpeaker = 'speaker';
 const historyTextLine = 'text-line';
 
 class HistoryText extends EditorHistoryData<HistoryText> {
-    linePos:number;
-    lang:Lang;
-    wordPos:number;
+    linePos: number;
+    lang: Lang;
+    wordPos: number;
 }
 
 class HistoryTextSpeaker extends EditorHistoryData<HistoryTextSpeaker> {
     type = historySpeaker;
-    oldValue:string;
-    newValue:string;
-    linePos:number;
+    oldValue: string;
+    newValue: string;
+    linePos: number;
 }
 
 class HistoryTextWords extends EditorHistoryData<HistoryTextWords> {
     type = historyTextLine;
-    linePos:number;
-    lang:Lang;
-    oldValue:string;
-    newValue:string;
+    linePos: number;
+    lang: Lang;
+    oldValue: string;
+    newValue: string;
 }
 
 export class EditorTextModel {
-    @prop editorModel:EditorModel
+    @prop editorModel: EditorModel
     // @prop lines:EditorLine[];
-    @prop selection:EditorSelection;
-    @prop history:EditorHistory;
+    @prop selection: EditorSelection;
+    @prop history: EditorHistory;
 
-    constructor(editorModel:EditorModel) {
+    constructor(editorModel: EditorModel) {
         this.editorModel = editorModel;
         // this.lines = editorModel.post.lines;
         this.selection = new EditorSelection(this.editorModel);
         /*this.history = this.editorModel.history
-            .listen(historySpeaker, this.historySetSpeaker)
-            .listen(historyTextLine, this.historySetTextLine)
+         .listen(historySpeaker, this.historySetSpeaker)
+         .listen(historyTextLine, this.historySetTextLine)
 
-            .listen(historySplit, this.historySplit)
-            .listen(historySplitMove, this.historySplitMove)
-            .listen(historyJoin, this.historyJoin)
-            .listen(historyJoinMove, this.historyJoinMove)*/
-    }
-/*
-    historySetTextLine = (data:HistoryTextWords, isRedo:boolean) => {
-        this.lines[data.linePos].getTextLine(data.lang).setText(isRedo ? data.newValue : data.oldValue);
+         .listen(historySplit, this.historySplit)
+         .listen(historySplitMove, this.historySplitMove)
+         .listen(historyJoin, this.historyJoin)
+         .listen(historyJoinMove, this.historyJoinMove)*/
     }
 
-    historySetSpeaker = (data:HistoryTextSpeaker, isRedo:boolean) => {
-        //todo
-        //this.lines[data.linePos].speaker = isRedo ? data.newValue : data.oldValue;
-    }
+    /*
+     historySetTextLine = (data:HistoryTextWords, isRedo:boolean) => {
+     this.lines[data.linePos].getTextLine(data.lang).setText(isRedo ? data.newValue : data.oldValue);
+     }
 
-    historyJoin = (data:HistoryText, isRedo:boolean) => {
-        this.selection.set(data.linePos, data.lang, data.wordPos);
-        this.splitIntoNewLine();
-        //todo: redo
-    }
+     historySetSpeaker = (data:HistoryTextSpeaker, isRedo:boolean) => {
+     //todo
+     //this.lines[data.linePos].speaker = isRedo ? data.newValue : data.oldValue;
+     }
 
-    historyJoinMove = (data:HistoryText, isRedo:boolean) => {
-        this.selection.set(data.linePos, data.lang, data.wordPos);
-        this.splitWithMove();
-        //todo: redo
-    }
+     historyJoin = (data:HistoryText, isRedo:boolean) => {
+     this.selection.set(data.linePos, data.lang, data.wordPos);
+     this.splitIntoNewLine();
+     //todo: redo
+     }
 
-    historySplit = (data:HistoryText, isRedo:boolean) => {
-        this.selection.set(data.linePos, data.lang, data.wordPos);
-        this.joinLine();
-        //todo: redo
-    }
+     historyJoinMove = (data:HistoryText, isRedo:boolean) => {
+     this.selection.set(data.linePos, data.lang, data.wordPos);
+     this.splitWithMove();
+     //todo: redo
+     }
 
-    historySplitMove = (data:HistoryText, isRedo:boolean) => {
-        this.selection.set(data.linePos, data.lang, data.wordPos);
-        this.joinLineWithMove();
-        //todo: redo
-    }*/
+     historySplit = (data:HistoryText, isRedo:boolean) => {
+     this.selection.set(data.linePos, data.lang, data.wordPos);
+     this.joinLine();
+     //todo: redo
+     }
 
-    findClosestNextWord(currWord:EditorWord, nextTextLine:EditorTextLine) {
+     historySplitMove = (data:HistoryText, isRedo:boolean) => {
+     this.selection.set(data.linePos, data.lang, data.wordPos);
+     this.joinLineWithMove();
+     //todo: redo
+     }*/
+
+    findClosestNextWord(currWord: EditorWord, nextTextLine: EditorTextLine) {
         const currRect = currWord.span.getBoundingClientRect();
         const currPos = currRect.left + currRect.width / 2;
         return nextTextLine.words.map((w, i) => {
@@ -100,32 +101,71 @@ export class EditorTextModel {
     }
 
     splitWithMove() {
-       /* const sel = this.selection;
+        const sel = this.selection;
         const currentTextLine = sel.textLine;
         const halfDur = currentTextLine.dur / 2;
         const origWords = currentTextLine.words.slice();
         const oldDur = currentTextLine.dur;
-
-        const lastLine = this.lines[this.lines.length - 1];
-        if (!lastLine.getTextLine(sel.lang).isEmpty()) {
-            this.lines.push(EditorLine.createEmpty());
+        const lines = currentTextLine.lang === Lang.EN ? this.editorModel.post.enLines : this.editorModel.post.ruLines;
+        const invertLines = currentTextLine.lang === Lang.RU ? this.editorModel.post.enLines : this.editorModel.post.ruLines;
+        const invertLang = currentTextLine.lang === Lang.RU ? Lang.EN : Lang.RU;
+        currentTextLine.setWords(origWords.slice(0, sel.wordPos));
+        const newTextLine = EditorTextLine.createWithExistsWords(sel.lang, currentTextLine.start, halfDur, origWords.slice(sel.wordPos));
+        lines.splice(sel.linePos + 1, 0, newTextLine);
+        const groups = this.editorModel.post.groups;
+        const group = groups.findGroupByLinePos(sel.linePos);
+        const newTextLine2 = EditorTextLine.createWithExistsWords(invertLang, 0, 0, []);
+        // newTextLine2.setText('Flow');
+        //console.log(group);
+        // if (!invertLines.get(group.end).isEmpty()) {
+            invertLines.splice(group.end + 1, 0, newTextLine2);
+        // }
+        this.editorModel.post.groups.appendLine(group);
+        if (currentTextLine.lang == Lang.EN) {
+            this.editorModel.post.speakerLines.splice(sel.linePos, 0, this.editorModel.post.speakerLines.get(sel.linePos));
+        } else {
+            this.editorModel.post.speakerLines.splice(group.end, 0, null);
         }
-        for (let i = this.lines.length - 1; i > sel.linePos; i--) {
-            this.lines[i].setTextLine(sel.lang, this.lines[i - 1].getTextLine(sel.lang));
-        }
-        sel.line.setTextLine(sel.lang, EditorTextLine.createWithExistsWords(sel.lang, currentTextLine.start, halfDur, origWords.slice(0, sel.wordPos)));
 
-        const prevTextLine = sel.textLine;
-        //currentTextLine.start += currentTextLine.dur;
 
-        const nextLinePos = sel.linePos + 1;
-        const newLine = this.lines[nextLinePos];
-        const selTextLine = newLine.getTextLine(sel.lang);
-        selTextLine.setWords(origWords.slice(sel.wordPos));
-        selTextLine.start = currentTextLine.start + halfDur;
-        selTextLine.dur = halfDur;
+        /*
+         const lastLine = lines[lines.length - 1];
+         if (!lastLine.getTextLine(sel.lang).isEmpty()) {
+         this.lines.push(EditorLine.createEmpty());
+         }
+         for (let i = this.lines.length - 1; i > sel.linePos; i--) {
+         this.lines[i].setTextLine(sel.lang, this.lines[i - 1].getTextLine(sel.lang));
+         }
+         sel.line.setTextLine(sel.lang, EditorTextLine.createWithExistsWords(sel.lang, currentTextLine.start, halfDur, origWords.slice(0, sel.wordPos)));
+         */
 
-        this.selection.set(nextLinePos, sel.lang, 0);*/
+
+        /* const sel = this.selection;
+         const currentTextLine = sel.textLine;
+         const halfDur = currentTextLine.dur / 2;
+         const origWords = currentTextLine.words.slice();
+         const oldDur = currentTextLine.dur;
+
+         const lastLine = this.lines[this.lines.length - 1];
+         if (!lastLine.getTextLine(sel.lang).isEmpty()) {
+         this.lines.push(EditorLine.createEmpty());
+         }
+         for (let i = this.lines.length - 1; i > sel.linePos; i--) {
+         this.lines[i].setTextLine(sel.lang, this.lines[i - 1].getTextLine(sel.lang));
+         }
+         sel.line.setTextLine(sel.lang, EditorTextLine.createWithExistsWords(sel.lang, currentTextLine.start, halfDur, origWords.slice(0, sel.wordPos)));
+
+         const prevTextLine = sel.textLine;
+         //currentTextLine.start += currentTextLine.dur;
+
+         const nextLinePos = sel.linePos + 1;
+         const newLine = this.lines[nextLinePos];
+         const selTextLine = newLine.getTextLine(sel.lang);
+         selTextLine.setWords(origWords.slice(sel.wordPos));
+         selTextLine.start = currentTextLine.start + halfDur;
+         selTextLine.dur = halfDur;
+
+         this.selection.set(nextLinePos, sel.lang, 0);*/
 
 
         /* return new EditorHistoryTimeline({
@@ -149,62 +189,62 @@ export class EditorTextModel {
          });*/
 
         /*return new HistoryText({
-            type: historySplitMove,
-            lang: sel.lang,
-            linePos: nextLinePos,
-            wordPos: 0
-        });*/
+         type: historySplitMove,
+         lang: sel.lang,
+         linePos: nextLinePos,
+         wordPos: 0
+         });*/
     }
 
     splitIntoNewLine() {
         /*const sel = this.selection;
-        const origWords = sel.textLine.words.slice();
-        const currentTextLine = sel.textLine;
+         const origWords = sel.textLine.words.slice();
+         const currentTextLine = sel.textLine;
 
-        currentTextLine.setWords(origWords.slice(0, sel.wordPos));
-        const nextLinePos = sel.linePos + 1;
-        let nextLine = this.lines[nextLinePos];
-        if (!nextLine.getTextLine(sel.lang).isEmpty()) {
-            nextLine = EditorLine.createEmpty();
-            this.lines.splice(nextLinePos, 0, nextLine);
-        }
-        const nextTextLine = nextLine.getTextLine(sel.lang);
-        nextTextLine.setWords(origWords.slice(sel.wordPos));
-        nextTextLine.start = currentTextLine.start + currentTextLine.dur / 2;
-        currentTextLine.dur /= 2;
-        nextTextLine.dur = currentTextLine.dur;
-        this.selection.set(nextLinePos, sel.lang, 0);
-        return new HistoryText({
-            type: historySplit,
-            lang: sel.lang,
-            linePos: nextLinePos,
-            wordPos: 0
-        });*/
+         currentTextLine.setWords(origWords.slice(0, sel.wordPos));
+         const nextLinePos = sel.linePos + 1;
+         let nextLine = this.lines[nextLinePos];
+         if (!nextLine.getTextLine(sel.lang).isEmpty()) {
+         nextLine = EditorLine.createEmpty();
+         this.lines.splice(nextLinePos, 0, nextLine);
+         }
+         const nextTextLine = nextLine.getTextLine(sel.lang);
+         nextTextLine.setWords(origWords.slice(sel.wordPos));
+         nextTextLine.start = currentTextLine.start + currentTextLine.dur / 2;
+         currentTextLine.dur /= 2;
+         nextTextLine.dur = currentTextLine.dur;
+         this.selection.set(nextLinePos, sel.lang, 0);
+         return new HistoryText({
+         type: historySplit,
+         lang: sel.lang,
+         linePos: nextLinePos,
+         wordPos: 0
+         });*/
     }
 
     _joinLine() {
         /*const sel = this.selection;
-        const currentTextLine = sel.textLine;
-        const origWords = currentTextLine.words.slice();
-        const prevLinePos = sel.linePos - 1;
-        const prevLine = this.lines[prevLinePos];
-        const prevTextLine = prevLine.getTextLine(sel.lang);
-        const prevWords = prevTextLine.words;
-        const newWords = [...prevWords, ...origWords];
-        const textLine = EditorTextLine.createWithExistsWords(sel.lang, prevTextLine.start, currentTextLine.start - prevTextLine.start + currentTextLine.dur, newWords);
-        prevLine.setTextLine(sel.lang, textLine);
-        sel.textLine.setWords(null);
-        const newWordPos = prevWords.length - (prevWords[0].isEmpty ? 1 : 0);
-        this.selection.set(prevLinePos, sel.lang, newWordPos);
-        return new HistoryText({
-            type: historyJoin,
-            lang: sel.lang,
-            linePos: prevLinePos,
-            wordPos: newWordPos
-        });*/
+         const currentTextLine = sel.textLine;
+         const origWords = currentTextLine.words.slice();
+         const prevLinePos = sel.linePos - 1;
+         const prevLine = this.lines[prevLinePos];
+         const prevTextLine = prevLine.getTextLine(sel.lang);
+         const prevWords = prevTextLine.words;
+         const newWords = [...prevWords, ...origWords];
+         const textLine = EditorTextLine.createWithExistsWords(sel.lang, prevTextLine.start, currentTextLine.start - prevTextLine.start + currentTextLine.dur, newWords);
+         prevLine.setTextLine(sel.lang, textLine);
+         sel.textLine.setWords(null);
+         const newWordPos = prevWords.length - (prevWords[0].isEmpty ? 1 : 0);
+         this.selection.set(prevLinePos, sel.lang, newWordPos);
+         return new HistoryText({
+         type: historyJoin,
+         lang: sel.lang,
+         linePos: prevLinePos,
+         wordPos: newWordPos
+         });*/
     }
 
-    joinLine(){
+    joinLine() {
         const undo = this._joinLine();
         const sel = this.selection;
         // if (sel.line.isEmpty()) {
@@ -215,21 +255,21 @@ export class EditorTextModel {
 
     joinLineWithMove() {
         /*const lang = this.selection.lang;
-        const linePos = this.selection.linePos;
+         const linePos = this.selection.linePos;
 
-        const undo = this._joinLine();
-        if (undo) {
-            for (let i = linePos + 1; i < this.lines.length; i++) {
-                this.lines[i - 1].setTextLine(lang, this.lines[i].getTextLine(lang));
-            }
-            const lastLine = this.lines[this.lines.length - 1];
-            lastLine.setTextLine(lang, new EditorTextLine(lang, null, null, null));
-            if (lastLine.isEmpty()) {
-                this.lines.pop();
-            }
-            undo.type = historyJoinMove;
-            return undo;
-        }*/
+         const undo = this._joinLine();
+         if (undo) {
+         for (let i = linePos + 1; i < this.lines.length; i++) {
+         this.lines[i - 1].setTextLine(lang, this.lines[i].getTextLine(lang));
+         }
+         const lastLine = this.lines[this.lines.length - 1];
+         lastLine.setTextLine(lang, new EditorTextLine(lang, null, null, null));
+         if (lastLine.isEmpty()) {
+         this.lines.pop();
+         }
+         undo.type = historyJoinMove;
+         return undo;
+         }*/
     }
 
     up() {
@@ -273,18 +313,18 @@ export class EditorTextModel {
         return true;
     }
 
-    setSpeaker(pos:number, speaker:Speaker) {
+    setSpeaker(pos: number, speaker: Speaker) {
         /*this.history.add(new HistoryTextSpeaker({
-            type: null,
-            linePos: pos,
-            oldValue: this.lines[pos].speaker,
-            newValue: speaker,
-        }));*/
+         type: null,
+         linePos: pos,
+         oldValue: this.lines[pos].speaker,
+         newValue: speaker,
+         }));*/
         //todo:
         //this.lines[pos].speaker = speaker;
     }
 
-    setWords(pos:number, lang:Lang, text:string) {
+    setWords(pos: number, lang: Lang, text: string) {
         const textLine = lang == Lang.EN ? this.editorModel.post.enLines.get(pos) : this.editorModel.post.ruLines.get(pos);
         this.history.add(new HistoryTextWords({
             type: null,

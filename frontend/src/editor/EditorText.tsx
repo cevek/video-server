@@ -29,8 +29,8 @@ export class EditorText extends React.Component<EditorTextProps, {}> {
                                 style={{top: this.model.renderLines[linePos].top}}>
                         <Speakers model={this.model} linePos={linePos}/>
                         <div className="editor-text__speaker_photo"
-                             title={speaker.name}
-                             style={{backgroundImage: 'url('+speaker.photo+ ')' }}>
+                             title={speaker && speaker.name}
+                             style={{backgroundImage: speaker && 'url('+speaker.photo+ ')' }}>
                         </div>
                         <TextLine model={this.model} textLine={en} linePos={linePos}/>
                         <TextLine model={this.model} textLine={this.model.post.ruLines.get(linePos)} linePos={linePos}/>

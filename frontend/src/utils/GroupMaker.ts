@@ -2,8 +2,9 @@ import {prop, AtomArray} from "atom-next";
 import {assert} from "./assert";
 
 export class Group {
-    start: number;
-    end: number;
+    @prop pos: number;
+    @prop start: number;
+    @prop end: number;
 }
 
 export class GroupList {
@@ -14,10 +15,15 @@ export class GroupList {
         assert(group, 'Incorrect groupPos');
         assert(group.start + linePos < group.end, 'Incorrect linePos');
         let newGroup = new Group();
+        newGroup.pos = groupPos;
         newGroup.end = group.end;
         group.end = group.start + linePos;
         newGroup.start = group.end + 1;
         this.groups.splice(groupPos + 1, 0, newGroup);
+        for (let i = groupPos + 1; i < this.groups.length; i++) {
+            const group = this.groups.get(i);
+            group.pos++;
+        }
     }
 
     joinWithNext(groupPos: number) {
@@ -26,8 +32,10 @@ export class GroupList {
         const nextGroup = this.groups.get(groupPos + 1);
         group.end = nextGroup.end;
         this.groups.splice(groupPos + 1, 1);
-        console.log(this.groups);
-
+        for (let i = groupPos; i < this.groups.length; i++) {
+            const group = this.groups.get(i);
+            group.pos--;
+        }
     }
 
     static generateFromLines(lines: number[], splitDuration: number) {
@@ -36,6 +44,7 @@ export class GroupList {
         }
         let groups = new AtomArray<Group>();
         let group = new Group();
+        group.pos = 0;
         groups.push(group);
         group.start = 0;
         if (lines.length > 0) {
@@ -45,6 +54,7 @@ export class GroupList {
                 if (line - prevLine > splitDuration) {
                     group.end = i - 1;
                     group = new Group();
+                    group.pos = groups.length;
                     groups.push(group);
                     group.start = i;
                 }
@@ -56,5 +66,24 @@ export class GroupList {
         const groupList = new GroupList();
         groupList.groups = groups;
         return groupList;
+    }
+
+    findGroupByLinePos(linePos: number) {
+        for (let i = 0; i < this.groups.length; i++) {
+            const group = this.groups.get(i);
+            if (group.start <= linePos && group.end >= linePos) {
+                return group;
+            }
+        }
+        return null;
+    }
+
+    appendLine(group: Group) {
+        group.end++;
+        for (let i = group.pos + 1; i < this.groups.length; i++) {
+            const group = this.groups.get(i);
+            group.start += 1;
+            group.end += 1;
+        }
     }
 }
