@@ -1,4 +1,5 @@
 import * as React from 'react';
+import FastPromise from "fast-promise";
 
 var scrollData:{[page: string]: number} = {};
 var activeUrl:string;
@@ -10,7 +11,7 @@ var resolving = false;
 
 export function go(url:string, isBack = false, replaceCurrent = false) {
     if (resolving) {
-        return Promise.resolve();
+        return FastPromise.resolve();
     }
 
     if (html5History) {
@@ -33,7 +34,7 @@ export let stack:string[] = [];
 
 export function goBack(defaultUrl:string) {
     if (resolving) {
-        return Promise.resolve();
+        return FastPromise.resolve();
     }
     stack.pop();
     var url = stack.pop();
@@ -77,7 +78,7 @@ export class Router extends React.Component<{pages: RouterPage<any, any>[]}, {}>
 
         if (activeUrl == currentUrl) {
             this.hideMenu();
-            return Promise.resolve();
+            return FastPromise.resolve();
         }
         resolving = true;
 
@@ -96,7 +97,7 @@ export class Router extends React.Component<{pages: RouterPage<any, any>[]}, {}>
             var promise = this.activePage.resolver(this.activePage.params);
         }
         else {
-            promise = Promise.resolve(null);
+            promise = FastPromise.resolve(null);
         }
         promise.then(data=> {
             this.activePage.resolved = data;
@@ -105,7 +106,7 @@ export class Router extends React.Component<{pages: RouterPage<any, any>[]}, {}>
             resolving = false;
         }, (reason)=> {
             resolving = false;
-            return Promise.reject(reason);
+            return FastPromise.reject(reason);
         });
         return promise;
     }
