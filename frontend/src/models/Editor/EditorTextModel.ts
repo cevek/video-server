@@ -115,7 +115,7 @@ export class EditorTextModel {
         lines.splice(sel.linePos + 1, 0, newTextLine);
         const groups = this.editorModel.post.groups;
         const group = groups.findGroupByLinePos(sel.linePos);
-        const newTextLine2 = EditorTextLine.createWithExistsWords(invertLang, 0, 0, []);
+        const newTextLine2 = EditorTextLine.createWithExistsWords(invertLang, -1, -1, []);
         // newTextLine2.setText('Flow');
         //console.log(group);
         // if (!invertLines.get(group.end).isEmpty()) {

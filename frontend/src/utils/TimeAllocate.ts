@@ -3,6 +3,7 @@ export class DisposerItem {
     bottomSpace = 0;
     power: number;
     realPos: number;
+    skip: boolean;
 
     get top() {
         return this.pos - this.height / 2;
@@ -20,6 +21,7 @@ export class DisposerItem {
         this.pos = top + height / 2;
         this.realPos = this.realTop + (this.realBottom - this.realTop) / 2;
         this.power = this.realPos - this.pos;
+        this.skip = realTop < 0;
     }
 }
 
@@ -86,12 +88,21 @@ export function disposerWithGroup(groups: {start: number; end: number}[], values
         const group = groups[i];
         let posSum = 0;
         let heightSum = 0;
+        let start: GG;
+        let end: GG;
         for (let j = group.start; j <= group.end; j++) {
             let val = values[j];
+            if (val.top < 0) {
+                continue;
+            }
+            if (!start) {
+                start = val;
+            }
+            end = val;
             posSum += val.top + (val.bottom - val.top) / 2;
             heightSum += val.height;
         }
-        const middle = values[group.start].top + (values[group.end].bottom - values[group.start].top) / 2;//posSum / (group.end - group.start + 1);
+        const middle = start.top + (end.bottom - start.top) / 2;//posSum / (group.end - group.start + 1);
         const item = {top: middle - 10, bottom: middle + 10, height: heightSum};
         groupValues.push(item);
     }

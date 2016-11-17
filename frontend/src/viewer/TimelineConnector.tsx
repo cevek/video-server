@@ -114,6 +114,9 @@ export class TimelineConnector extends React.Component<TimelineConnectorProps, {
 
         return <svg className="timeline-connector" width={svgWidth} height={svgHeight}>
             {this.model.renderLines.map((pos, i) => {
+                if (pos.skip) {
+                    return;
+                }
                 const textLine = this.model.post.enLines.get(i);
                 if (textLine.start != null) {
                     const tl = pos.realTop;
