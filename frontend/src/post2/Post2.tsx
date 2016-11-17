@@ -164,7 +164,7 @@ export class GroupView extends React.Component<GroupViewProps, {}> {
     }
 
     render() {
-        console.log('render groupview');
+        // console.log('render groupview');
 
         const {model, group, groupPos} = this.props;
         const top = model.renderLines[group.start].top;

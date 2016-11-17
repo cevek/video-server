@@ -96,7 +96,7 @@ export function disposerWithGroup(groups: {start: number; end: number}[], values
         groupValues.push(item);
     }
     const generated = disposer(groupValues);
-    console.log(generated);
+    // console.log(generated);
 
     const newArr: DisposerItem[] = [];
     for (let i = 0; i < groups.length; i++) {

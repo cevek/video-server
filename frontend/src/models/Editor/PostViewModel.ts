@@ -24,7 +24,7 @@ export class PostViewModel {
             bottom: this.lineCalc.timeToPx(en.start / 100 + en.dur / 100),
             height: 50
         }));
-        console.log('render lines');
+        // console.log('render lines');
 
         // console.log(JSON.stringify(positions));
         const res = disposerWithGroup(this.post.groups.groups.slice(), positions);
