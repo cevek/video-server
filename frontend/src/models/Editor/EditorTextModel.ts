@@ -110,7 +110,8 @@ export class EditorTextModel {
         const invertLines = currentTextLine.lang === Lang.RU ? this.editorModel.post.enLines : this.editorModel.post.ruLines;
         const invertLang = currentTextLine.lang === Lang.RU ? Lang.EN : Lang.RU;
         currentTextLine.setWords(origWords.slice(0, sel.wordPos));
-        const newTextLine = EditorTextLine.createWithExistsWords(sel.lang, currentTextLine.start, halfDur, origWords.slice(sel.wordPos));
+        currentTextLine.dur = halfDur;
+        const newTextLine = EditorTextLine.createWithExistsWords(sel.lang, currentTextLine.start + halfDur, halfDur, origWords.slice(sel.wordPos));
         lines.splice(sel.linePos + 1, 0, newTextLine);
         const groups = this.editorModel.post.groups;
         const group = groups.findGroupByLinePos(sel.linePos);
@@ -126,6 +127,8 @@ export class EditorTextModel {
         } else {
             this.editorModel.post.speakerLines.splice(group.end, 0, null);
         }
+        sel.setTextLine(newTextLine);
+        sel.setLine(sel.linePos + 1);
 
 
         /*
