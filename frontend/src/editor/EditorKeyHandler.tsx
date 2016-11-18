@@ -44,7 +44,8 @@ export class EditorKeyHandler extends React.Component<{model: EditorModel;},{}>{
                 // model.history.add(model.textModel.joinLine());
             }
             else {
-                model.textModel.joinLineWithMove();
+                model.textModel.joinLine();
+                // model.textModel.joinLineWithMove();
                 // model.history.add(model.textModel.joinLineWithMove());
             }
             handled = true;

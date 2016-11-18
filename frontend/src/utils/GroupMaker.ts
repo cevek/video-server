@@ -86,4 +86,13 @@ export class GroupList {
             group.end += 1;
         }
     }
+
+    removeLine(group: Group) {
+        group.end--;
+        for (let i = group.pos + 1; i < this.groups.length; i++) {
+            const group = this.groups.get(i);
+            group.start -= 1;
+            group.end -= 1;
+        }
+    }
 }

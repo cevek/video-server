@@ -248,12 +248,47 @@ export class EditorTextModel {
     }
 
     joinLine() {
-        const undo = this._joinLine();
+        // const undo = this._joinLine();
         const sel = this.selection;
+        if (sel.linePos <= 0) {
+            return;
+        }
+        const currentTextLine = sel.textLine;
+        const halfDur = currentTextLine.dur / 2;
+        const origWords = currentTextLine.words.slice();
+        const oldDur = currentTextLine.dur;
+        const lines = currentTextLine.lang === Lang.EN ? this.editorModel.post.enLines : this.editorModel.post.ruLines;
+        const invertLines = currentTextLine.lang === Lang.RU ? this.editorModel.post.enLines : this.editorModel.post.ruLines;
+        const invertLang = currentTextLine.lang === Lang.RU ? Lang.EN : Lang.RU;
+        const groups = this.editorModel.post.groups;
+        const group = groups.findGroupByLinePos(sel.linePos);
+
+        const upLine = lines.get(sel.linePos - 1);
+        upLine.setWords([...upLine.words, ...origWords]);
+        lines.splice(sel.linePos, 1);
+        sel.setTextLine(upLine);
+        sel.setLine(sel.linePos - 1);
+
+        const dur = (currentTextLine.start + currentTextLine.dur) - upLine.start;
+        upLine.dur = dur;
+
+        lines.splice(group.end, 0, EditorTextLine.createWithExistsWords(upLine.lang, -1, -1, []));
+
+
+        if (currentTextLine.lang == Lang.EN) {
+            // this.editorModel.post.speakerLines.splice(sel.linePos, 0, this.editorModel.post.speakerLines.get(sel.linePos));
+        } else {
+            // this.editorModel.post.speakerLines.splice(group.end, 0, null);
+        }
+
+        // this.editorModel.post.groups.removeLine(group);
+
+
+
         // if (sel.line.isEmpty()) {
         //     this.lines.splice(sel.linePos, 1);
         // }
-        return undo;
+        // return undo;
     }
 
     joinLineWithMove() {
