@@ -57,7 +57,10 @@ export class DB {
     updateSql(table: string, values: any, where: string) {
         let setValues = '';
         for (const key in values) {
-            setValues += `${key} = ${mysql.escape(values[key])}`;
+            const value = values[key];
+            if (value !== undefined) {
+                setValues += `${key} = ${mysql.escape(value)}`;
+            }
         }
         return `UPDATE \`${table}\` SET ${setValues} WHERE ${where}`;
     }

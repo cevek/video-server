@@ -12,6 +12,10 @@ export class BaseModel<T> {
         return await this.db.query(this.db.insertSql(this.table, [item]), {}, trx);
     }
 
+    async update(id: number, item:T, trx?:Transaction) {
+        return await this.db.query(this.db.updateSql(this.table, item, 'id = :id'), {id: id}, trx);
+    }
+
     async createBulk(items:T[], trx?:Transaction) {
         return await this.db.query(this.db.insertSql(this.table, items), {}, trx);
     }
